@@ -1,0 +1,410 @@
+{
+  "name": "Trends Analysis Agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "26e95a69-b36b-4078-9fe2-3d57fe1a2e1f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        992,
+        192
+      ],
+      "id": "809c5167-39b5-4484-8a06-9247bf6402b2",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[\n  {\n\t\"trendName\": \"...\",\n\t\"summary\": \"...\",\n    \"category\" :\"...\",\n    \"examples\":\"...\"\n  },\n  {\n\t\"trendName\": \"-\",\n\t\"summary\": \"-\",\n    \"category\" :\"-\",\n    \"examples\":\"-\"\n  }\n]"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1216,
+        208
+      ],
+      "id": "8bdc5bc6-7342-4a15-9abc-a249e5f9e412",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "af330cf5-2df0-4815-a9a5-8395b5eb9916",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1648,
+        0
+      ],
+      "id": "07c497c0-a1d2-402c-a350-bca4d199cec3",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/top-headlines",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "apiKey",
+              "value": "={{$env.NEWS_API_KEY}}"
+            },
+            {
+              "name": "language",
+              "value": "en"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "cb63dcf3-6c18-4365-bd15-0447b990eb86",
+      "name": "Fetch News Headlines",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Take the first item (NewsAPI response)\nconst articles = items[0].json.articles;\n\n// Clean and structure the data\nreturn articles.map(article => ({\n  json: {\n    title: article.title,\n    description: article.description,\n    source: article.source?.name,\n    url: article.url,\n    publishedAt: article.publishedAt\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "b1f5a10b-85d5-40d9-856f-5afd65ec3346",
+      "name": "Extract Articles"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all items into a readable text block\nconst combinedText = items.map(i => {\n  const a = i.json;\n  return `${a.title}\\n${a.description || ''}\\nSource: ${a.source}\\nDate: ${a.publishedAt}\\nURL: ${a.url}\\n`;\n}).join('\\n\\n');\n\nreturn [{ json: { newsText: combinedText } }];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "39469286-b46b-4bf5-9e0f-2ae0c251a4f4",
+      "name": "Prepare AI Input"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI Trend Analysis Agent.\nAnalyze the following real-time news headlines and descriptions. \nIdentify and summarize the top 5 emerging trends or topics from this dataset.\n\nFor each trend, output:\n1. Trend Name\n2. Brief Summary (2 sentences)\n3. Category (e.g. Politics, Technology, Sports, Entertainment)\n4. Example headlines supporting it\n\nHere is the dataset:\n{{ $json.newsText }}\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "ee8288be-c316-470c-b162-7175a03c34e1",
+      "name": "Analyze Trends",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Safely extract the AI output array\nconst results = $json.output || [];\n\n// Check if it's a string (sometimes models return stringified JSON)\nconst data = typeof results === 'string' ? JSON.parse(results) : results;\n\n// Expand into individual n8n items\nreturn data.map(trend => ({ json: trend }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "0316da29-f6c5-4a75-8f65-6b521ef9ac9d",
+      "name": "Parse AI Output"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appbCso4A3kgLX0Bo",
+          "mode": "list",
+          "cachedResultName": "Trend Analysis",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl1SMKnsk933xLjw",
+          "mode": "list",
+          "cachedResultName": "Trend",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo/tbl1SMKnsk933xLjw"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Trend Name": "={{ $json.trendName }}",
+            "Summary": "={{ $json.summary }}",
+            "Category": "={{ $json.category }}",
+            "Examples": "={{ $json.examples }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Trend Name",
+              "displayName": "Trend Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Examples",
+              "displayName": "Examples",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "CreateAt",
+              "displayName": "CreateAt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1840,
+        112
+      ],
+      "id": "eec4805e-37b3-4839-99b6-1bc6b3d477a7",
+      "name": "Save to Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KjHajpmhaN3srHl8",
+          "name": "Airtable Personal Access Token [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Trend Analysis Agent",
+        "height": 384,
+        "width": 416
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -80,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "5ef0cc99-82f8-4223-af2c-ad8008d88e08",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Trends",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analyze Trends",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Fetch News Headlines",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Save to Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch News Headlines": {
+      "main": [
+        [
+          {
+            "node": "Extract Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Articles": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Input": {
+      "main": [
+        [
+          {
+            "node": "Analyze Trends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Trends": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Output": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Airtable": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d3ad3d71-fd73-4ebd-9ea4-a845ff05b561",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "k2lDm6gRhyrRoiJE",
+  "tags": []
+}

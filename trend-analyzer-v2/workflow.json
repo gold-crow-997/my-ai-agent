@@ -1,0 +1,798 @@
+{
+  "name": "Trend Analysis AI Agent(V2)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Trend Analysis Agent(V2)\nAn AI-powered intelligence engine that detects emerging market and cultural trends in real time, turning raw data into actionable insights before they go mainstream.",
+        "height": 384,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1952,
+        -240
+      ],
+      "typeVersion": 1,
+      "id": "3c451a11-31e2-4e3f-8f7f-d1e528b7cbd8",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        176,
+        512
+      ],
+      "id": "150f32c5-9484-4f98-bad0-87ff19f3e3bc",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"keyword\": \"...\",\n  \"velocity\": \"<only number>\",\n  \"reason\": \"...\",\n  \"sentiment\": \"positive|neutral|negative\",\n  \"category\": \"Cultural|Product|Market|Meme\",\n  \"recommendation\": \"...\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        512
+      ],
+      "id": "db46b9da-81b4-45f6-b7c4-d51d9da98a47",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1840,
+        -16
+      ],
+      "id": "3320241b-e6c4-42cc-b8d4-d0f0a78e23cc",
+      "name": "Trigger-Manual Run"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appbCso4A3kgLX0Bo",
+          "mode": "list",
+          "cachedResultName": "Trend Analysis",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblkJyFSdtik3C3dT",
+          "mode": "list",
+          "cachedResultName": "trend_configs",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo/tblkJyFSdtik3C3dT"
+        },
+        "filterByFormula": "AND({Active} = 1, FIND(\"newsapi\", ARRAYJOIN({Sources})) > 0)",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -1616,
+        -16
+      ],
+      "id": "e0f2ea9f-5845-40ab-9fb7-5b258be5b126",
+      "name": "Get Trend Configs",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KjHajpmhaN3srHl8",
+          "name": "Airtable Personal Access Token [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1392,
+        -16
+      ],
+      "id": "5e3f70c3-113a-4d62-9b45-17cd6b7e9c94",
+      "name": "Loop Keywords"
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/everything",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "apiKey",
+              "value": "={{ $env.NEWS_API_KEY }}"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.Keyword }}"
+            },
+            {
+              "name": "language",
+              "value": "en"
+            },
+            {
+              "name": "sortBy",
+              "value": "publishedAt"
+            },
+            {
+              "name": "from",
+              "value": "={{$now.minus({days:2}).toISO()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1168,
+        -80
+      ],
+      "id": "123c8394-e941-428f-bcfb-fe8e996a9c2c",
+      "name": "Fetch News Mentions"
+    },
+    {
+      "parameters": {
+        "jsCode": "const keyword   = $('Loop Keywords').first().json.Keyword\nconst threshold = Number($('Loop Keywords').first().json.Threshold) || 150;\nconst category  = $('Loop Keywords').first().json.Category || null;\n\n// From NewsAPI node\nconst articles  = $input.first().json.articles || [];\nconst mentions  = Array.isArray(articles) ? articles.length : 0;\n\nconst windowEnd   = new Date();\nconst windowStart = new Date(windowEnd.getTime() - 24*60*60*1000);\n\nreturn [{\n  keyword,\n  threshold,\n  category,\n  mentions,\n  windowStart: windowStart,\n  windowEnd: windowEnd,\n  source: 'newsapi'\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -944,
+        -80
+      ],
+      "id": "849e8597-0a40-4b0e-a7a0-2e7dff44a7f2",
+      "name": "Calculate Velocity & Baseline"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appbCso4A3kgLX0Bo",
+          "mode": "list",
+          "cachedResultName": "Trend Analysis",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblBAHdSEE2CnQGJs",
+          "mode": "list",
+          "cachedResultName": "trend_history",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo/tblBAHdSEE2CnQGJs"
+        },
+        "filterByFormula": "=AND(   {Keyword} = \"{{ $json.keyword }}\",   IS_AFTER({Timestamp}, DATEADD(NOW(), -7, 'days')) )",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -720,
+        -80
+      ],
+      "id": "0b160f27-b8b8-4720-8266-7ca032914dd6",
+      "name": "Get 7d History",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KjHajpmhaN3srHl8",
+          "name": "Airtable Personal Access Token [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1️⃣ Current mention count from NewsAPI\nconst current = $('Calculate Velocity & Baseline').first().json.mentions;\n\n// 2️⃣ Safely get history items from the Airtable node\nconst historyItems = $items(\"Get 7d History\") || [];\n\n// 3️⃣ Extract valid numeric mention values\nconst values = historyItems\n  .map(i => Number(i.json.Mentions))\n  .filter(n => Number.isFinite(n));\n  \n\n// 4️⃣ Decide baseline value\nlet baseline;\n\n// Case 1: Real historical average\nif (values.length > 0) {\n  baseline = values.reduce((a, b) => a + b, 0) / values.length;\n}\n// Case 2: Fallback to initial baseline from config (if exists)\nelse if ($json.baseline_from_config) {\n  baseline = Number($json.baseline_from_config);\n}\n// Case 3: Final fallback constant\nelse {\n  baseline = 10;\n}\n\n// 5️⃣ Compute velocity %\nconst velocity = baseline ? ((current - baseline) / baseline) * 100 : 0;\n\n\n// 6️⃣ Output to next nodes\nreturn [{\n  historyItems: historyItems,\n  values: values,\n  keyword: $('Calculate Velocity & Baseline').first().json.keyword,\n  category: $('Calculate Velocity & Baseline').first().json.category,\n  threshold: $('Calculate Velocity & Baseline').first().json.threshold,\n  mentions: current,\n  baseline: Number(baseline.toFixed(2)),\n  velocity: Number(velocity.toFixed(2)),\n  anomaly: velocity >= $('Calculate Velocity & Baseline').first().json.threshold,\n  source:$('Calculate Velocity & Baseline').first().json.source ,\n  windowStart: $('Calculate Velocity & Baseline').first().json.windowStart,\n  windowEnd: $('Calculate Velocity & Baseline').first().json.windowEnd\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        -80
+      ],
+      "id": "88263dc1-ce6e-4e8c-9e66-1ac3479c8556",
+      "name": "Compute Dynamic Baseline"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appbCso4A3kgLX0Bo",
+          "mode": "list",
+          "cachedResultName": "Trend Analysis",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblBAHdSEE2CnQGJs",
+          "mode": "list",
+          "cachedResultName": "trend_history",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo/tblBAHdSEE2CnQGJs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Keyword": "={{ $json.keyword }}",
+            "Mentions": "={{ $json.mentions }}",
+            "Source": "={{ $json.source }}",
+            "WindowStart": "={{ $json.windowStart }}",
+            "WindowEnd": "={{ $json.windowEnd }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Keyword",
+              "displayName": "Keyword",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Mentions",
+              "displayName": "Mentions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "WindowStart",
+              "displayName": "WindowStart",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "WindowEnd",
+              "displayName": "WindowEnd",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -272,
+        -80
+      ],
+      "id": "08dfe254-3393-401a-9351-edbf0af2109e",
+      "name": "Log Mentions",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KjHajpmhaN3srHl8",
+          "name": "Airtable Personal Access Token [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0e065909-daf7-4f5e-ba74-7965dcd9102a",
+              "leftValue": "={{ $('Compute Dynamic Baseline').item.json.anomaly }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -48,
+        -80
+      ],
+      "id": "c06f715f-8273-491e-8716-81abbd381357",
+      "name": "Velocity > Threshold?"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"output\": null\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        -16
+      ],
+      "id": "a87cbc6f-6d6f-4dd5-a1cf-d8c3c3803861",
+      "name": "Clean Trend output"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a market intelligence analyst.\nThe topic \"{{ $('Compute Dynamic Baseline').item.json.keyword }}\" grew by {{ $('Compute Dynamic Baseline').item.json.velocity }}%.\nBased on these headlines:\n{{ $('Fetch News Mentions').first().json.articles.map(a => \"- \" + a.title).join(\"\\n\") }}\nReturned velocity must be number\n\nAnswer in JSON:\n{\n  \"keyword\":{{ $('Compute Dynamic Baseline').item.json.keyword }} ,\n  \"velocity\": {{ $('Compute Dynamic Baseline').item.json.velocity }},\n  \"reason\": \"...\",\n  \"sentiment\": \"positive|neutral|negative\",\n  \"category\": \"Cultural|Product|Market|Meme\",\n  \"recommendation\": \"...\"\n}\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        288
+      ],
+      "id": "ff6907a4-cecd-417a-969e-014bc8322bf1",
+      "name": "AI Trend Analyzer"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all incoming items\nconst items = $input.all();\n\n// Filter out items where output is not null\nconst filtered = items.filter(item => item.json.output !== null);\n\n// Return only the valid ones\nreturn filtered.map(item => ({ json: item.json.output }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1168,
+        -272
+      ],
+      "id": "486fb2c3-aaca-4cfe-8917-9acbf2076ff1",
+      "name": "Filter Null"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appbCso4A3kgLX0Bo",
+          "mode": "list",
+          "cachedResultName": "Trend Analysis",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblwwoS1Uc8crIRL5",
+          "mode": "list",
+          "cachedResultName": "trend_results",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo/tblwwoS1Uc8crIRL5"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Keyword": "={{ $json.keyword }}",
+            "Velocity": "={{ $json.velocity/100 }}",
+            "Reason": "={{ $json.reason }}",
+            "Sentiment": "={{ $json.sentiment }}",
+            "Category": "={{ $json.category }}",
+            "Recommendation": "={{ $json.recommendation }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Keyword",
+              "displayName": "Keyword",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Velocity",
+              "displayName": "Velocity",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recommendation",
+              "displayName": "Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Detected At",
+              "displayName": "Detected At",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -944,
+        -272
+      ],
+      "id": "73d983e7-3287-4036-b760-816377a467f0",
+      "name": "Save Trend Result",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KjHajpmhaN3srHl8",
+          "name": "Airtable Personal Access Token [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "trend-analysis-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -864,
+        256
+      ],
+      "id": "ac234e50-77a1-4028-8680-9f790d9b8d9f",
+      "name": "Webhook",
+      "webhookId": "e1e46b8d-fbb7-42ef-87fd-e0a67d91896e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const apiKey = $input.first().json.query.apikey;\nconst requiredKey = \"trend_agent_test_key\";\n\nif (!apiKey || apiKey !== requiredKey) {\n  throw new Error(\"Unauthorized — invalid API key\");\n}\n\nreturn [{ validated: true }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        256
+      ],
+      "id": "d22b078c-74ed-470d-9e83-f1918220952a",
+      "name": "validation"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=📝 Trend Analysis Agent (V2) — Developer Notes\n🔹 How to Use This Agent\n\nThis AI agent detects early-stage emerging trends by tracking keyword velocity, comparing it against historical baselines, and generating insights using Gemini.\n\nThe workflow performs:\n\nFetching trend configurations (keywords, thresholds, categories)\n\nLooping through each keyword\n\nFetching NewsAPI mentions\n\nComputing baseline + velocity\n\nLogging mentions into Airtable\n\nIdentifying threshold-breaking trends\n\nCleaning / normalizing trend data\n\nGenerating AI insights\n\nOutputting final trend report\n\nA Webhook Trigger is included for NMS-AI mandatory workflow standardization.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/trend-analysis-agent\n\nMethod: POST\n\nTest Payload:\n\n{\n  \"apiKey\": \"trend_agent_test_key\"\n}\n\n\nWebhook does not initiate the trend analysis loop.\nActual execution starts from Manual Trigger (or Cron, if added later).\n\n🔹 Setup Instructions\n\nAdd n8n environment variable:\n\nTREND_AGENT_API_KEY = trend_agent_test_key\n\n\nConfigure NewsAPI Credential\n\nNEWS_API_KEY = sample-news-key-12345\n\n\nConfigure Airtable Credentials\n\nAPI Key: keySampleAirtable123\nBase ID: appSampleTrendBase1\nTables:\n  - TrendConfigs\n  - TrendMentions\n  - TrendResults\n\n\nConfigure Gemini API Key\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nConfigure Trend Config Table Structure\nEach record must contain:\n\nkeyword\n\ncategory\n\nbaseline_window\n\nvelocity_threshold\n\nOutput\nThe agent writes:\n\nTrend analysis logs\n\nVelocity spikes\n\nAI-generated insight summaries\n\n🔹 Required Credentials (Example placeholders)\n\nNewsAPI\n\nNEWS_API_KEY = sample-news-key-12345\n\n\nAirtable\n\nAPI Key: keySampleAirtable123\nBase ID: appSampleTrendBase1\n\n\nGemini API\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nEnvironment Variable\n\nTREND_AGENT_API_KEY = trend_agent_test_key\n\n🔹 Notes\n\nThe Webhook + Validation block is mandatory for NMS compliance\n\nSticky note contains only placeholder credentials\n\nReal credentials belong ONLY in n8n Credential Manager / env vars\n\nManual Trigger is the true entry point\n\nDo not remove the webhook block",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -496,
+        256
+      ],
+      "id": "796cc644-1782-4e0b-8df7-aeb47a307b2c",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "content": "📝 Trend Analysis Agent (V2) — Developer Notes\n🔹 How to Use This Agent\n\nThis AI agent detects early-stage emerging trends by tracking keyword velocity, comparing it against historical baselines, and generating insights using Gemini.\n\nThe workflow performs:\n\nFetching trend configurations (keywords, thresholds, categories)\n\nLooping through each keyword\n\nFetching NewsAPI mentions\n\nComputing baseline + velocity\n\nLogging mentions into Airtable\n\nIdentifying threshold-breaking trends\n\nCleaning / normalizing trend data\n\nGenerating AI insights\n\nOutputting final trend report\n\nA Webhook Trigger is included for NMS-AI mandatory workflow standardization.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/trend-analysis-agent\n\nMethod: POST\n\nTest Payload:\n\n{\n  \"apiKey\": \"trend_agent_test_key\"\n}\n\n\nWebhook does not initiate the trend analysis loop.\nActual execution starts from Manual Trigger (or Cron, if added later).\n\n🔹 Setup Instructions\n\nAdd n8n environment variable:\n\nTREND_AGENT_API_KEY = trend_agent_test_key\n\n\nConfigure NewsAPI Credential\n\nNEWS_API_KEY = sample-news-key-12345\n\n\nConfigure Airtable Credentials\n\nAPI Key: keySampleAirtable123\nBase ID: appSampleTrendBase1\nTables:\n  - TrendConfigs\n  - TrendMentions\n  - TrendResults\n\n\nConfigure Gemini API Key\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nConfigure Trend Config Table Structure\nEach record must contain:\n\nkeyword\n\ncategory\n\nbaseline_window\n\nvelocity_threshold\n\nOutput\nThe agent writes:\n\nTrend analysis logs\n\nVelocity spikes\n\nAI-generated insight summaries\n\n🔹 Required Credentials (Example placeholders)\n\nNewsAPI\n\nNEWS_API_KEY = sample-news-key-12345\n\n\nAirtable\n\nAPI Key: keySampleAirtable123\nBase ID: appSampleTrendBase1\n\n\nGemini API\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nEnvironment Variable\n\nTREND_AGENT_API_KEY = trend_agent_test_key\n\n🔹 Notes\n\nThe Webhook + Validation block is mandatory for NMS compliance\n\nSticky note contains only placeholder credentials\n\nReal credentials belong ONLY in n8n Credential Manager / env vars\n\nManual Trigger is the true entry point\n\nDo not remove the webhook block",
+        "height": 2304,
+        "width": 688
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2160,
+        208
+      ],
+      "typeVersion": 1,
+      "id": "60789def-4372-4299-bf26-e4d8fd247289",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Trend Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Trend Analyzer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger-Manual Run": {
+      "main": [
+        [
+          {
+            "node": "Get Trend Configs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Trend Configs": {
+      "main": [
+        [
+          {
+            "node": "Loop Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Keywords": {
+      "main": [
+        [
+          {
+            "node": "Filter Null",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch News Mentions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch News Mentions": {
+      "main": [
+        [
+          {
+            "node": "Calculate Velocity & Baseline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Velocity & Baseline": {
+      "main": [
+        [
+          {
+            "node": "Get 7d History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get 7d History": {
+      "main": [
+        [
+          {
+            "node": "Compute Dynamic Baseline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Dynamic Baseline": {
+      "main": [
+        [
+          {
+            "node": "Log Mentions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Mentions": {
+      "main": [
+        [
+          {
+            "node": "Velocity > Threshold?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Velocity > Threshold?": {
+      "main": [
+        [
+          {
+            "node": "AI Trend Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clean Trend output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Trend output": {
+      "main": [
+        [
+          {
+            "node": "Loop Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Trend Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Loop Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Null": {
+      "main": [
+        [
+          {
+            "node": "Save Trend Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2cfbf96d-238a-40a3-88da-905b92187c03",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "9PYaz0bZS9cmoEKg",
+  "tags": []
+}

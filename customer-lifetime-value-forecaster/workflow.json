@@ -1,0 +1,587 @@
+{
+  "name": "Customer Lifetime Value (CLV) Forecaster",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clv",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        144,
+        96
+      ],
+      "id": "cc1de306-5cd9-45b6-9f35-2d7106497f64",
+      "name": "Webhook",
+      "webhookId": "3b040252-83ce-4023-81b0-67df9b6981f6"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You MUST reply with ONLY valid JSON.\nDo NOT include explanations.\nDo NOT include text before or after the JSON.\nDo NOT include markdown.\nDo NOT include thoughts.\nDo NOT include commentary.\n\nYour output MUST follow this exact schema:\n\n{\n  \"customer_id\": \"{{$json.customer_id}}\",\n  \"predicted_clv\": {{$json.predicted_clv}},\n  \"confidence_score\": {{$json.confidence_score}},\n  \"insight_summary\": \"ONE short paragraph insight.\",\n  \"top_drivers\": {{$json.top_drivers}}\n}\n\nRules:\n- The output must be valid JSON.\n- insight_summary must be plain text.\n- Do not break JSON structure.\n- Do not include any text outside the JSON.\n"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        -16
+      ],
+      "id": "e492a6f9-0fc8-4e0a-aff8-c27bdd60f31d",
+      "name": "Generate Insight Summary",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0A0KEPER9T",
+          "mode": "list",
+          "cachedResultName": "all-popai"
+        },
+        "text": "=🔥 *High-Value Customer Identified!*\n\nA customer with strong revenue potential has been analyzed.\n\n*Customer ID:* `{{ $json.properties['Customer ID'].title[0].text.content }}`\n*Predicted CLV:* $ {{ $json.properties['Predicted CLV'].number }}\n*Confidence:* {{ $json.properties['Confidence Score'].number }}\n*Recency:* {{ $json.properties['Recency (Days)'].number }} days  \n*Frequency:* {{ $json.properties.Frequency.number }} purchases  \n*Monetary:* $ {{ $json.properties.Monetary.number }}\n\n🧠 *Top Drivers:*  \n{{ $json.properties['Top Drivers'].multi_select[0].name || \" \" }}, {{ $json.properties['Top Drivers'].multi_select[1].name || \" \" }}, {{ $json.properties['Top Drivers'].multi_select[2].name || \" \" }}, {{ $json.properties['Top Drivers'].multi_select[3].name || \" \" }}\n\n💡 *Insight Summary:*  \n{{ $json.properties['Insight Summary'].rich_text[0].text.content }}\n\n📌 Logged to Notion: CLV Predictions Database\n",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2528,
+        -16
+      ],
+      "id": "ccc87968-cf9b-412f-afeb-94d08ea83d53",
+      "name": "Send a message",
+      "webhookId": "ceabc509-fdcd-41b0-b2f2-2b84bc613f3e",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "1rGfGqEBzssPkdR2",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        240
+      ],
+      "id": "65203dd6-457e-4f45-9200-888b64159253",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0A07EKBG1M",
+          "mode": "list",
+          "cachedResultName": "new-channel"
+        },
+        "text": "lll",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1920,
+        240
+      ],
+      "id": "0c575114-1edb-4259-9cec-e3e44aa8e3d2",
+      "name": "Send a message1",
+      "webhookId": "e5b4be23-82f4-4ba3-b427-87fee97508ad",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "1rGfGqEBzssPkdR2",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1SgfC-0b9l5WpyocdJH0slpyOx3W3lMqs2BzfJzc6GRM",
+          "mode": "list",
+          "cachedResultName": "Customer Lifetime Value (CLV) Forecaster",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SgfC-0b9l5WpyocdJH0slpyOx3W3lMqs2BzfJzc6GRM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SgfC-0b9l5WpyocdJH0slpyOx3W3lMqs2BzfJzc6GRM/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "customer_id",
+              "lookupValue": "={{ $json.body.customer_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        336,
+        96
+      ],
+      "id": "f51f874d-93b0-40df-8788-9ba43cc3fc78",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5e6e168b-2150-43da-aa4d-28b304fcd000",
+              "leftValue": "={{ $json.customer_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        96
+      ],
+      "id": "03db46a0-b17e-43fe-b4f1-99edeab67d72",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1SgfC-0b9l5WpyocdJH0slpyOx3W3lMqs2BzfJzc6GRM",
+          "mode": "list",
+          "cachedResultName": "Customer Lifetime Value (CLV) Forecaster",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SgfC-0b9l5WpyocdJH0slpyOx3W3lMqs2BzfJzc6GRM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1894795848,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SgfC-0b9l5WpyocdJH0slpyOx3W3lMqs2BzfJzc6GRM/edit#gid=1894795848"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "customer_id",
+              "lookupValue": "={{ $json.customer_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        -16
+      ],
+      "id": "f4705b63-fd8d-4233-97ec-127debf2d2da",
+      "name": "Get Transaction Rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "df42ebdd-caf5-4d92-9607-ccce7093afab",
+              "leftValue": "={{ $json.transaction_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        96
+      ],
+      "id": "fa6178ba-234d-489f-be53-3821d1dbd458",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"result\": \"not find customer id\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        816,
+        240
+      ],
+      "id": "79a50233-10a3-4245-a970-148eaa6da36f",
+      "name": "not find customer id"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"result\": \"not find transactions\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1328,
+        240
+      ],
+      "id": "a71b4e50-0f18-4cbf-9cd0-e71d530b4938",
+      "name": "not find transactions"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\n\nconst transactions = rows.map(r => r.json);\n\nconst frequency = transactions.length;\n\nconst today = new Date();\nconst dates = transactions.map(t => new Date(t.date));\nconst lastPurchase = new Date(Math.max.apply(null, dates));\nconst recency = Math.floor((today - lastPurchase) / (1000 * 60 * 60 * 24));\n\nconst monetary = transactions.reduce((sum, t) => sum + Number(t.amount), 0);\n\nreturn [\n  {\n    customer_id: $json.customer_id,\n    frequency,\n    recency,\n    monetary\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        -16
+      ],
+      "id": "3edffd88-e653-413f-a9a5-02827acab3f3",
+      "name": "RFM Feature Engineering"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input from RFM node\nconst r = $json.recency;\nconst f = $json.frequency;\nconst m = $json.monetary;\n\n// Simple placeholder model (temporary)\nconst predicted_clv = (f * m) - (r * 5);\nconst confidence_score = 0.85;\n\nreturn [\n  {\n    customer_id: $json.customer_id,\n    predicted_clv,\n    confidence_score,\n    top_drivers: [\"frequency\", \"monetary\"]\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        -16
+      ],
+      "id": "0ee77c93-1589-406b-922a-c7079053c44a",
+      "name": "Feature Engineering (RFM)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get raw text output from LLM (correct path for Gemini output)\nlet raw = $json.candidates?.[0]?.content?.parts?.[0]?.text || \"\";\n\ntry {\n    // --- Extract JSON inside curly braces ---\n    const firstBrace = raw.indexOf(\"{\");\n    const lastBrace = raw.lastIndexOf(\"}\");\n\n    if (firstBrace === -1 || lastBrace === -1) {\n        throw new Error(\"No JSON braces found\");\n    }\n\n    const jsonText = raw.slice(firstBrace, lastBrace + 1);\n\n    // --- Parse JSON ---\n    const data = JSON.parse(jsonText);\n\n    // --- Return clean output ---\n    return [\n        {\n            json: {\n                customer_id: data.customer_id,\n                predicted_clv: data.predicted_clv,\n                confidence_score: data.confidence_score,\n                insight_summary: data.insight_summary,\n                top_drivers: data.top_drivers\n            }\n        }\n    ];\n\n} catch (e) {\n    // --- Safe fallback ---\n    return [\n        {\n            json: {\n                success: false,\n                error_message: \"Failed to parse LLM JSON\",\n                details: e.message,\n                raw_output: raw\n            }\n        }\n    ];\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2128,
+        -16
+      ],
+      "id": "3b70e7c0-a133-430f-9d12-d0f11dedd451",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "2bf226d7-d2d5-8082-a12e-f44eae577a23",
+          "mode": "list",
+          "cachedResultName": "CLV Predictions",
+          "cachedResultUrl": "https://www.notion.so/2bf226d7d2d58082a12ef44eae577a23"
+        },
+        "simple": false,
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Customer ID|title",
+              "title": "={{ $json.customer_id }}"
+            },
+            {
+              "key": "Predicted CLV|number",
+              "numberValue": "={{ $json.predicted_clv }}"
+            },
+            {
+              "key": "Confidence Score|number",
+              "numberValue": "={{ $json.confidence_score }}"
+            },
+            {
+              "key": "Insight Summary|rich_text",
+              "textContent": "={{ $json.insight_summary }}"
+            },
+            {
+              "key": "Top Drivers|multi_select",
+              "multiSelectValue": "={{ $json.top_drivers[0].driver || \"\" }}{{ $json.top_drivers[0].value || \"\"}}, {{ $json.top_drivers[1].driver || \"\" }}{{ $json.top_drivers[1].value || \"\" }}, {{ $json.top_drivers[2].driver || \"\"}}{{ $json.top_drivers[2].value || \"\" }}"
+            },
+            {
+              "key": "Recency (Days)|number",
+              "numberValue": "={{ $('RFM Feature Engineering').first().json.recency }}"
+            },
+            {
+              "key": "Frequency|number",
+              "numberValue": "={{ $('RFM Feature Engineering').first().json.frequency }}"
+            },
+            {
+              "key": "Monetary|number",
+              "numberValue": "={{ $('RFM Feature Engineering').first().json.monetary }}"
+            },
+            {
+              "key": "Timestamp|date",
+              "date": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2336,
+        -16
+      ],
+      "id": "9191c38f-cdc3-4647-bd89-29303e01bec4",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "dJvzIaiDZ0p5tiZh",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"customer_id\": \"{{ $('Create a database page').first().json.properties['Customer ID'].title[0].text.content }}\",\n  \"predicted_clv\": \"{{ $('Create a database page').first().json.properties['Predicted CLV'].number }}\",\n  \"confidence\": \"{{ $('Create a database page').first().json.properties['Confidence Score'].number }}\",\n  \"recency\": \"\",\n  \"frequency\": \"{{ $('Create a database page').first().json.properties.Frequency.number }}\",\n  \"monetary\": \"{{ $('Create a database page').first().json.properties.Monetary.number }}\",\n  \"top_drivers\": \"{{ $('Create a database page').first().json.properties['Top Drivers'].multi_select[0].name || \"\" }}, {{ $('Create a database page').first().json.properties['Top Drivers'].multi_select[1].name || \"\" }}, {{ $('Create a database page').first().json.properties['Top Drivers'].multi_select[2].name || \"\" }}, {{ $('Create a database page').first().json.properties['Top Drivers'].multi_select[3].name || \"\" }}\",\n  \"insight_summary\": \"{{ $('Create a database page').item.json.properties['Insight Summary'].rich_text[0].text.content }}\"\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        2736,
+        -16
+      ],
+      "id": "9bfdf40a-5be6-4f63-89fa-e50b5379cb15",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Insight Summary": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get Transaction Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "not find customer id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Transaction Rows": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "RFM Feature Engineering",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "not find transactions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RFM Feature Engineering": {
+      "main": [
+        [
+          {
+            "node": "Feature Engineering (RFM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feature Engineering (RFM)": {
+      "main": [
+        [
+          {
+            "node": "Generate Insight Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a database page": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e643e13b-9a2d-4949-90c4-0c05b81632da",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "hlTgEwSHW19YkJAx",
+  "tags": []
+}

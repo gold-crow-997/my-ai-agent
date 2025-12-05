@@ -1,0 +1,1095 @@
+{
+  "name": "Sales Call Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0b2590c7-f83c-4162-b4b5-3d50c2f787fc",
+              "name": "name",
+              "value": "={{ $('Check: Request Format').item.json.prospect }}",
+              "type": "string"
+            },
+            {
+              "id": "c20a1778-c236-4793-af44-76b986fd79d5",
+              "name": "company",
+              "value": "={{ $('Check: Request Format').item.json.company }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1296,
+        144
+      ],
+      "id": "49099cd6-cd14-4e67-92c1-87055a301317",
+      "name": "Input: Prospect Info"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2f1f79a8-dbac-4372-84e5-e78a74860429",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "eefbf2aa-2aff-4423-8846-affa0aeab616",
+              "leftValue": "={{ $json.company }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1520,
+        144
+      ],
+      "id": "379f6946-4353-4bbe-93ee-cbef707276fc",
+      "name": "Check: Input Valid"
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/everything",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "apiKey",
+              "value": "={{$env.NEWS_API_KEY}}"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.company }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2192,
+        -144
+      ],
+      "id": "003af08d-b69b-471f-9ed2-7a098a3858e7",
+      "name": "Fetch News Articles",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "notesInFlow": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "$json.articles",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2416,
+        -240
+      ],
+      "id": "40b2a644-d2f4-4a26-8f73-f02763205a49",
+      "name": "Split News Results"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "$json.items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2416,
+        144
+      ],
+      "id": "ad7c64e9-29ea-4ccc-a876-77f64a8dbefd",
+      "name": "Split Google Results"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Runs for each item (CSE or News)\nreturn items.map(item => {\n  let i = item.json;\n\n  if (i.title || i.htmlSnippet) {\n    // CSE case\n    return {\n      json: {\n        source: \"Google CSE\",\n        title: i.title || \"Untitled\",\n        summary: i.htmlSnippet ? i.htmlSnippet.replace(/<[^>]+>/g, '') : \"\",\n        url: i.formattedUrl,\n        fileType: i.mime || \"\",\n        date: (i.pagemap?.metatags?.[0]?.creationdate || \"\").slice(2,10) // e.g. 20230605\n      }\n    };\n  } else {\n    // News API case\n    return {\n      json: {\n        source: i.source?.name || \"News\",\n        title: i.title || \"Untitled\",\n        summary: i.description || \"\",\n        url: i.url,\n        author: i.author || \"\",\n        date: i.publishedAt ? i.publishedAt.split(\"T\")[0] : \"\"\n      }\n    };\n  }\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        -240
+      ],
+      "id": "bf34498d-aaab-4d0d-ae1e-90f1fd2fe01b",
+      "name": "Format News Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Runs for each item (CSE or News)\nreturn items.map(item => {\n  let i = item.json;\n\n  if (i.title || i.htmlSnippet) {\n    // CSE case\n    return {\n      json: {\n        source: \"Google CSE\",\n        title: i.title || \"Untitled\",\n        summary: i.htmlSnippet ? i.htmlSnippet.replace(/<[^>]+>/g, '') : \"\",\n        url: i.formattedUrl,\n        fileType: i.mime || \"\",\n        date: (i.pagemap?.metatags?.[0]?.creationdate || \"\").slice(2,10) // e.g. 20230605\n      }\n    };\n  } else {\n    // News API case\n    return {\n      json: {\n        source: i.source?.name || \"News\",\n        title: i.title || \"Untitled\",\n        summary: i.description || \"\",\n        url: i.url,\n        author: i.author || \"\",\n        date: i.publishedAt ? i.publishedAt.split(\"T\")[0] : \"\"\n      }\n    };\n  }\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        144
+      ],
+      "id": "56f21867-63f9-45fa-ab48-aa77eb5df3cd",
+      "name": "Format Google Data"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2864,
+        48
+      ],
+      "id": "7bf5ead3-430b-4ba8-9847-24fccd729926",
+      "name": "Combine News + Google Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "let output = \"### Research Results\\n\";\n\nitems.forEach((item, idx) => {\n  const i = item.json;\n  output += `${idx+1}. [${i.title}](${i.url})\\n`;\n  output += `   - Source: ${i.source}\\n`;\n  if (i.author) output += `   - Author: ${i.author}\\n`;\n  if (i.date) output += `   - Date: ${i.date}\\n`;\n  if (i.fileType) output += `   - File Type: ${i.fileType}\\n`;\n  output += `   - Summary: ${i.summary}\\n\\n`;\n});\n\nreturn [{ json: { formattedResults: output } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3264,
+        352
+      ],
+      "id": "df0e3370-869d-48dc-b258-b37f6cfa5d94",
+      "name": "Filter + prepare Research"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an AI Sales Research Agent. \nYour goal is to prepare a salesperson for an upcoming call by transforming raw research results into a concise, structured, and actionable briefing document.\n\nProspect: {{ $('Input: Prospect Info').first().json.name }}\nCompany: {{ $('Input: Prospect Info').first().json.company }}\n\nHere are aggregated research results (from Google CSE, News API, and other sources):\n\n{{$json.formattedResults}}\n\n---\n\n### Your Tasks:\n1. Analyze all provided research and extract only what is most relevant to sales preparation.\n2. Summarize in a concise way that avoids fluff or repetition.\n3. Identify signals that reveal the company’s challenges, risks, or opportunities.\n4. Provide insights that help the salesperson personalize the call.\n\n### Output Format (must be valid JSON):\n{\n  \"prospect_background\": \"Short summary of the person’s role, history, and influence\",\n  \"company_summary\": \"Overview of the company (industry, size, recent activity, competitors, culture/values)\",\n  \"pain_points\": [\n    \"Likely challenge or risk #1\",\n    \"Likely challenge or risk #2\",\n    \"...\"\n  ],\n  \"opportunities\": [\n    \"Opportunity for alignment #1\",\n    \"Opportunity for alignment #2\",\n    \"...\"\n  ],\n  \"questions\": [\n    \"Open-ended question #1\",\n    \"Open-ended question #2\",\n    \"...\"\n  ]\n}\n\n### Requirements:\n- Keep each section under 3–4 bullet points unless highly relevant.\n- Use plain English, avoid jargon.\n- Never invent facts not grounded in the input.\n- If information is missing, infer carefully based on industry/company context.\n- Make questions open-ended, focused on uncovering needs and building trust.\n"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        720
+      ],
+      "id": "e7790977-52dc-4b5e-b2da-8c6627155ca2",
+      "name": "Generate Call Prep Briefing",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Safely get Gemini text output (stringified JSON)\nconst raw = $json.content?.parts?.[0]?.text || \"{}\";\n\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  return [{ json: { error: \"Could not parse Gemini JSON\", raw } }];\n}\n\nreturn [{ json: parsed }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2176,
+        624
+      ],
+      "id": "66b6ec6d-1139-4012-9acf-03b1ca407b9a",
+      "name": "Format Briefing for Doc"
+    },
+    {
+      "parameters": {
+        "folderId": "default",
+        "title": "=Sales_call_prep_{{ $('Input: Prospect Info').first().json.company }}_{{ $('Input: Prospect Info').first().json.name }}_{{ $now }}"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        624
+      ],
+      "id": "403574c9-1c69-44fa-8ddd-a1f518f21385",
+      "name": "Google Doc: Create New",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "yDN1LPDdBCB7q1Zy",
+          "name": "Google Docs [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "=# Sales Call Prep Briefing\n\n## Prospect Background\n{{ $('Format Briefing for Doc').item.json.prospect_background }}\n\n## Company Summary\n{{ $('Format Briefing for Doc').item.json.company_summary }}\n\n## Pain Points\n{{ $('Format Briefing for Doc').item.json.pain_points.map(p => \"- \" + p).join(\"\\n\") }}\n\n## Opportunities\n{{ $('Format Briefing for Doc').item.json.opportunities.map(o => \"- \" + o).join(\"\\n\") }}\n\n## Suggested Questions\n{{ $('Format Briefing for Doc').item.json.questions.map((q,i) => (i+1) + \". \" + q).join(\"\\n\") }}\n"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        2624,
+        624
+      ],
+      "id": "943b9f09-3ef8-4459-8be9-fd59a6e1800e",
+      "name": "Google Doc: Update Existing",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "yDN1LPDdBCB7q1Zy",
+          "name": "Google Docs [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{$env.GOOGLE_API_KEY}}"
+            },
+            {
+              "name": "cx",
+              "value": "={{$env.GOOGLE_API_CX}}"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.company }} {{ $json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2192,
+        240
+      ],
+      "id": "c362b0ab-c518-43a5-82c8-69d094a8a799",
+      "name": "Fetch Google Search Results",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -16,
+        336
+      ],
+      "id": "893a63ce-ed32-4d6f-acea-fae27e488d22",
+      "name": "Telegram Trigger",
+      "webhookId": "cdd42743-df4e-4543-b825-40a3d0c585bb",
+      "credentials": {
+        "telegramApi": {
+          "id": "ThOxeKDGnp00LkuP",
+          "name": "Telegram [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parsing Data').item.json.chat_id }}",
+        "text": "={{ $('Parsing Data').item.json.reply }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        432
+      ],
+      "id": "49018630-85b6-487a-a57d-22a792b4c23d",
+      "name": "Send a text message1",
+      "webhookId": "ae2ab77c-dc1f-4cd7-88ba-6bcfcb30c731",
+      "credentials": {
+        "telegramApi": {
+          "id": "ThOxeKDGnp00LkuP",
+          "name": "Telegram [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1744,
+        48
+      ],
+      "id": "603ff722-6913-454c-a025-23896e767ee7",
+      "name": "Wait1",
+      "webhookId": "3d21830c-d701-42de-8a05-e0d1e8cced53"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        -144
+      ],
+      "id": "2ad9bc44-dc90-4005-b544-4b6d58b9338a",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        240
+      ],
+      "id": "38614543-663d-4629-a370-7d2ac744416a",
+      "name": "Limit1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Check Lock').item.json.chat_id }}",
+        "text": "❌ Sorry, I couldn’t generate your call prep briefing this time.   Please try again in a few minutes.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2176,
+        816
+      ],
+      "id": "d64b4d0a-f218-4d0d-9d98-11ed113b2bca",
+      "name": "Send a text - Gemini API Error",
+      "webhookId": "b5e05a86-89b5-4b1d-87b9-6509e883bdd1",
+      "credentials": {
+        "telegramApi": {
+          "id": "ThOxeKDGnp00LkuP",
+          "name": "Telegram [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Check: Request Format').first().json.chat_id }}",
+        "text": "=📄 Your briefing is ready! \n👉 https://docs.google.com/document/d/{{ $json.documentId }}/edit",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2848,
+        624
+      ],
+      "id": "2fafe13b-e67d-480c-86ca-b5ed8693ee69",
+      "name": "Success Message",
+      "webhookId": "86a34d62-3a76-4364-8b64-789e33cd9853",
+      "credentials": {
+        "telegramApi": {
+          "id": "ThOxeKDGnp00LkuP",
+          "name": "Telegram [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.result.chat.id\nconst staticData = this.$getWorkflowStaticData('global');\n\n// Remove the lock\ndelete staticData[chatId];\n\nreturn [{\n  chat_id: chatId,\n  status: \"released\"\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3072,
+        624
+      ],
+      "id": "0e00d31a-ca0c-4d94-b400-8faca83a6d89",
+      "name": "Release Lock"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "63908073-76c6-4d96-ba28-d3b94f1cd483",
+              "name": "newsData",
+              "value": "\"No recent news articles available.\"",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2640,
+        -48
+      ],
+      "id": "5b4dca4d-072c-4ac7-9a9f-2ee6248fff8a",
+      "name": "News API Fallback"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9606c7e9-fe0a-4e52-b974-30c28d211d70",
+              "name": "googleSearchData",
+              "value": "\"No search results available.\"",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2640,
+        336
+      ],
+      "id": "7576a9b6-1f8a-421e-8a6b-8ca56cc7030a",
+      "name": "Google Search API Fallback"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Check: Request Format').item.json.chat_id }}",
+        "text": "❌ Invalid format. Please include both the prospect’s name and company. Use this format: 'Prepare me for a call with <Name> from <Company>'",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1744,
+        240
+      ],
+      "id": "95cecd79-42cc-462a-babf-1d934516bb74",
+      "name": "Send Invalid Input Message",
+      "webhookId": "7a229881-c70d-4799-bcd9-f40f886ea8f0",
+      "credentials": {
+        "telegramApi": {
+          "id": "ThOxeKDGnp00LkuP",
+          "name": "Telegram [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fd9f3b72-e98f-4ba1-92a5-4bb93c177f16",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        336
+      ],
+      "id": "1bbb594b-2115-41e0-ab03-df2c50fa11ba",
+      "name": "Check: Request Format"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.message.text.trim();\n\n// Check format\nif (!text.toLowerCase().includes(\"call with\") || !text.toLowerCase().includes(\"from\")) {\n  return [{\n    valid: false,\n    reply: \"❌ Invalid format. Please use: 'Prepare me for a call with <Name> from <Company>'\",\n    chat_id: $json.message.chat.id\n  }];\n}\n\nconst match = text.match(/call with (.+) from (.+)/i);\n\nif (match) {\n  return [{\n    valid: true,\n    prospect: match[1].trim(),\n    company: match[2].trim(),\n    reply: \"✅ Ok, accepted your request, please wait...\",\n    chat_id: $json.message.chat.id\n  }];\n} else {\n  return [{\n    valid: false,\n    reply: \"❌ Invalid format. Please use: 'Prepare me for a call with <Name> from <Company>'\",\n    chat_id: $json.message.chat.id\n  }];\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        336
+      ],
+      "id": "26691282-27d9-48a5-b83c-7d09f4695d4d",
+      "name": "Parsing Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.chat_id\nconst staticData = this.$getWorkflowStaticData('global')\n\n// If this user already has a lock, block\nif (staticData[chatId] === 'running') {\n  return [{\n    proceed: false,\n    chat_id: chatId,\n    reply: \"⏳ You already have a request running. Please wait until it finishes.\"\n  }];\n}\n\n// Otherwise, set lock\nstaticData[chatId] = 'running';\n\nreturn [{\n  proceed: true,\n  chat_id: chatId,\n  prospect: $json.prospect,\n  company: $json.company,\n  reply: \"✅ Ok, accepted your request, please wait...\"\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        240
+      ],
+      "id": "5840a13e-f1d8-431e-b160-e03e642ef663",
+      "name": "Decide Proceed?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "123655fd-2f99-4566-824c-f8bf8ae38e23",
+              "leftValue": "={{ $json.proceed }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        848,
+        240
+      ],
+      "id": "ac7f435d-b248-4007-961f-5e1bcf0cfae5",
+      "name": "Check Lock"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1072,
+        144
+      ],
+      "id": "5b2eed33-3c43-4f30-8bd5-4d83d54232e0",
+      "name": "Send Accept Message",
+      "webhookId": "887c7471-cabc-43db-af77-eafb42ff982b",
+      "credentials": {
+        "telegramApi": {
+          "id": "ThOxeKDGnp00LkuP",
+          "name": "Telegram [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1072,
+        336
+      ],
+      "id": "926590a9-8d3e-4bb5-b84c-f503fa8f366d",
+      "name": "Send Delay Message",
+      "webhookId": "36e149d0-7eba-4372-82c8-edebb1d6e9d3",
+      "credentials": {
+        "telegramApi": {
+          "id": "ThOxeKDGnp00LkuP",
+          "name": "Telegram [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sales-call-assistant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1152,
+        624
+      ],
+      "id": "6d715288-c75c-456d-b8e7-80cb944e13e3",
+      "name": "Webhook",
+      "webhookId": "e1e46b8d-fbb7-42ef-87fd-e0a67d91896e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const apiKey = $input.first().json.query.apikey;\nconst requiredKey = \"sales_call_assistant_test_key\";\n\nif (!apiKey || apiKey !== requiredKey) {\n  throw new Error(\"Unauthorized — invalid API key\");\n}\n\nreturn [{ validated: true }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        624
+      ],
+      "id": "c990c86a-382b-4996-9824-751087c82e7b",
+      "name": "validation"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=📝 Sales Call Assistant — Developer Notes\n🔹 How to Use This Agent\n\nThis workflow processes incoming Telegram commands to generate sales call preparation briefings.\nThe agent collects:\n\nProspect info provided by user\n\nLatest news about the company\n\nGoogle Search topical context\n\nPain points + opportunity mapping\n\nAI-generated call briefing\n\nGoogle Doc output\n\nTelegram follow-up messages\n\nWebhook Trigger is included for NMS workflow standardization.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/sales-call-assistant\n\nMethod: POST\n\nTest Request Body:\n\n{\n  \"apiKey\": \"sales_call_assistant_test_key\"\n}\n\n\nThis webhook does NOT trigger the real workflow.\nThe actual workflow starts from Telegram Trigger.\nWebhook exists to satisfy NMS mandatory rules.\n\n🔹 Setup Instructions\n\nAdd environment variable:\n\nSALES_CALL_ASSISTANT_API_KEY = sales_call_assistant_test_key\n\n\nConfigure Telegram Bot API\n\nBot Token: 123456:ABC-test-sample-token\nBot Username: test_sales_bot\n\n\nConfigure Google Custom Search API\n\nAPI Key: sample-google-search-key\nSearch Engine ID (CX): sample-cx-id-1234\n\n\nConfigure News API (Optional fallback)\n\nNEWS_API_KEY = sample-news-key-123\n\n\nConfigure Google Doc Credential\n\nEmail: test@test.com\nClient ID: sample-google-doc-id.apps.googleusercontent.com\nClient Secret: sample-google-doc-secret\n\n\nConfigure Gemini API Key\n\nGEMINI_API_KEY = sample-gemini-test-key-12345\n\n\nSetup Redis / Airtable / n8n Memory nodes if locking is required\n(lock-to-prevent-multiple-simultaneous-requests pattern)\n\n🔹 Required Credentials (Example placeholders)\n\nUse real credentials only inside n8n Credential Manager.\nUse test examples in this Sticky Note.\n\nTelegram Bot\n\nBot Token: 123456:ABC-test-sample-token\n\n\nGoogle Search API\n\nAPI Key: google-search-sample-key\nCX: sample-cx-id\n\n\nNews API\n\nNEWS_API_KEY = news-sample-key\n\n\nGemini API\n\nGEMINI_API_KEY = gemini-sample-key-12345\n\n\nGoogle Drive / Docs OAuth\n\nEmail: test@test.com\nClient ID: sample-doc-client-id.apps.googleusercontent.com\nClient Secret: sample-doc-secret\n\n\nEnvironment Variable\n\nSALES_CALL_ASSISTANT_API_KEY = sales_call_assistant_test_key\n\n🔹 Notes\n\nWebhook + immediate validation is required for NMS compliance\n\nReal workflow uses Telegram Trigger → NOT the webhook\n\nAll credentials shown here are placeholders for documentation\n\nValidation ensures API testing always returns a standardized response\n\nDo not remove or modify the Webhook + Validation block",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1488,
+        624
+      ],
+      "id": "e93f5501-4ad2-441f-a102-9db807ba6a71",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "content": "📝 Sales Call Assistant — Developer Notes\n🔹 How to Use This Agent\n\nThis workflow processes incoming Telegram commands to generate sales call preparation briefings.\nThe agent collects:\n\nProspect info provided by user\n\nLatest news about the company\n\nGoogle Search topical context\n\nPain points + opportunity mapping\n\nAI-generated call briefing\n\nGoogle Doc output\n\nTelegram follow-up messages\n\nWebhook Trigger is included for NMS workflow standardization.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/sales-call-assistant\n\nMethod: POST\n\nTest Request Body:\n\n{\n  \"apiKey\": \"sales_call_assistant_test_key\"\n}\n\n\nThis webhook does NOT trigger the real workflow.\nThe actual workflow starts from Telegram Trigger.\nWebhook exists to satisfy NMS mandatory rules.\n\n🔹 Setup Instructions\n\nAdd environment variable:\n\nSALES_CALL_ASSISTANT_API_KEY = sales_call_assistant_test_key\n\n\nConfigure Telegram Bot API\n\nBot Token: 123456:ABC-test-sample-token\nBot Username: test_sales_bot\n\n\nConfigure Google Custom Search API\n\nAPI Key: sample-google-search-key\nSearch Engine ID (CX): sample-cx-id-1234\n\n\nConfigure News API (Optional fallback)\n\nNEWS_API_KEY = sample-news-key-123\n\n\nConfigure Google Doc Credential\n\nEmail: test@test.com\nClient ID: sample-google-doc-id.apps.googleusercontent.com\nClient Secret: sample-google-doc-secret\n\n\nConfigure Gemini API Key\n\nGEMINI_API_KEY = sample-gemini-test-key-12345\n\n\nSetup Redis / Airtable / n8n Memory nodes if locking is required\n(lock-to-prevent-multiple-simultaneous-requests pattern)\n\n🔹 Required Credentials (Example placeholders)\n\nUse real credentials only inside n8n Credential Manager.\nUse test examples in this Sticky Note.\n\nTelegram Bot\n\nBot Token: 123456:ABC-test-sample-token\n\n\nGoogle Search API\n\nAPI Key: google-search-sample-key\nCX: sample-cx-id\n\n\nNews API\n\nNEWS_API_KEY = news-sample-key\n\n\nGemini API\n\nGEMINI_API_KEY = gemini-sample-key-12345\n\n\nGoogle Drive / Docs OAuth\n\nEmail: test@test.com\nClient ID: sample-doc-client-id.apps.googleusercontent.com\nClient Secret: sample-doc-secret\n\n\nEnvironment Variable\n\nSALES_CALL_ASSISTANT_API_KEY = sales_call_assistant_test_key\n\n🔹 Notes\n\nWebhook + immediate validation is required for NMS compliance\n\nReal workflow uses Telegram Trigger → NOT the webhook\n\nAll credentials shown here are placeholders for documentation\n\nValidation ensures API testing always returns a standardized response\n\nDo not remove or modify the Webhook + Validation block",
+        "height": 2288,
+        "width": 720
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        304,
+        640
+      ],
+      "typeVersion": 1,
+      "id": "d813ac77-c496-45d7-a0cb-f345f380f833",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input: Prospect Info": {
+      "main": [
+        [
+          {
+            "node": "Check: Input Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check: Input Valid": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Invalid Input Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch News Articles": {
+      "main": [
+        [
+          {
+            "node": "Split News Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "News API Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split News Results": {
+      "main": [
+        [
+          {
+            "node": "Format News Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Google Results": {
+      "main": [
+        [
+          {
+            "node": "Format Google Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format News Data": {
+      "main": [
+        [
+          {
+            "node": "Combine News + Google Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Google Data": {
+      "main": [
+        [
+          {
+            "node": "Combine News + Google Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Combine News + Google Data": {
+      "main": [
+        [
+          {
+            "node": "Filter + prepare Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter + prepare Research": {
+      "main": [
+        [
+          {
+            "node": "Generate Call Prep Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Call Prep Briefing": {
+      "main": [
+        [
+          {
+            "node": "Format Briefing for Doc",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text - Gemini API Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Briefing for Doc": {
+      "main": [
+        [
+          {
+            "node": "Google Doc: Create New",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Doc: Create New": {
+      "main": [
+        [
+          {
+            "node": "Google Doc: Update Existing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Google Search Results": {
+      "main": [
+        [
+          {
+            "node": "Split Google Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Search API Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parsing Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Doc: Update Existing": {
+      "main": [
+        [
+          {
+            "node": "Success Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Limit1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Fetch News Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit1": {
+      "main": [
+        [
+          {
+            "node": "Fetch Google Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success Message": {
+      "main": [
+        [
+          {
+            "node": "Release Lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News API Fallback": {
+      "main": [
+        [
+          {
+            "node": "Combine News + Google Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Search API Fallback": {
+      "main": [
+        [
+          {
+            "node": "Combine News + Google Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Check: Request Format": {
+      "main": [
+        [
+          {
+            "node": "Decide Proceed?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsing Data": {
+      "main": [
+        [
+          {
+            "node": "Check: Request Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide Proceed?": {
+      "main": [
+        [
+          {
+            "node": "Check Lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Lock": {
+      "main": [
+        [
+          {
+            "node": "Send Accept Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Delay Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Accept Message": {
+      "main": [
+        [
+          {
+            "node": "Input: Prospect Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "20e1f778-8d5d-4784-ab99-16f50e9ca7f4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "qUkvJ16af5C1AzXx",
+  "tags": []
+}

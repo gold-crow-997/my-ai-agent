@@ -1,0 +1,589 @@
+{
+  "name": "Product Decription Write",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        656,
+        160
+      ],
+      "id": "c02a0488-c755-4099-b382-965964bf89c1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"description\": \"...\",\n\t\"meta\": \"...\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        160
+      ],
+      "id": "9b5caf4f-f0bc-4756-abdf-f6a64c1a2e36",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 3,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "value": "appazG2zs6WBL0iS6",
+          "mode": "id"
+        },
+        "tableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tbl9DGec0WQYcmDZG"
+        },
+        "triggerField": "Trigger Time",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        112
+      ],
+      "id": "add361ec-607c-4a1c-9cf1-478df2005d24",
+      "name": "New Product",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KjHajpmhaN3srHl8",
+          "name": "Airtable Personal Access Token [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a7693f14-fd67-42e8-b7ca-75edc89c6d2e",
+              "name": "name",
+              "value": "={{ $json.fields['Product Name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "da410286-fe9f-4f93-b0b8-8c757256c7e2",
+              "name": "specs",
+              "value": "={{ $json.fields.Specs }}",
+              "type": "string"
+            },
+            {
+              "id": "7732ba2c-17ec-4de4-bf4c-8ca0e70077ed",
+              "name": "features",
+              "value": "={{ $json.fields.Features }}",
+              "type": "string"
+            },
+            {
+              "id": "4952db42-e786-4a4d-9d4a-6298c05d876a",
+              "name": "keywords",
+              "value": "={{ $json.fields['Target Keywords'] }}",
+              "type": "string"
+            },
+            {
+              "id": "2ce39152-12bc-4887-a8bd-f6878b076fe1",
+              "name": "tone",
+              "value": "={{ $json.fields['Brand Tone'] }}",
+              "type": "string"
+            },
+            {
+              "id": "70499d1b-633c-4dd3-9c66-e7d3329bd320",
+              "name": "platform",
+              "value": "={{ $json.fields.Platform }}",
+              "type": "string"
+            },
+            {
+              "id": "77c17bc9-2837-4d8f-a656-fd2a285723df",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        -16
+      ],
+      "id": "520fee0d-01dc-43db-b0da-c4a01615f154",
+      "name": "Product Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert e-commerce copywriter.  \nGenerate BOTH a full SEO-friendly product description and a short meta description for the product below.  \n\n### Product Information\nProduct: {{$json.name}}\nSpecs: {{$json.specs}}\nFeatures: {{$json.features}}\nKeywords: {{$json.keywords}}\nTone: {{$json.tone}}\nPlatform: {{$json.platform}}\n\n### Output Format\n{\n  \"description\": \"150–200 words, engaging and SEO-optimized, include all target keywords naturally, maintain brand tone, end with a call-to-action.\",\n  \"meta\": \"Under 160 characters, concise, compelling, include at least one target keyword.\"\n}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        -16
+      ],
+      "id": "e4539272-7968-4ce2-911b-7ee030061fe6",
+      "name": "Generate Description + Meta",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: \n// $json.description = AI generated product description\n// $json.keywords = comma-separated target keywords\n\nconst description = $input.first().json.output.description || \"\";\nconst keywordsRaw =  $('Product Data').first().json.keywords|| \"\";\nconst keywords = keywordsRaw.split(\",\").map(k => k.trim().toLowerCase());\n\nlet score = 0;\n\n// --- Keyword Coverage (70 pts) ---\nlet keywordPoints = 0;\nfor (let kw of keywords) {\n  if (description.toLowerCase().includes(kw)) {\n    keywordPoints += 70 / keywords.length;\n  }\n}\nscore += keywordPoints;\n\n// --- Length Check (30 pts) ---\nconst wordCount = description.split(/\\s+/).length;\n\nif (wordCount >= 120 && wordCount <= 220) {\n  score += 30;\n} else if ((wordCount >= 90 && wordCount < 120) || (wordCount > 220 && wordCount <= 250)) {\n  score += 15;\n} else {\n  score += 0;\n}\n\n// Round final score\nscore = Math.round(score);\n\n// Return enriched object\nreturn [{\n  description,\n  seoScore: score,\n  wordCount,\n  keywordsChecked: keywords.length,\n  keywordsMatched: Math.round(keywordPoints / (70 / keywords.length))\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        -16
+      ],
+      "id": "dcd2b3d1-01d3-4f5f-8864-2601eafcfa09",
+      "name": "SEO Score Check"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appazG2zs6WBL0iS6",
+          "mode": "list",
+          "cachedResultName": "Product Catalog",
+          "cachedResultUrl": "https://airtable.com/appazG2zs6WBL0iS6"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl9DGec0WQYcmDZG",
+          "mode": "list",
+          "cachedResultName": "Products",
+          "cachedResultUrl": "https://airtable.com/appazG2zs6WBL0iS6/tbl9DGec0WQYcmDZG"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Product Data').item.json.id }}",
+            "AI Description": "={{ $('Generate Description + Meta').item.json.output.description }}",
+            "Meta Description": "={{ $('Generate Description + Meta').item.json.output.meta }}",
+            "SEO Score": "={{ $json.seoScore }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Product Name",
+              "displayName": "Product Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Specs",
+              "displayName": "Specs",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Features",
+              "displayName": "Features",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Target Keywords",
+              "displayName": "Target Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Brand Tone",
+              "displayName": "Brand Tone",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Friendly",
+                  "value": "Friendly"
+                },
+                {
+                  "name": "Modern",
+                  "value": "Modern"
+                },
+                {
+                  "name": "Professional",
+                  "value": "Professional"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Shopity",
+                  "value": "Shopity"
+                },
+                {
+                  "name": "WooCommerce",
+                  "value": "WooCommerce"
+                },
+                {
+                  "name": "Amazon",
+                  "value": "Amazon"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Description",
+              "displayName": "AI Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Meta Description",
+              "displayName": "Meta Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "SEO Score",
+              "displayName": "SEO Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Trigger Time",
+              "displayName": "Trigger Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1312,
+        112
+      ],
+      "id": "a5ff65ed-3873-412f-8c5c-a2005aa68e18",
+      "name": "Write Results",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KjHajpmhaN3srHl8",
+          "name": "Airtable Personal Access Token [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        64,
+        112
+      ],
+      "id": "174d9076-61d5-48b7-ab2c-6726085211c5",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        288,
+        -16
+      ],
+      "id": "b7e1f4f6-bddd-4940-b65d-acaf669c3160",
+      "name": "Wait",
+      "webhookId": "6cf193e7-1355-41c4-9551-7e6a336936f3"
+    },
+    {
+      "parameters": {
+        "content": "📝 Airtable Product Description Generator — Developer Notes\n🔹 How to Use This Agent\n\nThis agent listens for new Airtable product entries, generates SEO-optimized product descriptions using Gemini, evaluates the SEO score, and writes the final enriched content back into Airtable.\n\nIn addition, this workflow includes a Webhook Trigger to satisfy NMS-AI standardization requirements.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/product-description-write\n\nMethod: POST\nRequest Example:\n\n{\n  \"apiKey\": \"airtable_product_writer_test_key\"\n}\n\n\nThis webhook does NOT trigger the workflow (Airtable Trigger does).\nIt exists to satisfy the Mandatory Workflow Requirement.\n\n🔹 Setup Instructions\n\nCreate environment variable:\n\nAIRTABLE_PRODUCT_WRITER_KEY = airtable_product_writer_test_key\n\n\nSet up Airtable credentials\n\nBase ID: sampleBase123456\n\nAPI Key: keySampleAirTableABC123\n\nTable Name: Products\n(example placeholders)\n\nSet up Google Gemini Model credentials\n\nGemini API Key: gemini-sample-api-key-12345\n\nSet up Airtable output table\n\nOutput table: Products\n\nFields updated:\n\nDescription\n\nSEO Score\n\nGenerated At\n\nWorkflow Trigger\n\nStarts when a new Airtable record is created (“New Product”).\n\n🔹 Required Credentials (Example placeholders)\n\nUse REAL credentials only inside n8n credential manager.\nUse TEST EXAMPLES in this sticky note.\n\nAirtable API\n\nAPI Key: keySampleAirTableABC123\nBase ID: sampleBase123456\nEmail: test@test.com\n\n\nGemini API\n\nGEMINI_API_KEY = gemini-sample-api-key-12345\n\n\nn8n Environment Variable\n\nAIRTABLE_PRODUCT_WRITER_KEY = airtable_product_writer_test_key\n\n🔹 Notes\n\nWebhook + Validation block is required for standardization.\n\nReal workflow uses Airtable Trigger for processing.\n\nValidation node ensures only authorized webhook calls pass.\n\nReplace placeholder values with real credentials in n8n settings only",
+        "height": 1680,
+        "width": 896
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -448,
+        336
+      ],
+      "typeVersion": 1,
+      "id": "2c758472-0e3d-4ab8-b03e-0079e271a16c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "product-description-write",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        496,
+        400
+      ],
+      "id": "9592211f-5726-4729-8413-6bf38efb1d5c",
+      "name": "Webhook",
+      "webhookId": "e1e46b8d-fbb7-42ef-87fd-e0a67d91896e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const apiKey = $input.first().json.query.apikey;\nconst requiredKey = \"airtable_product_writer_test_key\";\n\nif (!apiKey || apiKey !== requiredKey) {\n  throw new Error(\"Unauthorized — invalid API key\");\n}\n\nreturn [{ validated: true }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        400
+      ],
+      "id": "e5979153-312b-45e8-8859-b2ce4c4e7406",
+      "name": "validation"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=📝 Airtable Product Description Generator — Developer Notes\n🔹 How to Use This Agent\n\nThis agent listens for new Airtable product entries, generates SEO-optimized product descriptions using Gemini, evaluates the SEO score, and writes the final enriched content back into Airtable.\n\nIn addition, this workflow includes a Webhook Trigger to satisfy NMS-AI standardization requirements.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/product-description-write\n\nMethod: POST\nRequest Example:\n\n{\n  \"apiKey\": \"airtable_product_writer_test_key\"\n}\n\n\nThis webhook does NOT trigger the workflow (Airtable Trigger does).\nIt exists to satisfy the Mandatory Workflow Requirement.\n\n🔹 Setup Instructions\n\nCreate environment variable:\n\nAIRTABLE_PRODUCT_WRITER_KEY = airtable_product_writer_test_key\n\n\nSet up Airtable credentials\n\nBase ID: sampleBase123456\n\nAPI Key: keySampleAirTableABC123\n\nTable Name: Products\n(example placeholders)\n\nSet up Google Gemini Model credentials\n\nGemini API Key: gemini-sample-api-key-12345\n\nSet up Airtable output table\n\nOutput table: Products\n\nFields updated:\n\nDescription\n\nSEO Score\n\nGenerated At\n\nWorkflow Trigger\n\nStarts when a new Airtable record is created (“New Product”).\n\n🔹 Required Credentials (Example placeholders)\n\nUse REAL credentials only inside n8n credential manager.\nUse TEST EXAMPLES in this sticky note.\n\nAirtable API\n\nAPI Key: keySampleAirTableABC123\nBase ID: sampleBase123456\nEmail: test@test.com\n\n\nGemini API\n\nGEMINI_API_KEY = gemini-sample-api-key-12345\n\n\nn8n Environment Variable\n\nAIRTABLE_PRODUCT_WRITER_KEY = airtable_product_writer_test_key\n\n🔹 Notes\n\nWebhook + Validation block is required for standardization.\n\nReal workflow uses Airtable Trigger for processing.\n\nValidation node ensures only authorized webhook calls pass.\n\nReplace placeholder values with real credentials in n8n settings only",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        832,
+        400
+      ],
+      "id": "f4da02a0-264e-4ec5-af8f-30df0f713228",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Description + Meta",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Description + Meta",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Product": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Description + Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Description + Meta": {
+      "main": [
+        [
+          {
+            "node": "SEO Score Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SEO Score Check": {
+      "main": [
+        [
+          {
+            "node": "Write Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Results": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Product Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "273fcf2c-fa41-4855-b158-2449675fb418",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "2t88M7EV81sZLmBH",
+  "tags": []
+}

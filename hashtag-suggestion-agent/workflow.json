@@ -1,0 +1,991 @@
+{
+  "name": "Hashtag Suggestion Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_prompt }}",
+        "options": {
+          "systemMessage": "=You are the Chief Marketing Officer (CMO) Agent, responsible for compiling and refining the final outputs from all platform-specific AI Agents. Each platform’s agent (Instagram, Facebook, X, Reddit, LinkedIn) provides its own hashtag recommendations, tiered breakdown, and confidence score.\n\nYour goal is to combine and present all of these results in a clear, professional, and platform-distinguished format.\n\nIn addition, generate a short, relevant email subject line that summarizes the overall theme or campaign — this will be used for the email that delivers these hashtag recommendations.\n\nYour final output must follow this exact structure:\n\nSubject: [A short, engaging subject line summarizing the campaign — e.g., “Final Hashtag Strategy Report: Team Culture Campaign”]\n\nPlatform: Instagram  \nHashtag Set:  \nTiered breakdown:  \nConfidence Score:\n\nPlatform: Facebook  \nHashtag Set:  \nTiered breakdown:  \nConfidence Score:\n\nPlatform: X  \nHashtag Set:  \nTiered breakdown:  \nConfidence Score:\n\nPlatform: Reddit  \nHashtag Set:  \nTiered breakdown:  \nConfidence Score:\n\nPlatform: LinkedIn  \nHashtag Set:  \nTiered breakdown:  \nConfidence Score:\n\n\nOutput Guidelines:\n\nEach section must be labeled by platform name.\n\nInclude hashtags formatted and optimized per platform (no duplicates or irrelevant tags).\n\nThe “Tiered breakdown” must categorize hashtags into Niche, Medium, and High-Reach tiers.\n\n“Confidence Score” must reflect the agent’s estimated confidence level (0–100%).\n\nThe Subject line should reflect the post category or theme (e.g., “Team Culture,” “Behind the Scenes,” “Product Launch,” etc.).\n\nThe entire output should be clean, readable, and ready to send as an email or export as text. Do not put something like **, ## or any. Just a plain text will do and some emojis would be fine."
+        }
+      },
+      "id": "ebe29266-358c-45a0-afa6-64c2b5bb6799",
+      "name": "CMO Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        2656,
+        592
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {},
+      "id": "4224b4c7-ccce-465a-8cbd-c617c82e54f1",
+      "name": "Think",
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "position": [
+        2432,
+        832
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node\n// This expects `items` where:\n// - items[0].json is the Google Form row (Caption, Target Platform, Post Category, Content Keywords, etc.)\n// - items[1].json (optional) is the Gemini image analysis result with content.parts[0].text\n//\n// The node returns a single item with:\n// { user_prompt: \"...\", has_image: true/false }\n//\n// Robust to missing second item (no image analysis).\n\n// Helper to safely get a nested value\nconst get = (obj, path, fallback = undefined) => {\n  try {\n    return path.split('.').reduce((o, k) => (o || {})[k], obj) ?? fallback;\n  } catch (e) {\n    return fallback;\n  }\n};\n\nconst form = items[0]?.json || {};\nconst gemini = items[1]?.json || null;\n\n// Extract form fields (fall back to empty strings)\nconst caption = String(form.Caption || form.caption || \"\").trim();\nlet targetPlatformRaw = String(form[\"Target Platform\"] || form[\"Target platform\"] || form.targetPlatform || \"\").trim();\nconst postCategory = String(form[\"Post Category\"] || form[\"Post category\"] || form.postCategory || \"\").trim();\nconst contentKeywords = String(form[\"Content Keywords\"] || form[\"Content keywords\"] || form.contentKeywords || \"\").trim();\n\n// Normalize target platform: if it indicates \"All of the platforms mentioned\" (case-insensitive),\n// then set to the explicit list \"Instagram, Facebook, X, Reddit, LinkedIn\"\nconst normalizeAllPlatforms = (value) => {\n  if (!value) return value;\n  const lower = value.toLowerCase();\n  if (lower.includes(\"all of the platforms\") || lower.includes(\"all platforms\") || lower === \"all\") {\n    return \"Instagram, Facebook, X, Reddit, LinkedIn\";\n  }\n  return value;\n};\n\nconst targetPlatform = normalizeAllPlatforms(targetPlatformRaw);\n\n// Extract image description from Gemini response (if present)\nconst imageDescription = get(gemini, \"content.parts.0.text\", null);\n\n// Build the user prompt only (system message separated elsewhere)\nlet userPromptParts = [];\n\nuserPromptParts.push(\"Here is the social media post content for which you will generate hashtag suggestions.\");\nuserPromptParts.push(\"\");\nuserPromptParts.push(\"Caption:\");\nuserPromptParts.push(caption || \"(No caption provided)\");\nuserPromptParts.push(\"\");\nuserPromptParts.push(`Target Platform(s): ${targetPlatform || \"Unspecified\"}`);\nuserPromptParts.push(`Post Category: ${postCategory || \"Unspecified\"}`);\nuserPromptParts.push(`Content Keywords: ${contentKeywords || \"None\"}`);\nuserPromptParts.push(\"\");\n\nif (imageDescription) {\n  userPromptParts.push(\"Image Description:\");\n  userPromptParts.push(imageDescription.trim());\n  userPromptParts.push(\"\");\n} else {\n  userPromptParts.push(\"(No image provided)\");\n  userPromptParts.push(\"\");\n}\n\n// Clear, focused instruction for the main AI (user message)\nuserPromptParts.push(\"Task:\");\nuserPromptParts.push(\"Based only on the information above (caption, target platform(s), category, keywords, and image description if available), generate a set of highly relevant hashtags optimized for the specified platform(s).\");\nuserPromptParts.push(\"\");\nuserPromptParts.push(\"Requirements:\");\nuserPromptParts.push(\"- Provide a mix of popular and niche hashtags appropriate to the post content and platform(s).\");\nuserPromptParts.push(\"- Avoid duplicates and banned/offensive tags.\");\nuserPromptParts.push(\"- Return between 15 and 25 hashtags.\");\nuserPromptParts.push(\"- Output hashtags only, separated by spaces (no extra explanation).\");\n\nconst user_prompt = userPromptParts.join(\"\\n\");\n\nreturn [\n  {\n    json: {\n      user_prompt,\n      has_image: !!imageDescription\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        592
+      ],
+      "id": "729d4311-fa52-49f0-8278-833701e74554",
+      "name": "Initialize Prompt Message"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input format assumption:\n// [\n//   {\n//     \"output\": \"Subject: ... Platform: Instagram ... Platform: Facebook ... etc.\"\n//   }\n// ]\n\nconst input = items[0].json.output;\n\n// Split the subject line first\nconst subjectMatch = input.match(/Subject:\\s*(.*?)(?=\\n\\nPlatform:)/s);\nconst subject = subjectMatch ? subjectMatch[1].trim() : \"\";\n\n// Extract each platform section\nconst platformRegex = /Platform:\\s*(.*?)\\nHashtag Set:\\s*([\\s\\S]*?)(?=\\n\\nPlatform:|\\s*$)/g;\nlet match;\nconst platforms = [];\n\nwhile ((match = platformRegex.exec(input)) !== null) {\n  const platform = match[1].trim();\n  const section = match[2].trim();\n\n  const hashtagSetMatch = section.match(/Hashtag Set:\\s*([#\\s\\w,]+)/);\n  const hashtags = hashtagSetMatch\n    ? hashtagSetMatch[1]\n        .split(/[\\s,]+/)\n        .filter(tag => tag.startsWith(\"#\"))\n        .map(tag => tag.trim())\n    : [];\n\n  const tierMatch = section.match(/Tiered breakdown:\\s*([\\s\\S]*?)Confidence Score:/);\n  const tierText = tierMatch ? tierMatch[1].trim() : \"\";\n\n  const tiers = {\n    high: (tierText.match(/High[\\-\\s]*Reach:\\s*(.*)/i) || [])[1]?.split(/[\\s,]+/).filter(t => t.startsWith(\"#\")) || [],\n    medium: (tierText.match(/Medium[\\-\\s]*Reach:\\s*(.*)/i) || [])[1]?.split(/[\\s,]+/).filter(t => t.startsWith(\"#\")) || [],\n    niche: (tierText.match(/Niche[\\-\\s]*Reach?:\\s*(.*)/i) || [])[1]?.split(/[\\s,]+/).filter(t => t.startsWith(\"#\")) || [],\n  };\n\n  const confidenceMatch = section.match(/Confidence Score:\\s*([\\d]+)/);\n  const confidenceScore = confidenceMatch ? parseInt(confidenceMatch[1]) : null;\n\n  platforms.push({\n    platform,\n    hashtagSet: hashtags,\n    tieredBreakdown: tiers,\n    confidenceScore,\n  });\n}\n\n// Return structured JSON\nreturn [\n  {\n    json: {\n      subject,\n      platforms,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3120,
+        336
+      ],
+      "id": "817b0836-c59c-44af-9128-974def3457ef",
+      "name": "Parse JSON"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ $('Finalize data').item.json.report }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        3776,
+        336
+      ],
+      "id": "9f55bea5-d27b-4f57-b71a-d3c323f8ec92",
+      "name": "Inserts the Output in the new File",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "FYdDefUntNwoOswp",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Initialization for the Prompt Message \n1. Pure Caption Message.\n2. Generates the topic from a Image address. ",
+        "height": 592,
+        "width": 1648
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        464,
+        448
+      ],
+      "id": "95e8c025-6849-48a1-aa49-29bc8970859a",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Content Creation Agent\nCreates output depending on the specific topic or prompt message.",
+        "height": 800,
+        "width": 2240,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        512
+      ],
+      "id": "b7db2fc8-9d0d-4823-9aa0-b59f0e72a22a",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Output Preparation\nPrepares the google document file which is available for viewing to the user.",
+        "height": 512,
+        "width": 1808,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3072,
+        -16
+      ],
+      "id": "cf59ce78-a219-411c-82b3-eed5f476f945",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1mDmUzoZIsADYvbDP5YwTp0WkEN3ENWPRdzVMFkhG0cw",
+          "mode": "list",
+          "cachedResultName": "Hashtag Suggestion Agent (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mDmUzoZIsADYvbDP5YwTp0WkEN3ENWPRdzVMFkhG0cw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1689662682,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mDmUzoZIsADYvbDP5YwTp0WkEN3ENWPRdzVMFkhG0cw/edit#gid=1689662682"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        688,
+        672
+      ],
+      "id": "851a13b2-1e40-48a5-9734-fb012cab8117",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "eptRWdUko6Fy2WCg",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f3383933-4151-4336-b4ad-c39e7ce09258",
+              "leftValue": "={{ $json[\"Image URL\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        672
+      ],
+      "id": "953b8d62-20df-4bd9-a69c-94f05be76336",
+      "name": "Has No Image URL?"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Describe this image in detail, including its main subjects, setting, mood, and any notable visual elements.",
+        "imageUrls": "={{ $json[\"Image URL\"] }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        864
+      ],
+      "id": "7bb621d2-ecee-42f5-a1cd-8c7b460af6f7",
+      "name": "Analyze an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bHGNpPCrwKcZFYDZ",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b3454b42-f153-4455-bd41-4dba11e170c8",
+              "name": "Timestamp",
+              "value": "={{ $json.Timestamp }}",
+              "type": "string"
+            },
+            {
+              "id": "f2a52241-3351-436c-97a6-dbe1170a35a6",
+              "name": "Caption",
+              "value": "={{ $json.Caption }}",
+              "type": "string"
+            },
+            {
+              "id": "e32168b3-08c0-4187-b93e-486dc918f9ee",
+              "name": "Target Platform",
+              "value": "={{ $json[\"Target Platform\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "bc8168f8-79be-4d93-8db8-86e548b8da22",
+              "name": "Image URL",
+              "value": "={{ $json[\"Image URL\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "663be007-02d4-4376-a446-4ae5533b7eb8",
+              "name": "Post Category",
+              "value": "={{ $json[\"Post Category\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "bfe953a4-1df6-4f37-808f-d47f716f3d7b",
+              "name": "Content Keywords",
+              "value": "={{ $json[\"Content Keywords\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "18e4f661-713a-457b-8c17-19d77777fbba",
+              "name": "Email",
+              "value": "={{ $json.Email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        672
+      ],
+      "id": "bf894cd0-f24c-43ab-8c6c-11ebb0a56d1a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1824,
+        752
+      ],
+      "id": "0f3d1a48-7b29-4643-893f-8eeaf8ae5203",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Crafts subreddit-appropriate posts and discussion prompts. 100–300 words per post, titles ≤120 characters. Soft CTAs, no overt marketing, and tailor tone to each community. Suggest polls or AMAs if relevant. Always follow and adapt the approved Reddit templates and formats stored in the knowledge base/vector store.\n",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Reddit Social Media Specialist.\nYour role is to identify subreddit-style tags or interest group markers that fit naturally into Reddit culture.\n\nFollow these rules:\n\nAvoid typical “hashtag spam.” Instead, create tags that resemble subreddit or community identifiers.\n\nUse 5–10 highly contextual tags that appeal to Reddit communities.\n\nKeep tone authentic, clever, and respectful of Reddit norms.\n\nOutput only subreddit-style tags (e.g., #WorkCulture, #TeamMotivation) separated by spaces."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        4000,
+        944
+      ],
+      "id": "18daa36c-2edd-4423-97bb-7d6c4ce236ea",
+      "name": "Reddit Social Media Specialist"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Creates high-performing posts and multi-post threads for Meta Threads optimized for reach and engagement. Writes compelling opening posts, concise follow-up posts, and clear CTAs to drive discussion, clicks, or follows. Always adapts to the approved thread structures and formats stored in the knowledge base/vector store.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Meta Threads Social Media Specialist.\nYour focus is on casual yet creative hashtag generation suited for Threads’ conversational style.\n\nFollow these rules:\n\nPrioritize short, punchy, and expressive hashtags.\n\nUse 10–20 total, with a mix of trending and creative niche ones.\n\nHashtags should feel spontaneous, not overly branded.\n\nOutput only hashtags, separated by spaces (no text or commentary)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        3712,
+        944
+      ],
+      "id": "30dbea60-0ca8-43c3-ae08-6481ab55e944",
+      "name": "Meta Threads Social Media Specialist"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Drafts professional, thought-leadership style posts for LinkedIn. 150–300 words, clear value upfront, professional tone. Use 1–3 industry hashtags and propose supporting media (infographics, explainer videos). Always follow and adapt the approved LinkedIn templates and formats stored in the knowledge base/vector store.\n",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the LinkedIn Social Media Specialist.\nYour goal is to create professional, career-oriented, and industry-relevant hashtags.\n\nFollow these rules:\n\nPrioritize hashtags for networking, leadership, business insights, and company culture.\n\nAvoid casual, meme-style, or unrelated tags.\n\nUse 8–15 relevant hashtags that align with business and thought leadership.\n\nOutput only hashtags, separated by spaces (no text or commentary)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        3376,
+        944
+      ],
+      "id": "7a488022-c70b-4273-a658-56d50bd4c727",
+      "name": "LinkedIn Social Media Specialist"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Creates engaging Facebook posts and carousels optimized for reach and shares. Each post 100–200 words, conversational yet informative tone. Use 1–3 relevant hashtags, clear CTA, and suggest visuals (images, videos, or link previews). Always follow and adapt the approved Facebook templates and formats stored in the knowledge base/vector store.\n",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Facebook Social Media Specialist.\nYour role is to generate hashtags optimized for Facebook’s engagement model.\n\nFollow these rules:\n\nFocus on community-friendly, relatable, and discovery-oriented hashtags.\n\nMix broad tags (#TeamCulture) with specific or branded ones (#NewStarTechLife).\n\nAvoid overuse — use 5–10 strong hashtags only.\n\nEnsure tone fits a friendly, authentic brand personality.\n\nOutput only hashtags, separated by spaces (no text or commentary)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        3024,
+        944
+      ],
+      "id": "7623adf1-3e96-4148-bd39-9ad601c31e2b",
+      "name": "Facebook Social Media Specialist"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Generates tweets or threads following Twitter/X best practices. Each tweet ≤280 characters, strong hook in first line, 1–3 hashtags max. Always include a concise CTA and suggest visuals or polls if relevant. Always follow and adapt the approved Twitter templates and formats stored in the knowledge base/vector store.\n",
+        "text": "={{ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Twitter (X) Social Media Specialist.\nYour role is to generate platform-optimized hashtags for Twitter posts.\n\nFollow these rules:\n\nFocus on concise, trending, and high-engagement hashtags.\n\nMix popular tags (e.g., #MotivationMonday) with niche or branded ones.\n\nUse relevant topics, industries, and tone based on the provided caption and image description.\n\nLimit hashtags to a maximum of 8–12 due to Twitter’s character constraints.\n\nOutput only hashtags, separated by spaces (no text or commentary)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        2672,
+        944
+      ],
+      "id": "59bed2e0-d508-4785-8824-6d64d7a4356e",
+      "name": "Twitter Social Media Specialist"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        816
+      ],
+      "id": "f44ec1a1-27a2-4fff-b3b3-a1208c40ce95",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bHGNpPCrwKcZFYDZ",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2544,
+        1152
+      ],
+      "id": "e55d79e8-cd6f-4d49-a290-cc88baf824de",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bHGNpPCrwKcZFYDZ",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2896,
+        1200
+      ],
+      "id": "098c957d-e979-4245-bc94-cc291acc710e",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bHGNpPCrwKcZFYDZ",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3248,
+        1152
+      ],
+      "id": "a1f6e0a9-be0f-471c-a272-2d4729fde460",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bHGNpPCrwKcZFYDZ",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3680,
+        1200
+      ],
+      "id": "1baf2b56-2391-47d4-afd3-4316a0db34a2",
+      "name": "Google Gemini Chat Model4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bHGNpPCrwKcZFYDZ",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3968,
+        1200
+      ],
+      "id": "ac5891b8-ac9c-4ff9-b00c-456b16aed1f6",
+      "name": "Google Gemini Chat Model5",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bHGNpPCrwKcZFYDZ",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "folderId": "1HySxf28cJOH1rIIjck47ICDFutIWbwOg",
+        "title": "={{ $json.subject }}"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        3568,
+        336
+      ],
+      "id": "0e573822-4b7c-4f7c-882e-4c3e1093eb95",
+      "name": "Create a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "FYdDefUntNwoOswp",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: data from the \"Parse JSON\" node\n// Structure: items[0].json.subject and items[0].json.platforms\n\nconst data = $json; // from the \"Parse JSON\" node\nconst { subject, platforms } = data;\n\n// Build the report\nlet report = `📊 ${subject}\\n\\n`;\nreport += `This report summarizes the finalized hashtag strategies for each target platform, including tiered breakdowns and confidence scores.\\n\\n`;\n\nplatforms.forEach(platformData => {\n  const { platform, tieredBreakdown, confidenceScore } = platformData;\n  \n  report += `---\\n`;\n  report += `🟦 Platform: ${platform}\\n`;\n  \n  // High Reach\n  const high = tieredBreakdown.high.length\n    ? tieredBreakdown.high.join(' ')\n    : '_No high-reach hashtags_';\n  // Medium Reach\n  const medium = tieredBreakdown.medium.length\n    ? tieredBreakdown.medium.join(' ')\n    : '_No medium-reach hashtags_';\n  // Niche Reach\n  const niche = tieredBreakdown.niche.length\n    ? tieredBreakdown.niche.join(' ')\n    : '_No niche hashtags_';\n\n  report += `Tiered Breakdown:\\n`;\n  report += `- 🔥 High Reach: ${high}\\n`;\n  report += `- ⚡ Medium Reach: ${medium}\\n`;\n  report += `- 🎯 Niche: ${niche}\\n\\n`;\n  report += `Confidence Score: ${confidenceScore}%\\n\\n`;\n});\n\nreport += `---\\n📝 End of Report\\nGenerated automatically by the CMO AI Agent.`;\n\n// Return as single text output (can be used for document generation or email)\nreturn [\n  {\n    json: {\n      subject,\n      report,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3328,
+        336
+      ],
+      "id": "02317d45-28b0-40fb-92b4-0036bd2a1bd3",
+      "name": "Finalize data"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.documentId }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3952,
+        336
+      ],
+      "id": "838269eb-646e-4325-bc1c-758ee52be0ce",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "R3h6xi4OTiD2fROQ",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4192,
+        16
+      ],
+      "id": "4eb090ff-12f4-46c6-9f9c-1f96683cbf81",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "sendTo": "john@popai.agency",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4736,
+        16
+      ],
+      "id": "5e4a8e92-ae3a-49c7-98a8-928079815afd",
+      "name": "Send a message",
+      "webhookId": "bf7c4105-43f7-41c3-9708-dc32c07bdbfa",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bhvqwkkyn4GVCJ3e",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- 1️⃣ Get parsed JSON input ---\nconst data = items[0].json;\nconst subject = data.subject;\nconst platforms = data.platforms;\n\n// --- 2️⃣ Build the HTML body ---\nlet html = `\n<html>\n  <body style=\"font-family: Arial, sans-serif; color: #333;\">\n    <h1 style=\"color:#004aad;\">${subject}</h1>\n    <p>Hello,</p>\n    <p>\n      Attached below is your finalized <strong>Hashtag Strategy Report</strong>,\n      summarizing optimized hashtag sets and performance confidence for each social platform.\n    </p>\n`;\n\nfor (const p of platforms) {\n  html += `\n    <div style=\"margin-top:20px; border-top:1px solid #ccc; padding-top:10px;\">\n      <h2 style=\"color:#004aad;\">${p.platform}</h2>\n      <p><strong>Confidence Score:</strong> ${p.confidenceScore}%</p>\n\n      <p><strong>High-Reach Hashtags:</strong></p>\n      <ul>${p.tieredBreakdown.high.map(tag => `<li>${tag}</li>`).join('')}</ul>\n\n      <p><strong>Medium-Reach Hashtags:</strong></p>\n      <ul>${p.tieredBreakdown.medium.map(tag => `<li>${tag}</li>`).join('')}</ul>\n\n      <p><strong>Niche Hashtags:</strong></p>\n      <ul>${p.tieredBreakdown.niche.map(tag => `<li>${tag}</li>`).join('')}</ul>\n    </div>\n  `;\n}\n\nhtml += `\n  <p style=\"margin-top:30px;\">\n    The complete report document (<strong>${subject}</strong>)\n    is attached for your reference and download.\n  </p>\n  <p>Best regards,<br><strong>CMO Strategy Agent</strong></p>\n  </body>\n</html>\n`;\n\n// --- 3️⃣ Now add THIS new part below (binary handling + return) ---\nlet outputBinary = undefined;\nif (items[1] && items[1].binary) {\n  const binKeys = Object.keys(items[1].binary);\n  if (binKeys.length) {\n    const original = items[1].binary[binKeys[0]];\n\n    // Create a clean, descriptive filename\n    const safeFileName = subject.replace(/[^\\w\\s.-]+/g, '').replace(/\\s+/g, '_') + '.docx';\n\n    // Ensure proper MIME type and name for Gmail\n    outputBinary = {\n      data: {\n        ...original,\n        fileName: safeFileName,\n        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'\n      }\n    };\n  }\n}\n\n// --- 4️⃣ Return everything to Gmail node ---\nif (outputBinary) {\n  return [\n    {\n      json: {\n        subject,\n        html\n      },\n      binary: outputBinary\n    }\n  ];\n} else {\n  return [\n    {\n      json: {\n        subject,\n        html\n      }\n    }\n  ];\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4384,
+        16
+      ],
+      "id": "8dad4d25-e0c5-413d-a606-c62e02181aba",
+      "name": "Finalize html + binary"
+    }
+  ],
+  "pinData": {
+    "Google Sheets Trigger": [
+      {
+        "json": {
+          "Timestamp": 45958.612644629626,
+          "Caption": "At New Star Tech, we believe that our greatest asset is our team. We've intentionally cultivated a work environment that is positive, inclusive, and highly collaborative, ensuring every voice is heard and valued. It's more than just a place to work—it's a dynamic hub where passion meets purpose. Our supportive culture encourages continuous learning and growth, allowing each member to truly thrive and bring their best to the table. When you see a great result from us, know that it's the product of this powerful, united team environment. We're proud of the community we've built, and we believe it's what sets us apart!",
+          "Target Platform": "All of the platforms mentioned",
+          "Image URL": "https://www.aib.edu.au/wp-content/uploads/2019/03/form-submission-8115-shutterstock_447145060.jpg",
+          "Post Category": "Team Culture / Behind the scenes",
+          "Content Keywords": "team collaboration, healthy environment",
+          "Email": "demoagent@nms.ph"
+        }
+      }
+    ],
+    "Analyze an image": [
+      {
+        "json": {
+          "content": {
+            "parts": [
+              {
+                "text": "This is a close-up, high-angle shot depicting a group of individuals, likely business professionals, engaging in a collaborative activity: piecing together large, white jigsaw puzzle pieces around a rustic wooden table.\n\n**Main Subjects:**\nThe primary subjects are the numerous hands of several people, along with the white puzzle pieces they are manipulating.\n*   **Hands:** At least eight distinct hands and forearms are visible from various angles, extending into the frame from different sides of the table. They are carefully holding, moving, and connecting the puzzle pieces. Some hands are gently guiding pieces into place, while others firmly grip individual sections. The skin tones vary slightly, suggesting a diverse group. One hand on the left wears a dark wristwatch.\n*   **Attire:** The visible clothing consists of dark business suits (appearing either navy or charcoal) and crisp white dress shirts, reinforcing the professional context of the scene. The sleeves are neatly cuffed.\n\n**Setting:**\n*   **Table:** The activity takes place on a prominent, rustic wooden table. The table features a rich, dark brown wood grain with visible planks and seams, suggesting an aged or reclaimed aesthetic. The texture of the wood is quite detailed, indicating a rough-hewn surface rather than a polished one. There's a distinct vertical seam running down the center, possibly indicating two tables pushed together or a very wide, multi-plank table.\n*   **Background:** The background is softly blurred and out of focus, showing vague shapes of other seated figures in similar professional attire, further emphasizing that this is a group activity in an office or meeting setting. A brighter, indistinct area in the upper left suggests a light source or window, but it's too blurry to discern details.\n\n**Notable Visual Elements:**\n*   **The Puzzle Pieces:** The puzzle pieces are uniformly white, large, and thick, lacking any images or patterns. This blankness is a significant element, emphasizing the abstract nature of the \"problem\" or \"solution\" being constructed. Several pieces are already interlocked, forming small clusters, while many others remain individual, poised to be fitted together. The classic jigsaw shape with \"knobs\" and \"holes\" is clearly visible on each piece.\n*   **Composition and Lighting:** The high-angle perspective draws the viewer's eye directly to the activity on the table. Soft, ambient lighting illuminates the scene, casting subtle shadows beneath the hands and puzzle pieces, which adds depth and definition to the scene. The lighting appears to come from the top-left, creating highlights on the puzzle pieces and hands.\n\n**Mood and Symbolism:**\nThe overall mood is one of focused concentration, collaboration, and collective effort. The image strongly symbolizes teamwork, synergy, problem-solving, strategic planning, and the idea of different parts coming together to form a complete whole. The blank white puzzle suggests that the \"picture\" or solution is being *created* or *discovered* through their combined intelligence and efforts, rather than simply revealed."
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      }
+    ],
+    "CMO Agent": [
+      {
+        "json": {
+          "output": "Subject: Final Hashtag Strategy Report: New Star Tech Team Culture Campaign\n\nPlatform: Instagram\nHashtag Set: #TeamCulture #WorkplaceCulture #NewStarTechLife #TeamworkMakesTheDreamWork #CollaborativeEnvironment #EmployeeAppreciation #HealthyWorkEnvironment #BehindTheScenes #InnovationByCollaboration #TechTeam #PuzzleSolving #TogetherWeThrive #CompanyValues #EmployerBranding #PositiveVibesOnly #NewStarTech\nTiered breakdown:\nNiche: #NewStarTechLife #InnovationByCollaboration #TechTeam #PuzzleSolving #NewStarTech\nMedium: #TeamCulture #WorkplaceCulture #TeamworkMakesTheDreamWork #CollaborativeEnvironment #EmployeeAppreciation #HealthyWorkEnvironment #BehindTheScenes #TogetherWeThrive #CompanyValues #EmployerBranding\nHigh-Reach: #PositiveVibesOnly\nConfidence Score: 95%\n\nPlatform: Facebook\nHashtag Set: #Teamwork #CompanyCulture #NewStarTech #WorkLife #Collaboration #EmployeeEngagement #OurTeam #BehindTheScenes #TechCompany #InclusiveWorkplace #GrowthMindset #TeamGoals #PositiveWorkplace\nTiered breakdown:\nNiche: #NewStarTech #TechCompany #OurTeam\nMedium: #CompanyCulture #Collaboration #EmployeeEngagement #InclusiveWorkplace #GrowthMindset #TeamGoals #PositiveWorkplace\nHigh-Reach: #Teamwork #WorkLife #BehindTheScenes\nConfidence Score: 93%\n\nPlatform: X\nHashtag Set: #Teamwork #WorkCulture #NewStarTech\nTiered breakdown:\nNiche: #NewStarTech\nMedium: #WorkCulture\nHigh-Reach: #Teamwork\nConfidence Score: 90%\n\nPlatform: Reddit\nHashtag Set: #TeamCollaboration #WorkplaceCulture #NewStarTech #EmployeeExperience #TechLife #CompanyCulture\nTiered breakdown:\nNiche: #NewStarTech #TechLife\nMedium: #TeamCollaboration #EmployeeExperience\nHigh-Reach: #WorkplaceCulture #CompanyCulture\nConfidence Score: 92%\n\nPlatform: LinkedIn\nHashtag Set: #TeamCollaboration #WorkplaceCulture #EmployeeEngagement #Leadership #NewStarTech #Innovation #ProfessionalGrowth\nTiered breakdown:\nNiche: #NewStarTech\nMedium: #TeamCollaboration #EmployeeEngagement #Innovation #ProfessionalGrowth\nHigh-Reach: #WorkplaceCulture #Leadership\nConfidence Score: 94%"
+        }
+      }
+    ],
+    "Inserts the Output in the new File": [
+      {
+        "json": {
+          "documentId": "1gemLA50QD2KHSIW-BT6zNgBuCercpcjAmqLZUSRA1hE"
+        }
+      }
+    ],
+    "Create a document": [
+      {
+        "json": {
+          "kind": "drive#file",
+          "id": "1gemLA50QD2KHSIW-BT6zNgBuCercpcjAmqLZUSRA1hE",
+          "name": "Final Hashtag Strategy Report: New Star Tech Team Culture Campaign",
+          "mimeType": "application/vnd.google-apps.document"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "CMO Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize Prompt Message": {
+      "main": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON": {
+      "main": [
+        [
+          {
+            "node": "Finalize data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inserts the Output in the new File": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has No Image URL?": {
+      "main": [
+        [
+          {
+            "node": "Initialize Prompt Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Has No Image URL?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Initialize Prompt Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit Social Media Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meta Threads Social Media Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Social Media Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Social Media Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twitter Social Media Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Twitter Social Media Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Facebook Social Media Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LinkedIn Social Media Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Meta Threads Social Media Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Reddit Social Media Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a document": {
+      "main": [
+        [
+          {
+            "node": "Inserts the Output in the new File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize data": {
+      "main": [
+        [
+          {
+            "node": "Create a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Finalize html + binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize html + binary": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "88p5lEvCr7tFDgO2"
+  },
+  "versionId": "06be576d-f7e6-41ff-a0a0-2f414d6e29c3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "8bPIjzL2VMSQXruk",
+  "tags": []
+}

@@ -1,0 +1,1735 @@
+{
+  "name": "Internal Linking Suggester",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9fd00d0a-3bb2-4a76-9252-5ad55f9d9254",
+              "name": "=targetUrl",
+              "value": "={{ $json[\"URL\"].trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "77a7402c-6239-4f03-ada8-740187b5c3db",
+              "name": "maxCrawlDepth",
+              "value": "={{ Number($json['maxCrawlDepth\\t']) || 3 }}",
+              "type": "number"
+            },
+            {
+              "id": "53314aa5-3738-462e-9d9a-5c207f7b1930",
+              "name": "row_number",
+              "value": "={{ $json.row_number }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -144,
+        368
+      ],
+      "id": "d0ec4610-ced6-4171-a97f-6d65a7401ef3",
+      "name": "Set Scan Parameters from Queue Row"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Robust robots.txt parser for n8n\n// Input: expects $input.item.json.data to contain the robots.txt content\n\ntry {\n  const robotsTxt = String($input.item.json.data || '').trim();\n  \n  if (!robotsTxt) {\n    return {\n      json: {\n        success: false,\n        error: 'No robots.txt content found',\n        parsed: null\n      }\n    };\n  }\n\n  const result = {\n    userAgents: [],\n    sitemaps: [],\n    rawContent: robotsTxt\n  };\n\n  const lines = robotsTxt\n    .split('\\n')\n    .map(line => line.trim())\n    .filter(line => line.length > 0 && !line.startsWith('#'));\n\n  let currentAgent = null;\n\n  for (const line of lines) {\n    const cleanLine = line.split('#')[0].trim();\n    if (!cleanLine) continue;\n\n    if (cleanLine.toLowerCase().startsWith('user-agent:')) {\n      const agent = cleanLine.substring(11).trim();\n      currentAgent = {\n        name: agent,\n        disallow: [],\n        allow: [],\n        crawlDelay: null\n      };\n      result.userAgents.push(currentAgent);\n    }\n    else if (cleanLine.toLowerCase().startsWith('disallow:')) {\n      const path = cleanLine.substring(9).trim();\n      if (currentAgent) {\n        currentAgent.disallow.push(path);\n      }\n    }\n    else if (cleanLine.toLowerCase().startsWith('allow:')) {\n      const path = cleanLine.substring(6).trim();\n      if (currentAgent) {\n        currentAgent.allow.push(path);\n      }\n    }\n    else if (cleanLine.toLowerCase().startsWith('crawl-delay:')) {\n      const delay = cleanLine.substring(12).trim();\n      if (currentAgent) {\n        currentAgent.crawlDelay = Number(delay) || null;\n      }\n    }\n    else if (cleanLine.toLowerCase().startsWith('sitemap:')) {\n      const sitemapUrl = cleanLine.substring(8).trim();\n      if (sitemapUrl) {\n        result.sitemaps.push(sitemapUrl);\n      }\n    }\n  }\n\n  const summary = {\n    totalUserAgents: result.userAgents.length,\n    totalSitemaps: result.sitemaps.length,\n    hasSitemaps: result.sitemaps.length > 0,\n    blockedBots: result.userAgents\n      .filter(ua => ua.disallow.includes('/'))\n      .map(ua => ua.name),\n    hasWildcard: result.userAgents.some(ua => ua.name === '*')\n  };\n\n  return {\n    json: {\n      success: true,\n      error: null,\n      parsed: result,\n      summary: summary,\n      source: $input.item.json.targetUrl || 'unknown'\n    }\n  };\n\n} catch (error) {\n  return {\n    json: {\n      success: false,\n      error: error.message || 'Unknown parsing error',\n      errorStack: error.stack || null,\n      parsed: null\n    }\n  };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        112
+      ],
+      "id": "13d6acbe-4cf9-4fe8-9422-674cfe90dd93",
+      "name": "Parse robots.txt Content"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "806f4133-19a1-4188-a556-37757d0da5c5",
+              "leftValue": "={{ $json.summary.hasSitemaps }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        112
+      ],
+      "id": "7eedabb5-1890-4b36-8583-a2be27d089a0",
+      "name": "Sitemaps Declared in robots.txt?"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=parsed.sitemaps",
+        "include": "selectedOtherFields",
+        "fieldsToInclude": "targetUrl",
+        "options": {
+          "destinationFieldName": "sitemaps"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        96
+      ],
+      "id": "29feafa2-002c-47b0-ad30-a3e04935ef32",
+      "name": "Split robots.txt Sitemap URLs",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "={{\n  (() => {\n    const raw = $('Set Scan Parameters from Queue Row').item.json.targetUrl || '';\n    const clean = raw.trim().replace(/\\/+$/, '');\n    const match = clean.match(/^(https?:\\/\\/[^\\/]+)/i);\n    const root = match ? match[1] : clean;\n    return root + '/sitemap.xml';\n  })()\n}}\n",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          },
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        784,
+        384
+      ],
+      "id": "7530ccdc-ebc6-4a64-8849-38f66ca8ec84",
+      "name": "Try Default /sitemap.xml",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "07448669-4401-48c4-9072-b3b969e8e9b9",
+              "leftValue": "={{ Number($json.statusCode) === 200 && String($json.data || '').length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        384
+      ],
+      "id": "160bcfb4-61ac-4fd2-bc27-bae3c2f384ae",
+      "name": "Default sitemap.xml Found?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Robust XML Sitemap Parser - handles sitemap indexes and URL sets\ntry {\n  const xmlContent = String($input.item.json.data || '').trim();\n  const currentDepth = $input.item.json.sitemapDepth || 0;\n  const maxDepth = $('Set Scan Parameters from Queue Row').first().json.maxCrawlDepth;\n  \n  if (currentDepth > maxDepth) {\n    return {\n      json: {\n        success: false,\n        error: 'Max sitemap depth exceeded',\n        maxDepthReached: true\n      }\n    };\n  }\n\n  const extractTag = (xml, tagName) => {\n    const regex = new RegExp(`<${tagName}[^>]*>([\\\\s\\\\S]*?)<\\\\/${tagName}>`, 'gi');\n    const matches = [];\n    let match;\n    while ((match = regex.exec(xml)) !== null) {\n      matches.push(match[1].trim());\n    }\n    return matches;\n  };\n\n  const extractSingleTag = (xml, tagName) => {\n    const regex = new RegExp(`<${tagName}[^>]*>([\\\\s\\\\S]*?)<\\\\/${tagName}>`, 'i');\n    const match = xml.match(regex);\n    return match ? match[1].trim() : null;\n  };\n\n  let sitemapType = 'unknown';\n  if (xmlContent.includes('<sitemapindex')) {\n    sitemapType = 'sitemapindex';\n  } else if (xmlContent.includes('<urlset')) {\n    sitemapType = 'urlset';\n  }\n\n  const result = {\n    type: sitemapType,\n    urls: [],\n    sitemapDepth: currentDepth,\n    parentSitemap: $input.item.json.sitemapUrl || $input.item.json['parsed.sitemaps'] || 'unknown',\n    metadata: {\n      sourceUrl: $input.item.json.sitemapUrl || $input.item.json['parsed.sitemaps'] || 'unknown',\n      parsedAt: new Date().toISOString(),\n      totalUrls: 0,\n      depth: currentDepth\n    }\n  };\n\n  if (sitemapType === 'sitemapindex') {\n    const sitemaps = extractTag(xmlContent, 'sitemap');\n    result.urls = sitemaps.map(sitemap => ({\n      loc: extractSingleTag(sitemap, 'loc'),\n      lastmod: extractSingleTag(sitemap, 'lastmod'),\n      type: 'sitemap',\n      sitemapDepth: currentDepth + 1\n    })).filter(item => item.loc);\n  }\n  else if (sitemapType === 'urlset') {\n    const urls = extractTag(xmlContent, 'url');\n    result.urls = urls.map(url => ({\n      loc: extractSingleTag(url, 'loc'),\n      lastmod: extractSingleTag(url, 'lastmod'),\n      changefreq: extractSingleTag(url, 'changefreq'),\n      priority: extractSingleTag(url, 'priority'),\n      type: 'url',\n      parentSitemap: result.parentSitemap\n    })).filter(item => item.loc);\n  }\n\n  result.metadata.totalUrls = result.urls.length;\n\n  return {\n    json: {\n      success: true,\n      error: null,\n      ...result,\n      summary: {\n        totalUrls: result.urls.length,\n        sitemapType: sitemapType,\n        depth: currentDepth,\n        isSitemapIndex: sitemapType === 'sitemapindex'\n      }\n    }\n  };\n\n} catch (error) {\n  return {\n    json: {\n      success: false,\n      error: error.message || 'Unknown parsing error',\n      type: null,\n      urls: []\n    }\n  };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        368
+      ],
+      "id": "3bb8c41f-a7be-495e-b5c9-d59eb56e021d",
+      "name": "Parse XML Sitemap Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize sitemap.xml fallback to match sitemaps format\nconst targetUrl = $('Set Scan Parameters from Queue Row').first().json.targetUrl;\nconst cleanUrl = targetUrl.trim();\nconst urlMatch = cleanUrl.match(/^(https?:\\/\\/[^\\/]+)/i);\nconst rootUrl = urlMatch ? urlMatch[1] : cleanUrl.replace(/\\/.*$/, '');\nconst sitemapUrl = rootUrl + '/sitemap.xml';\n\nreturn {\n  json: {\n    sitemaps: sitemapUrl,\n    sitemapDepth: 0\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1888,
+        528
+      ],
+      "id": "f1475f48-7104-47ad-bcab-f773d2628af0",
+      "name": "Format Single Sitemap for Processing"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "FTBlJdp8tl5kwz6D",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/FTBlJdp8tl5kwz6D",
+          "cachedResultName": "Sitemap Extractor Subworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "maxCrawlDepth": "={{ $('Set Scan Parameters from Queue Row').first().json.maxCrawlDepth }}",
+            "robotsRules": "={{\n  (() => {\n    try {\n      const robotsNode = $('Parse robots.txt Content').first();\n      if (robotsNode?.json?.parsed) {\n        return robotsNode.json.parsed;\n      }\n      return { allowAll: true, disallowAll: false, groups: [] };\n    } catch (error) {\n      return { allowAll: true, disallowAll: false, groups: [] };\n    }\n  })()\n}}",
+            "sitemapDepth": "={{ $json.sitemapDepth || 0 }}",
+            "sitemaps": "={{ $json.sitemaps }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "maxCrawlDepth",
+              "displayName": "maxCrawlDepth",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "sitemaps",
+              "displayName": "sitemaps",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "sitemapDepth",
+              "displayName": "sitemapDepth",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "robotsRules",
+              "displayName": "robotsRules",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            },
+            {
+              "id": "exclusionList",
+              "displayName": "exclusionList",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        2112,
+        96
+      ],
+      "name": "Extract URLs from robots.txt Sitemaps",
+      "id": "18b9228c-84f9-4c55-b303-41b35af96b63"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "url",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        976
+      ],
+      "id": "62a26d15-383e-4cdb-960c-d6bf6789e552",
+      "name": "Split URLs for Individual Validation"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        784,
+        1168
+      ],
+      "id": "c547332a-fd8d-4014-bf12-8fddabb5b0dd",
+      "name": "Loop Over Items3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1024,
+        1008
+      ],
+      "id": "e3bbda4b-2c66-4c5b-8a79-d05950ff2d4e",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allInputs = $input.all();\nconst targetData = allInputs.find(item => item.json.targetUrl);\n\nif (!targetData) {\n  return [{ json: { error: 'No target data found' } }];\n}\n\n// Get all SOURCE pages\nconst sourcePages = allInputs.filter(item => item.json.isSource === true);\n\nif (sourcePages.length === 0) {\n  return [{ json: { error: 'No source pages found' } }];\n}\n\n// Analyze in batches (10 pages at a time to avoid token limits)\nconst batchSize = 10;\nconst batches = [];\n\nfor (let i = 0; i < sourcePages.length; i += batchSize) {\n  const batchPages = sourcePages.slice(i, i + batchSize);\n  \n  // Format source pages for AI\n  const formattedSources = batchPages.map((page, idx) => {\n    return `\nSOURCE PAGE ${idx + 1}:\nURL: ${page.json.url}\nTitle: ${page.json.title || 'Untitled'}\nH1: ${page.json.h1Tags?.[0] || 'N/A'}\nKey Topics: ${(page.json.h2Tags || []).slice(0, 3).join(', ')}\nContent Preview: ${(page.json.trimmedText || '').substring(0, 800)}...\n---`;\n  }).join('\\n\\n');\n\n  batches.push({\n    json: {\n      // Target page info\n      targetUrl: targetData.json.targetUrl,\n      targetTitle: targetData.json.targetTitle,\n      targetTopics: targetData.json.targetMainTopics,\n      targetContent: targetData.json.targetContentSample,\n      \n      // Batch info\n      batchNumber: Math.floor(i / batchSize) + 1,\n      totalBatches: Math.ceil(sourcePages.length / batchSize),\n      pagesInBatch: batchPages.length,\n      \n      // Formatted for AI\n      aiPrompt: `TARGET PAGE TO LINK TO:\nURL: ${targetData.json.targetUrl}\nTitle: ${targetData.json.targetTitle}\nMain Topics: ${targetData.json.targetMainTopics}\nContent Sample: ${targetData.json.targetContentSample}\n\n======================================\n\nANALYZE THESE SOURCE PAGES AND FIND LINK OPPORTUNITIES:\n\n${formattedSources}\n\nFind 1-2 natural places in each source page where you could add an internal link to the target page. Only suggest links that are contextually relevant and add value for readers.`\n    }\n  });\n}\n\nreturn batches;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        1008
+      ],
+      "id": "673ca327-18ac-4c4a-9e81-42a153a834f1",
+      "name": "Prepare AI Analysis Prompt"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "66d729c6-67bc-4c00-be90-c4b2624ce915",
+              "leftValue": "={{ $json.isSource }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        992
+      ],
+      "id": "40e5985e-733e-4d22-bf27-f21a5498d9f7",
+      "name": "Filter SOURCE Pages"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "80f8535f-7db2-4a32-8876-17c009779fd8",
+              "leftValue": "={{ $json.isTarget }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        1168
+      ],
+      "id": "28d7a42d-5527-4da6-9f01-0499845e622b",
+      "name": "Loop Over TARGET Pages"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U",
+          "mode": "list",
+          "cachedResultName": "URL To Analyze",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 284984526,
+          "mode": "list",
+          "cachedResultName": "Sheet3",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U/edit#gid=284984526"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "sourceURL",
+              "displayName": "sourceURL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sourceTitle",
+              "displayName": "sourceTitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "anchorText",
+              "displayName": "anchorText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contextSnippet",
+              "displayName": "contextSnippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SuggestedInsertion",
+              "displayName": "SuggestedInsertion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paragraphHint",
+              "displayName": "paragraphHint",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reasoning",
+              "displayName": "reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1968,
+        1008
+      ],
+      "id": "586541f4-30c4-48e2-ab12-4f0c73e1d3ab",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IzZFdKDy8iaOFYNG",
+          "name": "Google Sheets [ Gabriel ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.aiPrompt }}",
+        "options": {
+          "systemMessage": "=You are an expert SEO internal linking specialist.\nAnalyze the blog content and identify the most relevant and natural internal linking opportunities from the source page to the target page.\n\n    For each source page, find up to 2 optimal places to add a link to the target page where the link would be:\n\n    1. Contextually relevant and natural\n    2. Valuable for users  \n    3. SEO-friendly with natural anchor text\n\n    CRITICAL: Respond ONLY with valid JSON. No markdown, no explanations outside JSON.\n\n    Format:\n    {\n      \"opportunities\": [\n        {\n          \"sourceUrl\": \"full URL\",\n          \"sourceTitle\": \"page title\",\n          \"anchorText\": \"2-5 word natural phrase\",\n          \"contextSnippet\": \"the full sentence where link fits\",\n          \"suggestedInsertion\": \"sentence with <a href='URL'>anchor</a> inserted\",\n          \"paragraphHint\": \"e.g., 'Paragraph 3' or 'After H2 heading'\",\n          \"confidence\": 85,\n          \"reasoning\": \"why this link makes sense\"\n        }\n      ]\n    }\n\n    Rules:\n    - Only suggest truly relevant links (confidence 70+)\n    - Anchor text must be natural, not forced\n    - If no good opportunity, return empty opportunities array\n    - Return ONLY valid JSON, nothing else"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        1008
+      ],
+      "id": "50f291ff-dfac-4c36-a1d1-95d2df1a6865",
+      "name": "AI Analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "let allRows = [];\n\n// Loop through all incoming items (in case multiple AI nodes feed here)\nfor (const item of items) {\n  let data = item.json;\n\n  // 🔹 Handle stringified JSON (common in AI outputs)\n  if (typeof data === \"string\") {\n    try {\n      data = JSON.parse(data);\n    } catch (e) {\n      continue; // skip if it's invalid JSON\n    }\n  }\n\n  // 🔹 Handle case where result is inside 'output' or 'output' contains stringified JSON\n  if (data.output && typeof data.output === \"string\") {\n    try {\n      data = JSON.parse(data.output);\n    } catch (e) {\n      data = data.output;\n    }\n  }\n\n  // 🔹 Now access the 'opportunities' array safely\n  const opportunities = data.opportunities || [];\n\n  for (const o of opportunities) {\n    allRows.push({\n      sourceUrl: o.sourceUrl || \"\",\n      sourceTitle: o.sourceTitle || \"\",\n      anchorText: o.anchorText || \"\",\n      contextSnippet: o.contextSnippet || \"\",\n      suggestedInsertion: o.suggestedInsertion || \"\",\n      paragraphHint: o.paragraphHint || \"\",\n      confidence: o.confidence || \"\",\n      reasoning: o.reasoning || \"\"\n    });\n  }\n}\n\n// Return one item per row for Excel Append\nreturn allRows.map(r => ({ json: r }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        1008
+      ],
+      "id": "f3f8b99c-f65a-44e3-96fe-e12f3c985f94",
+      "name": "Parse AI Output",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all pages with authority scores\nconst pages = $input.all();\n\n// Sort by quality (authority score + word count factor)\nconst sortedPages = pages.map(page => ({\n  ...page,\n  qualityScore: page.json.authorityScore + (page.json.wordCount / 10000)\n})).sort((a, b) => b.qualityScore - a.qualityScore);\n\n// Top 15% = TARGETS (pages to boost)\n// Bottom 85% = SOURCES (pages that will link to targets)\nconst targetPercentage = 0.15;\nconst targetCount = Math.ceil(sortedPages.length * targetPercentage);\n\nconst results = sortedPages.map((page, index) => {\n  const isTarget = index < targetCount;\n  \n  return {\n    json: {\n      ...page.json,\n      pageClassification: isTarget ? 'TARGET' : 'SOURCE',\n      qualityScore: parseFloat(page.qualityScore.toFixed(3)),\n      rank: index + 1,\n      classificationReason: isTarget \n        ? 'Top-performing content (pillar/cornerstone)' \n        : 'Supporting content',\n      // Add these flags for easy filtering\n      isTarget: isTarget,\n      isSource: !isTarget\n    }\n  };\n});\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        1184
+      ],
+      "id": "237a9039-8495-4724-884d-71b8efa90121",
+      "name": "Page Classification"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get ALL input items\nconst items = $input.all();\n\nif (!items || items.length === 0) {\n  return [];\n}\n\n// Process each item and collect results\nconst results = [];\n\nfor (let i = 0; i < items.length; i++) {\n  // Get data from the current item (HTTP Request node)\n  const html = items[i].json.data || '';\n  const statusCode = items[i].json.statusCode || 0;\n  \n  // Get URL from the corresponding item in the Split URLs node\n  const urlNode = $('Split URLs for Individual Validation').all();\n  const url = urlNode[i]?.json.url || '';\n\n  // --- DEFAULT EMPTY RESPONSE STRUCTURE ---\n  const emptyResponse = {\n    url: url,\n    statusCode: statusCode,\n    authorityScore: 0,\n    title: null,\n    description: null,\n    text: '',\n    trimmedText: '',\n    wordCount: 0,\n    trimmedWordCount: 0,\n    existingLinks: [],\n    internalLinks: [],\n    externalLinks: [],\n    anchorLinks: [],\n    h1Tags: [],\n    h2Tags: [],\n    totalLinkCount: 0,\n    internalLinkCount: 0,\n    externalLinkCount: 0,\n    linksPerWord: 0,\n    linkingHealth: 'poor',\n    existingInternalTargets: []\n  };\n\n  // Check if we have valid HTML and URL\n  if (!html || !url || statusCode >= 400) {\n    results.push({ \n      json: { \n        ...emptyResponse, \n        error: statusCode >= 400 ? `HTTP ${statusCode}` : 'No HTML content' \n      } \n    });\n    continue;\n  }\n\n  try {\n    // --- Clean text ---\n    let text = html\n      .replace(/<script[\\s\\S]*?<\\/script>/gi, '')\n      .replace(/<style[\\s\\S]*?<\\/style>/gi, '')\n      .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, '')\n      .replace(/<!--[\\s\\S]*?-->/g, '')\n      .replace(/<svg[\\s\\S]*?<\\/svg>/gi, '')\n      .replace(/<[^>]+>/g, ' ')\n      .replace(/&nbsp;/gi, ' ')\n      .replace(/&amp;/gi, '&')\n      .replace(/&lt;/gi, '<')\n      .replace(/&gt;/gi, '>')\n      .replace(/&quot;/gi, '\"')\n      .replace(/&#\\d+;/gi, ' ')\n      .replace(/&[a-z]+;/gi, ' ')\n      .replace(/\\s+/g, ' ')\n      .trim();\n\n    // --- Trimmed text for OpenAI ---\n    let trimmedText = text.substring(0, 5000);\n    const lastSpaceIndex = trimmedText.lastIndexOf(' ');\n    if (lastSpaceIndex > 4500) {\n      trimmedText = trimmedText.substring(0, lastSpaceIndex);\n    }\n\n    const wordCountFull = text.split(/\\s+/).filter(w => w.length > 0).length;\n    const trimmedWordCount = trimmedText.split(/\\s+/).filter(w => w.length > 0).length;\n\n    // --- Metadata ---\n    const titleMatch = html.match(/<title[^>]*>(.*?)<\\/title>/i);\n    const descMatch = html.match(/<meta[^>]*name=[\"']description[\"'][^>]*content=[\"']([^\"']+)[\"']/i);\n\n    // --- Headings ---\n    const h1Matches = html.match(/<h1[^>]*>(.*?)<\\/h1>/gi) || [];\n    const h2Matches = html.match(/<h2[^>]*>(.*?)<\\/h2>/gi) || [];\n\n    const h1Tags = h1Matches.map(h => h.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/gi, ' ').trim()).filter(h => h.length > 0);\n    const h2Tags = h2Matches.map(h => h.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/gi, ' ').trim()).filter(h => h.length > 0);\n\n    // --- Links ---\n    const linkMatches = html.match(/<a[^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)<\\/a>/gi) || [];\n    const existingLinks = linkMatches\n      .map(link => {\n        const hrefMatch = link.match(/href=[\"']([^\"']+)[\"']/i);\n        const anchorTextMatch = link.match(/>([^<]+)</);\n        if (!hrefMatch) return null;\n        \n        let href = hrefMatch[1].trim();\n        const anchorText = anchorTextMatch ? anchorTextMatch[1].replace(/&[a-z]+;/gi, ' ').trim() : '';\n        \n        if (!href || href.startsWith('javascript:') || href.startsWith('mailto:')) return null;\n        \n        // Normalize relative URLs\n        if (href.startsWith('/') && !href.startsWith('//')) {\n          const baseUrl = url.match(/https?:\\/\\/[^\\/]+/);\n          if (baseUrl) href = baseUrl[0] + href;\n        }\n        \n        const currentDomain = url.match(/https?:\\/\\/([^\\/]+)/);\n        const linkDomain = href.match(/https?:\\/\\/([^\\/]+)/);\n        \n        let linkType = 'external';\n        if (href.startsWith('#')) linkType = 'anchor';\n        else if (currentDomain && linkDomain && currentDomain[1] === linkDomain[1]) linkType = 'internal';\n        else if (href.startsWith('/')) linkType = 'internal';\n        \n        const isInternal = linkType === 'internal';\n        \n        return { href, anchorText, linkType, isInternal };\n      })\n      .filter(l => l !== null);\n\n    const internalLinks = existingLinks.filter(l => l.isInternal);\n    const externalLinks = existingLinks.filter(l => !l.isInternal && l.linkType !== 'anchor');\n    const anchorLinks = existingLinks.filter(l => l.linkType === 'anchor');\n\n    const linksPerWord = wordCountFull > 0 ? internalLinks.length / wordCountFull : 0;\n\n    // --- Linking Health Assessment ---\n    let linkingHealth = 'good';\n    if (internalLinks.length === 0) linkingHealth = 'poor';\n    else if (internalLinks.length < 3) linkingHealth = 'needs-improvement';\n    else if (linksPerWord > 0.02) linkingHealth = 'over-optimized';\n\n    // --- Authority Score Calculation ---\n    const normWordCount = Math.min(wordCountFull / 2500, 1); // Changed from 2000\n\n    // 2. INTERNAL LINKS - Adjust based on your average\n    // If you average 35 internal links, that should be your target\n    const normInternalLinks = Math.min(internalLinks.length / 35, 1); // Changed from 20\n    \n    // 3. EXTERNAL LINKS - You said this is fine, so keep it\n    let normExternalLinks;\n    if (externalLinks.length <= 3) {\n      normExternalLinks = externalLinks.length / 3;\n    } else if (externalLinks.length <= 8) {\n      normExternalLinks = 1;\n    } else {\n      normExternalLinks = Math.max(0, 1 - ((externalLinks.length - 8) / 20));\n    }\n    \n    // 4. LINK DENSITY - Adjust threshold for your link-heavy site\n    // If you have more links per page, increase from 0.015 to 0.025 (2.5%)\n    const normLinksPerWord = linksPerWord > 0 ? Math.min(linksPerWord / 0.025, 1) : 0;\n\n    const authorityScore =\n      (normWordCount * 0.35) +\n      (normInternalLinks * 0.30) +\n      (normExternalLinks * 0.20) +\n      (normLinksPerWord * 0.15);\n\n    const finalAuthorityScore = Math.min(1, Math.max(0, authorityScore));\n\n    // --- Add processed item to results ---\n    results.push({\n      json: {\n        url: url,\n        statusCode: statusCode,\n        authorityScore: parseFloat(finalAuthorityScore.toFixed(3)),\n        title: titleMatch ? titleMatch[1].trim() : null,\n        description: descMatch ? descMatch[1].trim() : null,\n        text,\n        trimmedText,\n        wordCount: wordCountFull,\n        trimmedWordCount,\n        h1Tags,\n        h2Tags,\n        existingLinks,\n        internalLinks,\n        externalLinks,\n        anchorLinks,\n        totalLinkCount: existingLinks.length,\n        internalLinkCount: internalLinks.length,\n        externalLinkCount: externalLinks.length,\n        linksPerWord: parseFloat(linksPerWord.toFixed(4)),\n        linkingHealth,\n        existingInternalTargets: internalLinks.map(l => l.href),\n        metrics: {\n          normWordCount: parseFloat(normWordCount.toFixed(3)),\n          normInternalLinks: parseFloat(normInternalLinks.toFixed(3)),\n          normExternalLinks: parseFloat(normExternalLinks.toFixed(3)),\n          normLinksPerWord: parseFloat(normLinksPerWord.toFixed(3))\n        }\n      }\n    });\n\n  } catch (error) {\n    console.error(`Error processing URL ${url}:`, error);\n    results.push({ \n      json: { \n        ...emptyResponse, \n        error: error.message \n      } \n    });\n  }\n}\n\n// Return all processed items\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        1184
+      ],
+      "id": "d8ac4418-280b-4c22-94d7-54ae6e31d6fd",
+      "name": "Authority Score and Contents"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.targetUrl.replace(/\\/$/, '') + '/robots.txt' }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        368
+      ],
+      "id": "6d76eac2-dbd9-4431-bdb3-d2fc64c120ee",
+      "name": "Fetch robots.txt",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "01a14493-b5fe-4dec-a2b7-ad3987497f38",
+              "leftValue": "={{ Number($json.statusCode) === 200 && String($json.data || '').length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        368
+      ],
+      "id": "0b37a1fe-dae1-4435-83a2-0c947dbfa5ce",
+      "name": "robots.txt Found?"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U",
+          "mode": "list",
+          "cachedResultName": "URL To Analyze",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -720,
+        352
+      ],
+      "id": "325d06ca-0220-4098-a1f3-41855b068fad",
+      "name": "Fetch Scan Queue from Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IzZFdKDy8iaOFYNG",
+          "name": "Google Sheets [ Gabriel ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "be2568f1-3a62-47b9-99c4-25a397ea8306",
+              "leftValue": "={{ $json.type === 'sitemapindex' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1408,
+        368
+      ],
+      "id": "c6af4bb2-1917-470b-9501-6f0daafc1680",
+      "name": "Contains Nested Sitemaps?"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "urls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        320
+      ],
+      "id": "f64aa68b-1255-44fc-9306-fe6e558fa381",
+      "name": "Split Nested Sitemap URLs"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Convert parsed sitemap URLs to normalized format\nreturn $input.all()\n  .filter(item => item.json?.loc)\n  .map(item => ({\n    json: {\n      sitemaps: String(item.json.loc).trim(),\n      sitemapDepth: Number(item.json.sitemapDepth) || 1\n    }\n  }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        320
+      ],
+      "id": "6173de1a-92a2-4d85-8c53-df876365fb8f",
+      "name": "Format Nested Sitemaps for Processing"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "FTBlJdp8tl5kwz6D",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/FTBlJdp8tl5kwz6D",
+          "cachedResultName": "Sitemap Extractor Subworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "robotsRules": "={{ \n  (() => {\n    try {\n      const robotsNode = $('Parse robots.txt Content').first();\n      if (robotsNode?.json?.parsed) {\n        return robotsNode.json.parsed;\n      }\n      return { allowAll: true, disallowAll: false, groups: [] };\n    } catch (error) {\n      return { allowAll: true, disallowAll: false, groups: [] };\n    }\n  })()\n}}",
+            "maxCrawlDepth": "={{ $('Set Scan Parameters from Queue Row').first().json.maxCrawlDepth }}",
+            "sitemapDepth": "={{ $json.sitemapDepth || 0 }}",
+            "sitemaps": "={{ $json.sitemaps }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "maxCrawlDepth",
+              "displayName": "maxCrawlDepth",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "sitemaps",
+              "displayName": "sitemaps",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "sitemapDepth",
+              "displayName": "sitemapDepth",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "robotsRules",
+              "displayName": "robotsRules",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            },
+            {
+              "id": "exclusionList",
+              "displayName": "exclusionList",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        2112,
+        528
+      ],
+      "name": "Recursively Extract URLs from Nested Sitemaps",
+      "id": "cd13ef7e-47f2-4f18-8184-4c593148640d",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst seen = new Set();\nconst output = [];\n\nconst safeDecode = (value = '') => {\n  try { return decodeURIComponent(String(value).replace(/\\+/g, ' ')); }\n  catch { return value; }\n};\n\nconst normalizeQuery = (query = '') => {\n  if (!query) return '';\n  const params = query\n    .split('&')\n    .filter(Boolean)\n    .map(pair => {\n      const [rawKey, rawValue = ''] = pair.split('=');\n      return {\n        key: safeDecode(rawKey || '').trim(),\n        value: safeDecode(rawValue || '').trim()\n      };\n    })\n    .filter(entry => entry.key.length > 0)\n    .sort((a, b) => {\n      const keyCompare = a.key.localeCompare(b.key);\n      return keyCompare !== 0 ? keyCompare : a.value.localeCompare(b.value);\n    });\n\n  return params\n    .map(({ key, value }) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)\n    .join('&');\n};\n\nconst targetConfig = $('Set Scan Parameters from Queue Row').first()?.json ?? {};\nconst targetRaw = String(targetConfig.targetUrl || '').trim();\nconst originMatch = targetRaw.match(/^([a-z][a-z0-9+\\-.]*):\\/\\/([^\\/?#]+)/i) || [];\nconst targetScheme = originMatch[1]?.toLowerCase() || 'https';\nconst targetAuthority = originMatch[2] || '';\nconst targetOrigin = originMatch[0] || '';\nconst targetHost = targetAuthority.replace(/^www\\./i, '').toLowerCase();\n\nconst resolveHref = (href = '') => {\n  const raw = String(href).trim();\n  if (!raw) return null;\n\n  const hasScheme = /^[a-z][a-z0-9+\\-.]*:\\/\\//i.test(raw);\n  let absolute = raw;\n\n  if (hasScheme) {\n  } else if (raw.startsWith('//')) {\n    absolute = `${targetScheme}:${raw}`;\n  } else if (raw.startsWith('/')) {\n    absolute = targetOrigin ? `${targetOrigin.replace(/\\/+$/, '')}${raw}` : raw;\n  } else {\n    absolute = targetOrigin ? `${targetOrigin.replace(/\\/+$/, '')}/${raw}` : raw;\n  }\n\n  const schemeMatch = absolute.match(/^([a-z][a-z0-9+\\-.]*):\\/\\//i);\n  const scheme = schemeMatch ? schemeMatch[1].toLowerCase() : targetScheme;\n  const authorityMatch = absolute.match(/^[a-z][a-z0-9+\\-.]*:\\/\\/([^\\/?#]+)/i);\n  const authority = authorityMatch ? authorityMatch[1] : '';\n  const hostNormalized = authority.replace(/^www\\./i, '').toLowerCase();\n  const pathMatch = absolute.match(/^[a-z][a-z0-9+\\-.]*:\\/\\/[^\\/?#]+(\\/[^?#]*)?/i);\n  const path = pathMatch && pathMatch[1] ? pathMatch[1] : '/';\n  const queryMatch = absolute.match(/\\?([^#]*)/);\n  const query = queryMatch ? queryMatch[1] : '';\n  const scope = hostNormalized\n    ? (hostNormalized === targetHost ? 'internal' : 'external')\n    : (raw.startsWith('/') || raw.startsWith('./') || raw.startsWith('../')) ? 'internal' : 'external';\n\n  return {\n    absolute,\n    scheme,\n    authority,\n    hostNormalized,\n    path,\n    query,\n    scope\n  };\n};\n\nconst buildCanonical = (resolved) => {\n  if (!resolved) return '';\n  const authorityLower = resolved.authority.toLowerCase();\n  const normalizedPath = resolved.path === '/' ? '' : resolved.path.replace(/\\/+$/, '');\n  const base = authorityLower\n    ? `${resolved.scheme}://${authorityLower}${normalizedPath}`\n    : normalizedPath || resolved.absolute;\n\n  const query = normalizeQuery(resolved.query);\n  return query ? `${base}?${query}` : base;\n};\n\nconst allUrlEntries = [];\nfor (const item of items) {\n  if (Array.isArray(item.json.urls)) {\n    for (const entry of item.json.urls) {\n      allUrlEntries.push({ ...entry, parentSitemap: item.json.parentSitemap || entry.parentSitemap });\n    }\n  } else if (item.json.url) {\n    allUrlEntries.push(item.json);\n  }\n}\n\nfor (const entry of allUrlEntries) {\n  const originalUrl = entry.loc || entry.url;\n  if (!originalUrl) continue;\n\n  const resolved = resolveHref(originalUrl);\n  if (!resolved || !resolved.absolute) continue;\n\n  const canonical = buildCanonical(resolved);\n  if (!canonical || seen.has(canonical)) continue;\n\n  seen.add(canonical);\n  output.push({\n    json: {\n      ...entry,\n      originalUrl,\n      url: canonical,\n      absoluteUrl: resolved.absolute,\n      isInternal: resolved.scope === 'internal',\n      linkScope: resolved.scope\n    }\n  });\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2448,
+        624
+      ],
+      "id": "11091215-4570-4cc8-ad59-5fa47f8cb8fa",
+      "name": "Deduplicate & Normalize All URLs"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\",\n  \"Accept\": \"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\",\n  \"Accept-Language\": \"en-US,en;q=0.5\",\n  \"Accept-Encoding\": \"gzip, deflate, br\",\n  \"DNT\": \"1\",\n  \"Connection\": \"keep-alive\",\n  \"Upgrade-Insecure-Requests\": \"1\",\n  \"Sec-Fetch-Dest\": \"document\",\n  \"Sec-Fetch-Mode\": \"navigate\",\n  \"Sec-Fetch-Site\": \"none\",\n  \"Cache-Control\": \"max-age=0\"\n}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          },
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          },
+          "timeout": 50000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        96,
+        976
+      ],
+      "id": "2fd1a1f2-17cd-4a2f-9bb5-8aac859324b7",
+      "name": "Validate URL with HEAD Request",
+      "retryOnFail": false,
+      "maxTries": 5,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -352,
+        352
+      ],
+      "id": "db27f485-a249-40e7-b21e-41bf69791618",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U",
+          "mode": "list",
+          "cachedResultName": "URL To Analyze",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "Status": "In Progress",
+            "Analysis Started": "={{ new Date().toLocaleString(\"en-PH\", { timeZone: \"Asia/Manila\" }) }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Analysis Started",
+              "displayName": "Analysis Started",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Analysis Completed",
+              "displayName": "Analysis Completed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        48,
+        368
+      ],
+      "id": "564823c8-cd82-4da4-a92f-4c8d25a34d20",
+      "name": "Set Status",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IzZFdKDy8iaOFYNG",
+          "name": "Google Sheets [ Gabriel ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "da2ac545-f00b-47fa-b785-8032ed70eae4",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -544,
+        352
+      ],
+      "id": "d92e4d7b-f014-4337-847c-5e562de2b19c",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U",
+          "mode": "list",
+          "cachedResultName": "URL To Analyze",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tq1NjCQ1-DfZMpaWVs7UcbOUdz0aPRQMJi6RINkbT4U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Set Scan Parameters from Queue Row').first().json.row_number }}",
+            "Analysis Completed": "={{ new Date().toLocaleString(\"en-PH\", { timeZone: \"Asia/Manila\" }) }}",
+            "Status": "Completed"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Analysis Started",
+              "displayName": "Analysis Started",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Analysis Completed",
+              "displayName": "Analysis Completed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2144,
+        1136
+      ],
+      "id": "76c13765-8b40-4f93-aa65-3766cfa69233",
+      "name": "Status Completed",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IzZFdKDy8iaOFYNG",
+          "name": "Google Sheets [ Gabriel ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1440,
+        1184
+      ],
+      "id": "6728ceb9-dc7c-4675-b6d6-bfe6083342fb",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "bvCZ2nWZpZLIyQAY",
+          "name": "OpenAi [ Gabriel ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "701964d2-db97-403a-9d54-33ceaae6e881",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -912,
+        352
+      ],
+      "id": "f5f07640-b9cd-4ab4-b9f2-7d586c518fe4",
+      "name": "Webhook",
+      "webhookId": "701964d2-db97-403a-9d54-33ceaae6e881"
+    },
+    {
+      "parameters": {
+        "content": "## Scheduled Base Internal Linking Suggestion\n- Fetch lists of URL to scan and filter them by status \n- Only URL with no status will be scanned\n- Loop each URL for fetching sitemaps, contents for analysis and link matching to be used in some pages.\n",
+        "height": 144,
+        "width": 560
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -832,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "c3626f21-2922-4044-8e53-c043fc19d5f4",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## URL Normalization & Deduplication\n**Purpose:** Deduplicates and normalizes all discovered URLs from both sitemap sources\n\n**Nodes:**\n- Deduplicate & Normalize All URLs\n- Split URLs for Individual Validation\n\n**Features:**\n- Merges URLs from robots.txt sitemaps AND /sitemap.xml fallback\n- Removes duplicate URLs (canonical comparison)\n- Normalizes query parameters (sorts alphabetically)\n- Resolves relative URLs to absolute\n- Identifies internal vs external links\n- Canonicalizes URLs (removes trailing slashes, lowercases domains)\n- Handles URL encoding/decoding properly\n\n**Processing:**\n1. Collects all URLs from both execution paths\n2. Builds canonical form for each URL\n3. Deduplicates using Set (canonical URLs)\n4. Preserves metadata (lastmod, priority, changefreq, parentSitemap)\n5. Adds linkScope (internal/external) and isInternal flags\n\n**Output:** Unique, normalized URLs ready for validation",
+        "height": 560,
+        "width": 496
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2448,
+        16
+      ],
+      "typeVersion": 1,
+      "id": "6918f2c9-a1a6-4dcb-bc7d-a8abc16ea3f9",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Sitemap Discovery\n1. **Fetch robots.txt** from target domain\n2. **If found (200 OK):**\n   - Parse content to extract sitemap URLs\n   - Check if sitemaps are declared\n   - If yes → use declared sitemaps\n   - If no → try /sitemap.xml fallback\n3. **If not found:**\n   - Try /sitemap.xml fallback\n4. **If /sitemap.xml found:**\n   - Parse as single sitemap\n\n**Output:** List of sitemap URLs to crawl (from robots.txt or fallback)",
+        "height": 320,
+        "width": 528
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1120,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "91d1e158-efc6-4851-a75f-2e2f81894dba",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Setting Data and Status\n- Setting URL, Row Number, Max Crawl Depth (Default = 3)\n- Setting the Status in Excel to In Progress",
+        "height": 128,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -144,
+        208
+      ],
+      "typeVersion": 1,
+      "id": "216321c7-2c04-4d58-a30c-2818c7a15fc4",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## FETCHING HTML DOCUMENT FROM EACH URL PAGE\n\n**Purpose:**  \nFetches the complete HTML content from each URL to analyze internal linking opportunities.\n\n**Process:**\n1. Get all URLs from the input (Google Sheets or sitemap)\n2. Send HTTP GET request to each URL\n3. Extract and parse key data:\n   - Page title  \n   - Meta description  \n   - H1 and H2 headings  \n   - Full text content (cleaned)  \n   - Existing internal links  \n   - Existing external links  \n   - Word count  \n   - Link density\n\n**Output:**  \nComplete page data ready for:\n- Authority scoring  \n- Internal linking analysis",
+        "height": 560,
+        "width": 480
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -928,
+        768
+      ],
+      "typeVersion": 1,
+      "id": "73677030-12c7-48b2-8255-a6c2a6c48baa",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## AUTHORITY SCORE CALCULATION\n\n**Purpose:**  \nCalculate a quality score (**0–1**) for each page based on weighted factors:\n\n- **Word Count (35%)** — Target: *2,000+ words*  \n- **Internal Links (30%)** — Target: *20+ links*  \n- **External Links (20%)** — Target: *3–8 links*  \n- **Link Density (15%)** — Target: *~1.5%*\n\n**Goal:**  \nHelps identify:\n- Strong pages to prioritize or boost  \n- Supporting pages ideal for adding internal links",
+        "height": 384,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -176,
+        1360
+      ],
+      "typeVersion": 1,
+      "id": "51c92a2d-9b60-4936-8def-49acd7ff8d8b",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## SOURCE vs TARGET PAGES - SIMPLE EXPLANATION\n\nTARGET PAGES = Pages You Want to Rank Higher (Top 15%)\n- Your BEST, most comprehensive content\n- High authority score (0.7+)\n- Long articles (2,500+ words)\n- Examples: Complete guides, main service pages, pillar content.\n- GOAL: Get MORE internal links pointing TO these pages\n\n\nSOURCE PAGES = Pages That Will Give Links (Other 85%)\n- Your supporting blog posts and articles\n- Lower authority score (0.3-0.7)\n- Shorter articles (800-2,000 words)\n- Examples: Tips posts, quick guides, specific how-tos\n- GOAL: Find places to INSERT links FROM these TO target pages\n",
+        "height": 400,
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        576,
+        560
+      ],
+      "typeVersion": 1,
+      "id": "c8c35722-8a34-48a6-8e8b-b585a6afc54a",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## PREPARE AI ANALYSIS PROMPT\n\n**Purpose:**  \nFormat the data so AI can analyze source pages and find places to  \nadd internal links to the target page.\n\n**What This Node Does:**  \n- Takes **1 target page** (current loop iteration)  \n- Takes **all 133 source pages** (from merge)  \n- Breaks sources into **batches of 10 pages each**  \n- Creates **formatted prompt** for AI  \n- **Output:** ~13 batches ready for AI analysis  \n\n**Why Batching?**  \n- AI has token limits (can’t process 133 pages at once)  \n- 10 pages per batch = optimal for quality and speed  \n- 133 pages ÷ 10 = ~13 batches per target\n",
+        "height": 400,
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1312,
+        1360
+      ],
+      "typeVersion": 1,
+      "id": "553f53eb-48a0-4bad-a973-d231f384cd20",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the current TARGET page being processed in this loop iteration\nconst targetPage = $input.first().json;\n\n// Extract key information about the target\nreturn [{\n  json: {\n    // Basic info\n    targetUrl: targetPage.url,\n    targetTitle: targetPage.title || 'Untitled',\n    targetDescription: targetPage.description || '',\n    \n    // Content context for AI\n    targetH1: targetPage.h1Tags || [],\n    targetH2: targetPage.h2Tags || [],\n    targetMainTopics: [\n      ...(targetPage.h1Tags || []),\n      ...(targetPage.h2Tags || []).slice(0, 3)\n    ].join(', '),\n    \n    // Give AI a sample of content (first 1500 chars)\n    targetContentSample: (targetPage.trimmedText || targetPage.text || '').substring(0, 1500),\n    \n    // Current stats\n    targetCurrentLinks: targetPage.internalLinkCount || 0,\n    targetAuthorityScore: targetPage.authorityScore || 0,\n    targetWordCount: targetPage.wordCount || 0,\n    \n    // Meta\n    targetRank: targetPage.rank\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        1184
+      ],
+      "id": "cb53d276-8ad4-4cd1-8c21-489cf334ff6f",
+      "name": "Get Current Target Info"
+    },
+    {
+      "parameters": {
+        "content": "## Parse Output and Append Data\n- Parse the AI Output into a clean JSON Structure for appending the oppurtunities / suggestions.\n- Once the date is appended update the status to \"Completed\" also update the Analysis Completed to the current date and time",
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2144,
+        928
+      ],
+      "typeVersion": 1,
+      "id": "04f4df83-1bbc-4fdf-a0f3-711ff74c07aa",
+      "name": "Sticky Note8"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.popapps.ai",
+            "user-agent": "n8n-scheduler/1.0",
+            "content-length": "2",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "via": "1.1 Caddy",
+            "x-forwarded-for": "139.99.123.97",
+            "x-forwarded-host": "n8n.popapps.ai",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {},
+          "webhookUrl": "https://n8n.popapps.ai/webhook/701964d2-db97-403a-9d54-33ceaae6e881",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Set Scan Parameters from Queue Row": {
+      "main": [
+        [
+          {
+            "node": "Set Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse robots.txt Content": {
+      "main": [
+        [
+          {
+            "node": "Sitemaps Declared in robots.txt?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sitemaps Declared in robots.txt?": {
+      "main": [
+        [
+          {
+            "node": "Split robots.txt Sitemap URLs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Default /sitemap.xml",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split robots.txt Sitemap URLs": {
+      "main": [
+        [
+          {
+            "node": "Extract URLs from robots.txt Sitemaps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Try Default /sitemap.xml": {
+      "main": [
+        [
+          {
+            "node": "Default sitemap.xml Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default sitemap.xml Found?": {
+      "main": [
+        [
+          {
+            "node": "Parse XML Sitemap Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse XML Sitemap Content": {
+      "main": [
+        [
+          {
+            "node": "Contains Nested Sitemaps?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Single Sitemap for Processing": {
+      "main": [
+        [
+          {
+            "node": "Recursively Extract URLs from Nested Sitemaps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract URLs from robots.txt Sitemaps": {
+      "main": [
+        [
+          {
+            "node": "Deduplicate & Normalize All URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split URLs for Individual Validation": {
+      "main": [
+        [
+          {
+            "node": "Validate URL with HEAD Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items3": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Get Current Target Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Analysis Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Analysis Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter SOURCE Pages": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over TARGET Pages": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Output": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Page Classification": {
+      "main": [
+        [
+          {
+            "node": "Filter SOURCE Pages",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Loop Over TARGET Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authority Score and Contents": {
+      "main": [
+        [
+          {
+            "node": "Page Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch robots.txt": {
+      "main": [
+        [
+          {
+            "node": "robots.txt Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "robots.txt Found?": {
+      "main": [
+        [
+          {
+            "node": "Parse robots.txt Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Default /sitemap.xml",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Scan Queue from Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contains Nested Sitemaps?": {
+      "main": [
+        [
+          {
+            "node": "Split Nested Sitemap URLs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Single Sitemap for Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Nested Sitemap URLs": {
+      "main": [
+        [
+          {
+            "node": "Format Nested Sitemaps for Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Nested Sitemaps for Processing": {
+      "main": [
+        [
+          {
+            "node": "Recursively Extract URLs from Nested Sitemaps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursively Extract URLs from Nested Sitemaps": {
+      "main": [
+        [
+          {
+            "node": "Deduplicate & Normalize All URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate & Normalize All URLs": {
+      "main": [
+        [
+          {
+            "node": "Split URLs for Individual Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate URL with HEAD Request": {
+      "main": [
+        [
+          {
+            "node": "Authority Score and Contents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Set Scan Parameters from Queue Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Status Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Status": {
+      "main": [
+        [
+          {
+            "node": "Fetch robots.txt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status Completed": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Scan Queue from Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Current Target Info": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cbe617bb-ce2d-4f0c-b888-5c1d890994bf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "PJcZdTOGLsRVqBHC",
+  "tags": []
+}

@@ -1,0 +1,525 @@
+{
+  "name": "NMS Time logs validator",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const records = $input.all();\n\nconst results = records.map((record) => {\n  const userRecord = record.json;\n  const date = userRecord.date;\n  const [startStr, endStr] = userRecord.scheduledTime.split(\" - \");\n\n  const startDateTime = new Date(`${date}T${startStr}:00+08:00`);\n  let endDateTime = new Date(`${date}T${endStr}:00+08:00`);\n\n  // Handle overnight shift (end time next day)\n  if (endDateTime <= startDateTime) {\n    endDateTime.setDate(endDateTime.getDate() + 1);\n  }\n\n  // Apply buffer (±1 hour)\n  const bufferStart = new Date(startDateTime.getTime() - 60 * 60 * 1000);\n  const bufferEnd = new Date(endDateTime.getTime() + 60 * 60 * 1000);\n\n  // Parse time logs (already array)\n  const logs = userRecord.timeLogs || [];\n\n  // Collect logs outside buffer\n  const invalidLogs = logs.filter((log) => {\n    const logTime = new Date(\n      log.timestamp.includes(\"+\") ? log.timestamp : `${log.timestamp}+08:00`\n    );\n    return logTime < bufferStart || logTime > bufferEnd;\n  });\n\n  return {\n    row: userRecord.row_number,\n    employeeId: userRecord.employeeId,\n    name: userRecord.name,\n    companyEmail: userRecord.companyEmail,\n    telegramUsername: userRecord.telegramUsername,\n    managerEmail: userRecord.managerEmail,\n    date: userRecord.date,\n    scheduledTime: userRecord.scheduledTime,\n    timeLogs: userRecord.timeLogs,\n    onLeave: userRecord.onLeave,\n    invalidLogs: invalidLogs.map((log) => log.timestamp),\n  };\n});\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -144
+      ],
+      "id": "09a43741-7929-43e0-ab85-8a1c8463fb2c",
+      "name": "Check logs if Within Sched"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\n\nfor (const item of items) {\n  const record = item.json;\n  const {\n    employeeId,\n    name,\n    companyEmail,\n    managerEmail,\n    date,\n    scheduledTime,\n    onLeave,\n    timeLogs,\n    invalidLogs\n  } = record;\n\n  let logs;\n  try {\n    logs = timeLogs.filter(l => l.status === \"active\");\n  } catch (e) {\n    results.push({\n      json: {\n        employeeId,\n        name,\n        companyEmail,\n        managerEmail,\n        date,\n        scheduledTime,\n        onLeave,\n        timeLogs: [],\n        finalStatus: \"Invalid\",\n        reason: \"Invalid timeLogs JSON\"\n      }\n    });\n    continue;\n  }\n\n  const logsIn = logs.filter(l => l.type.toLowerCase() === 'in').map(l => new Date(l.timestamp));\n  const logsOut = logs.filter(l => l.type.toLowerCase() === 'out').map(l => new Date(l.timestamp));\n\n  const leaveType = (onLeave || \"\").toLowerCase().trim();\n  let isValid = true;\n  let reason = \"\";\n\n  // Parse shift times\n  const [startStr, endStr] = scheduledTime.split(\" - \");\n  let shiftStart = new Date(`${date}T${startStr}:00+08:00`);\n  let shiftEnd = new Date(`${date}T${endStr}:00+08:00`);\n  if (shiftEnd <= shiftStart) shiftEnd.setDate(shiftEnd.getDate() + 1);\n\n  const midPoint = new Date((shiftStart.getTime() + shiftEnd.getTime()) / 2);\n\n  if (leaveType === 'whole day') {\n    if (logs.length > 0) {\n      isValid = false;\n      reason = \"Has logs but marked as whole day leave\";\n    }\n  } else if (leaveType === '1st shift' || leaveType === 'first shift' || leaveType === 'morning') {\n    // No logs allowed in first half\n    const hasMorningLogs = logs.some(l => new Date(l.timestamp) < midPoint);\n    const afternoonLogsIn = logsIn.filter(t => t >= midPoint);\n    const afternoonLogsOut = logsOut.filter(t => t >= midPoint);\n    \n    if (hasMorningLogs) {\n      isValid = false;\n      reason = \"Has logs during 1st shift leave period\";\n    } else if (afternoonLogsIn.length !== 1 || afternoonLogsOut.length !== 1) {\n    isValid = false;\n    reason = \"Missing logs for 2nd shift (should have In and Out)\";\n    } else if (!(afternoonLogsIn[0] < afternoonLogsOut[0])) {\n      isValid = false;\n      reason = \"Incorrect log sequence for 2nd shift\";\n    }\n  } else if (leaveType === '2nd shift' || leaveType === 'second shift' || leaveType === 'afternoon') {\n    // No logs allowed in second half\n    const hasAfternoonLogs = logs.some(l => new Date(l.timestamp) >= midPoint);\n    const morningLogsIn = logsIn.filter(t => t < midPoint);\n    const morningLogsOut = logsOut.filter(t => t < midPoint);\n  \n    if (hasAfternoonLogs) {\n      isValid = false;\n      reason = \"Has logs during 2nd shift leave period\";\n    } else if (morningLogsIn.length !== 1 || morningLogsOut.length !== 1) {\n      isValid = false;\n      reason = \"Missing logs for 1st shift (should have In and Out)\";\n    } else if (!(morningLogsIn[0] < morningLogsOut[0])) {\n      isValid = false;\n      reason = \"Incorrect log sequence for 1st shift\";\n    }\n  } else {\n    // Normal (not on leave)\n    if (logs.length === 0) {\n      isValid = false;\n      reason = \"Absent: no logs\";\n    } else if (logsIn.length !== 2 || logsOut.length !== 2) {\n      isValid = false;\n      reason = \"Missing or extra logs\";\n    } else if (!(logsIn[0] < logsOut[0] && logsOut[0] < logsIn[1] && logsIn[1] < logsOut[1])) {\n      isValid = false;\n      reason = \"Incorrect log sequence\";\n    }\n  }\n\n  if (invalidLogs && invalidLogs.length > 0) {\n    isValid = false;\n    reason = \"Logs outside allowed range\";\n  }\n\n  if (!isValid) {\n    results.push({\n      json: {\n        employeeId,\n        name,\n        companyEmail,\n        managerEmail,\n        date,\n        scheduledTime,\n        onLeave,\n        timeLogs: logs, // keep filtered active logs\n        finalStatus: \"Invalid\",\n        reason\n      }\n    });\n  }\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        -144
+      ],
+      "id": "6787dc4e-e1b3-46d2-a6b3-df7c87947f2e",
+      "name": "Check time logs",
+      "notesInFlow": true,
+      "notes": "This node will check missing, extra, and incorrect sequence logs."
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "2d07e3c3-fe9f-4660-b821-6e16d60ea553",
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -816,
+        -144
+      ],
+      "id": "66c276e9-e288-4d09-ae77-c6b996ffeb6b",
+      "name": "Webhook1",
+      "webhookId": "2d07e3c3-fe9f-4660-b821-6e16d60ea553"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "data0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        -144
+      ],
+      "id": "49ffbcd1-c5ea-4a44-a159-70c882bda8bf",
+      "name": "Extract from File1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  let rawLogs = item.json.timeLogs;\n  let activeLogs = [];\n\n  try {\n    // Parse only if it's a string and not empty\n    if (rawLogs && typeof rawLogs === \"string\") {\n      const logs = JSON.parse(rawLogs);\n      activeLogs = Array.isArray(logs)\n        ? logs.filter(log => log.status === \"active\")\n        : [];\n    }\n  } catch (e) {\n    // If JSON is invalid, keep logs empty\n    activeLogs = [];\n  }\n\n  // Replace with active logs (keep as array)\n  item.json.timeLogs = activeLogs;\n\n  // Fix Excel date serials (only if it's a number)\n  if (typeof item.json.date === \"number\") {\n    const excelEpoch = new Date(1899, 11, 30); // Excel base date (1900-01-00)\n    const fixedDate = new Date(excelEpoch.getTime() + item.json.date * 86400000);\n    item.json.date = fixedDate.toISOString().split(\"T\")[0]; // format YYYY-MM-DD\n  }\n\n  return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        -144
+      ],
+      "id": "1362588f-49d5-4edd-9630-318254392f4a",
+      "name": "Filter / Remove break logs",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: Array of employees from previous node\nconst employees = $input.all().map(i => i.json);\n\n// Group by managerEmail set\nconst grouped = {};\n\nfor (const emp of employees) {\n  if (!emp.managerEmail || !emp.managerEmail.trim()) continue; // skip if no managers\n\n  // Normalize (remove spaces, consistent sorting)\n  const managers = emp.managerEmail\n    .split(\",\")\n    .map(m => m.trim())\n    .sort()\n    .join(\", \");\n\n  if (!grouped[managers]) {\n    grouped[managers] = [];\n  }\n\n  grouped[managers].push({\n    employeeId: emp.employeeId,\n    name: emp.name,\n    companyEmail: emp.companyEmail,\n    date: emp.date,\n    scheduledTime: emp.scheduledTime,\n    finalStatus: emp.finalStatus,\n    reason: emp.reason,\n    timeLogs: emp.timeLogs\n  });\n}\n\n// Return grouped data as separate items for mailing\nreturn Object.entries(grouped).map(([managers, employees]) => {\n  return {\n    json: {\n      to: managers,\n      employees: employees\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        128
+      ],
+      "id": "10e07cbc-59f6-494b-9037-0d3917b4b5ea",
+      "name": "Collect manager emails and users",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -528,
+        128
+      ],
+      "id": "27e6fa99-f25b-48fe-897f-9cbcec4a8844",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Loop Over Items1').item.json.companyEmail }}",
+        "subject": "Daily Attendance Check",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -208,
+        368
+      ],
+      "id": "549d20f6-9a6c-4e4b-804e-271f7ec3f3bc",
+      "name": "Send a message",
+      "webhookId": "70231df2-1074-42d6-be95-90018e1dda0e"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: array of employees (items)\nconst employees = items.map(item => item.json);\n\n// Helper: format timestamp into readable 12-hour with TZ\nfunction formatDateTime(dt) {\n  try {\n    // Split datetime and timezone\n    const match = dt.match(/^(.+)([+-]\\d{2}:?\\d{2}|Z)$/);\n    if (!match) return dt;\n\n    const [ , datetime, tz ] = match;\n\n    // Extract parts\n    const [datePart, timePart] = datetime.split(\"T\");\n    const [year, month, day] = datePart.split(\"-\");\n    const [hour, minute, second] = timePart.split(\":\");\n\n    // Build month names\n    const months = [\n      \"January\",\"February\",\"March\",\"April\",\"May\",\"June\",\n      \"July\",\"August\",\"September\",\"October\",\"November\",\"December\"\n    ];\n\n    return `${months[parseInt(month) - 1]} ${day}, ${year} ${hour}:${minute}:${second} ${tz}`;\n  } catch (e) {\n    return dt;\n  }\n}\n\n// Start HTML\nlet html = `\n  <html>\n  <head>\n    <style>\n      table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }\n      th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }\n      th { background-color: #f4f4f4; }\n      tr:nth-child(even) { background-color: #f9f9f9; }\n      .invalid { color: red; font-weight: bold; }\n      .valid { color: green; font-weight: bold; }\n    </style>\n  </head>\n  <body>\n`;\n\n// Loop employees\nfor (const emp of employees) {\n  html += `\n    <h3>${emp.name} (${emp.employeeId})</h3>\n    <p><b>Date:</b> ${emp.date}</p>\n    <p><b>Schedule:</b> ${emp.scheduledTime}</p>\n    <p><b>On Leave:</b> ${!emp.onLeave ? \"None\" : emp.onLeave}</p>\n    <p><b>Status:</b> <span class=\"${emp.finalStatus === \"Valid\" ? \"valid\" : \"invalid\"}\">${emp.finalStatus}</span></p>\n    <p><b>Reason:</b> ${emp.reason || \"—\"}</p>\n\n    <table>\n      <thead>\n        <tr>\n          <th>Time Logs</th>\n          <th>Type</th>\n        </tr>\n      </thead>\n      <tbody>\n  `;\n\n  for (const log of emp.timeLogs) {\n    html += `\n      <tr>\n        <td>${formatDateTime(log.timestamp)}</td>\n        <td>${log.type}</td>\n      </tr>\n    `;\n  }\n\n  html += `\n      </tbody>\n    </table>\n    <hr>\n  `;\n}\n\nhtml += `\n  </body>\n  </html>\n`;\n\nreturn [{ json: { html } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        368
+      ],
+      "id": "6cf1263c-7085-4a6a-ab3a-0835841d4a43",
+      "name": "Send to Employee"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        112
+      ],
+      "id": "72c2a09e-838c-4d9b-b23c-dd7e45c748f4",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        128,
+        368
+      ],
+      "id": "d6363c30-5775-40b7-877d-bbd001d959f7",
+      "name": "Wait 1 Sec",
+      "webhookId": "f76636df-403f-4ecf-8b76-adcb83423c76"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input JSON is already multiple items\nconst input = items;\n\n// Function to format timelogs into table rows\nfunction formatTimeLogs(logs) {\n  if (!logs || logs.length === 0) {\n    return `<tr><td colspan=\"3\" style=\"text-align:center;\">No logs</td></tr>`;\n  }\n  return logs.map(log => `\n    <tr>\n      <td>${log.type}</td>\n      <td>${new Date(log.timestamp).toLocaleString(\"en-PH\", { timeZone: \"Asia/Manila\" })}</td>\n      <td>${log.status}</td>\n    </tr>\n  `).join(\"\");\n}\n\n// Loop through recipients and build email tables\nconst emails = input.map(group => {\n  let html = `\n    <p>Hello,</p>\n    <p>Please see the list of employees with <b>Invalid Logs</b> for ${group.json.employees[0]?.date || \"\"}.</p>\n    <table border=\"1\" cellspacing=\"0\" cellpadding=\"5\" style=\"border-collapse:collapse; width:100%;\">\n      <thead>\n        <tr style=\"background:#f2f2f2;\">\n          <th>Employee</th>\n          <th>Email</th>\n          <th>Schedule</th>\n          <th>Status</th>\n          <th>Reason</th>\n          <th>Logs</th>\n        </tr>\n      </thead>\n      <tbody>\n  `;\n\n  group.json.employees.forEach(emp => {\n    html += `\n      <tr>\n        <td>${emp.name} (${emp.employeeId})</td>\n        <td>${emp.companyEmail}</td>\n        <td>${emp.scheduledTime}</td>\n        <td>${emp.finalStatus}</td>\n        <td>${emp.reason}</td>\n        <td>\n          <table border=\"1\" cellspacing=\"0\" cellpadding=\"3\" style=\"border-collapse:collapse; width:100%;\">\n            <tr style=\"background:#f9f9f9;\">\n              <th>Type</th>\n              <th>Timestamp</th>\n              <th>Status</th>\n            </tr>\n            ${formatTimeLogs(emp.timeLogs)}\n          </table>\n        </td>\n      </tr>\n    `;\n  });\n\n  html += `\n      </tbody>\n    </table>\n    <p>Thanks,<br/>Attendance Bot 🤖</p>\n  `;\n\n  return {\n    to: group.json.to,\n    subject: `Invalid Attendance Logs - ${group.json.employees[0]?.date || \"\"} (${group.json.employees.length} Employees)`,\n    body: html\n  };\n});\n\nreturn emails.map(e => ({ json: e }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        128
+      ],
+      "id": "6961bc76-f99e-4989-81a7-8dde02181fc7",
+      "name": "Code1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1JZR0HDPCL8I18UZIRL4iSYkE978GJGaBFIR8zhKb5aU",
+          "mode": "list",
+          "cachedResultName": "NMS Invalid Timelogs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JZR0HDPCL8I18UZIRL4iSYkE978GJGaBFIR8zhKb5aU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Time logs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JZR0HDPCL8I18UZIRL4iSYkE978GJGaBFIR8zhKb5aU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {\n  const r = Math.random() * 16 | 0;\n  const v = c === 'x' ? r : (r & 0x3 | 0x8);\n  return v.toString(16);\n})}}",
+            "employeeId": "={{ $json.employeeId }}",
+            "name": "={{ $json.name }}",
+            "companyEmail": "={{ $json.companyEmail }}",
+            "managerEmail": "={{ $json.managerEmail }}",
+            "date": "={{ $json.date }}",
+            "scheduledTime": "={{ $json.scheduledTime }}",
+            "onLeave": "={{ $json.onLeave }}",
+            "timeLogs": "={{ $json.timeLogs }}",
+            "finalStatus": "={{ $json.finalStatus }}",
+            "reason": "={{ $json.reason }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "employeeId",
+              "displayName": "employeeId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "companyEmail",
+              "displayName": "companyEmail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "managerEmail",
+              "displayName": "managerEmail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "scheduledTime",
+              "displayName": "scheduledTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "onLeave",
+              "displayName": "onLeave",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "timeLogs",
+              "displayName": "timeLogs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "finalStatus",
+              "displayName": "finalStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        752,
+        -144
+      ],
+      "id": "45ef00d1-e9e2-4eb2-b004-11af1e660c5f",
+      "name": "Store Detected invalid time logs"
+    },
+    {
+      "parameters": {
+        "content": "# Validate timelogs per roster",
+        "height": 928,
+        "width": 1904,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -848,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "748afe0e-0144-49eb-b14c-6bab3eee7d69",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "sendTo": "jayditch@popai.agency",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        368
+      ],
+      "id": "26ec1b46-3858-4a1c-bdd3-ecbe75d6bc5a",
+      "name": "Notify Manager",
+      "webhookId": "80935367-e7e7-42b3-9e74-2020097e31b0",
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Check logs if Within Sched": {
+      "main": [
+        [
+          {
+            "node": "Check time logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check time logs": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Store Detected invalid time logs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Collect manager emails and users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Filter / Remove break logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter / Remove break logs": {
+      "main": [
+        [
+          {
+            "node": "Check logs if Within Sched",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect manager emails and users": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send to Employee",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Wait 1 Sec",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Employee": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1 Sec": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Notify Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4330a938-7c59-49b3-8992-cec27662c11d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "a0AmFxLnptjtUo3C",
+  "tags": []
+}

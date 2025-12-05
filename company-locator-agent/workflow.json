@@ -1,0 +1,708 @@
+{
+  "name": "Company Locator - AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        256
+      ],
+      "id": "6233ba6b-94f9-4d24-8125-69ebb698d577",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "DYOI37VzfdAZY3AV",
+          "name": "OpenRouter account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.fields }}",
+        "options": {
+          "systemMessage": "You are an AI agent that receives JSON objects from OpenStreetMap. Extract the business name (tags.name), type (tags.shop or tags.office), address fields (addr:*), contacts(email and phone) and coordinates (lat, lon).\n\nNote for the contact numbers, put each of them into a proper format (639XXXXXXXXX), if there are multiple, display it like phonenumber1, phonenumber2 and so on. I want this to happen because when saving in excel, it has an error or Parse Error. "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1216,
+        32
+      ],
+      "id": "ba49f3c2-6959-482a-9750-44b01fe8ab46",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1973z3Gc_vITAosdGP6O_4WxTMQRmyoAnd0aSqGZftII",
+          "mode": "list",
+          "cachedResultName": "Company Locator - AI Agent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1973z3Gc_vITAosdGP6O_4WxTMQRmyoAnd0aSqGZftII/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "INPUT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1973z3Gc_vITAosdGP6O_4WxTMQRmyoAnd0aSqGZftII/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        160
+      ],
+      "id": "86ad4c48-2009-4ac0-acaa-6404f6b20b7a",
+      "name": "Google Sheets Trigger",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "eptRWdUko6Fy2WCg",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        768,
+        32
+      ],
+      "id": "88653242-f7c0-4443-94fe-95760ecb0b7b",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "elements",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        544,
+        32
+      ],
+      "id": "871009f0-0b1c-4fc1-adad-5cbbaea07fae",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "41e621f9-f537-4d17-9cea-b6dd18b16f48",
+              "name": "fields",
+              "value": "={{ $json }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        992,
+        32
+      ],
+      "id": "eb6ca6c1-88c6-419d-8860-a533f35e8d88",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1973z3Gc_vITAosdGP6O_4WxTMQRmyoAnd0aSqGZftII",
+          "mode": "list",
+          "cachedResultName": "Company Locator - AI Agent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1973z3Gc_vITAosdGP6O_4WxTMQRmyoAnd0aSqGZftII/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 979985804,
+          "mode": "list",
+          "cachedResultName": "OUTPUT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1973z3Gc_vITAosdGP6O_4WxTMQRmyoAnd0aSqGZftII/edit#gid=979985804"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ADDRESS": "={{ $json.address.city }} {{ $json.address.country }}",
+            "COMPANY NAME": "={{ $json.name }}",
+            "BUSSINESS TYPE": "={{ $json.type }}",
+            "Phone Number": "={{ $json.contacts.phone }}",
+            "Email": "={{ $json.contacts.email }}",
+            "STATUS": "For Company Qualifying",
+            "INPUT ROW": "={{ $('Google Sheets Trigger').item.json.ID }}"
+          },
+          "matchingColumns": [
+            "ADDRESS"
+          ],
+          "schema": [
+            {
+              "id": "ADDRESS",
+              "displayName": "ADDRESS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "COMPANY NAME",
+              "displayName": "COMPANY NAME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "BUSSINESS TYPE",
+              "displayName": "BUSSINESS TYPE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "INPUT ROW",
+              "displayName": "INPUT ROW",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        48
+      ],
+      "id": "61002a3f-bd33-429b-9859-12c931ef683b",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1973z3Gc_vITAosdGP6O_4WxTMQRmyoAnd0aSqGZftII",
+          "mode": "list",
+          "cachedResultName": "Company Locator - AI Agent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1973z3Gc_vITAosdGP6O_4WxTMQRmyoAnd0aSqGZftII/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 427426270,
+          "mode": "list",
+          "cachedResultName": "INPUT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo/edit#gid=427426270"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ADDRESS": "={{ $('Google Sheets Trigger').item.json.ADDRESS }}",
+            "STATUS": "DONE Scaping"
+          },
+          "matchingColumns": [
+            "ADDRESS"
+          ],
+          "schema": [
+            {
+              "id": "ADDRESS",
+              "displayName": "ADDRESS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "RADIUS (METERS)",
+              "displayName": "RADIUS (METERS)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        992,
+        -160
+      ],
+      "id": "54e751e2-1929-4d6c-85b9-fda8335dfc06",
+      "name": "Update row in sheet",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1973z3Gc_vITAosdGP6O_4WxTMQRmyoAnd0aSqGZftII",
+          "mode": "list",
+          "cachedResultName": "Company Locator - AI Agent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1973z3Gc_vITAosdGP6O_4WxTMQRmyoAnd0aSqGZftII/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 427426270,
+          "mode": "list",
+          "cachedResultName": "INPUT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo/edit#gid=427426270"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ADDRESS": "={{ $('Google Sheets Trigger').item.json.ADDRESS }}",
+            "STATUS": "Stopped : No available data in the specified address and radius."
+          },
+          "matchingColumns": [
+            "ADDRESS"
+          ],
+          "schema": [
+            {
+              "id": "ADDRESS",
+              "displayName": "ADDRESS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "RADIUS (METERS)",
+              "displayName": "RADIUS (METERS)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        544,
+        256
+      ],
+      "id": "60fab952-fbb8-497d-a97c-d8de2a6e54a9",
+      "name": "Update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://nominatim.openstreetmap.org/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.ADDRESS }}"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "addressdetails",
+              "value": "1"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "curl-geocoding-demo"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -128,
+        160
+      ],
+      "id": "ac1dddc6-4f4d-4270-bc4b-d237cbd0a5c1",
+      "name": "Get Longitude and Latitude",
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://overpass-api.de/api/interpreter",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data",
+              "value": "=[out:json][timeout:25];\n(\n  node(around:{{ $('Google Sheets Trigger').item.json['RADIUS (METERS)'] }},\n            {{ $json.lat }},{{ $json.lon }})[{{ $('Google Sheets Trigger').item.json.CATEGORY }}][\"contact:phone\"];\n  node(around:{{ $('Google Sheets Trigger').item.json['RADIUS (METERS)'] }},\n            {{ $json.lat }},{{ $json.lon }})[{{ $('Google Sheets Trigger').item.json.CATEGORY }}][\"contact:email\"];\n\n  way(around:{{ $('Google Sheets Trigger').item.json['RADIUS (METERS)'] }},\n           {{ $json.lat }},{{ $json.lon }})[{{ $('Google Sheets Trigger').item.json.CATEGORY }}][\"contact:phone\"];\n  way(around:{{ $('Google Sheets Trigger').item.json['RADIUS (METERS)'] }},\n           {{ $json.lat }},{{ $json.lon }})[{{ $('Google Sheets Trigger').item.json.CATEGORY }}][\"contact:email\"];\n);\nout center qt 10;"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        96,
+        80
+      ],
+      "id": "538d72bc-193d-444d-8395-28c72c06ca1f",
+      "name": "Scrape data from Maps"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5cf63302-2bd7-4825-b914-ecc9b7433c31",
+              "leftValue": "={{ $json.elements }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        80
+      ],
+      "id": "40297db3-92df-45f5-bf32-b21d8d6e672d",
+      "name": "Is not Empty?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node (JavaScript)\n\nreturn items.map(item => {\n  let parsed = {};\n  \n  try {\n    if (item.json.output && typeof item.json.output === \"string\") {\n      parsed = JSON.parse(item.json.output);\n    } else {\n      parsed = item.json.output || {};\n    }\n  } catch (e) {\n    parsed = { error: \"Invalid JSON\", raw: item.json.output };\n  }\n\n  return {\n    json: parsed\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        32
+      ],
+      "id": "79581eeb-ce34-40b7-a042-1b2b1b4e78d8",
+      "name": "Parse into JSON"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Longitude and Latitude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Parse into JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Longitude and Latitude": {
+      "main": [
+        [
+          {
+            "node": "Scrape data from Maps",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape data from Maps": {
+      "main": [
+        [
+          {
+            "node": "Is not Empty?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is not Empty?": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse into JSON": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e0db73da-dabb-432a-9d5c-468dec564cf4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "FGms9w4vrno2bKxC",
+  "tags": []
+}

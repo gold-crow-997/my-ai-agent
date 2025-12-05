@@ -1,0 +1,536 @@
+{
+  "name": "Contact Identifier - AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "414d130e-efb8-4788-9f70-fed1d7a37bb1",
+              "name": "Company Name",
+              "value": "={{ $json.organization.name }}",
+              "type": "string"
+            },
+            {
+              "id": "d572f698-bc4b-4f29-8335-80916df82ac5",
+              "name": "Contact Name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "fbb040eb-a3f2-433b-9c68-bae8bd3dec14",
+              "name": "Job Title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "ad3cdc5b-e3ba-4966-a13f-f56e267bd904",
+              "name": "Email Address",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "e70acc23-7d4b-4aff-85fd-e3794241b569",
+              "name": "Phone Number",
+              "value": "='{{ $json.organization.primary_phone.number }}",
+              "type": "string"
+            },
+            {
+              "id": "31d00181-1102-4001-a9a5-98e96b916f6b",
+              "name": "LinkedIn URL",
+              "value": "={{ $json.linkedin_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        32,
+        208
+      ],
+      "id": "cc80e1a1-d1eb-43b7-80e2-278739afa519",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1-3mwPYoZRZkkQuZXZcnE-AlfpZFJOyYhl9IkHALpIGE",
+          "mode": "list",
+          "cachedResultName": "Contact Identifier",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-3mwPYoZRZkkQuZXZcnE-AlfpZFJOyYhl9IkHALpIGE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Apollo Scraped data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-3mwPYoZRZkkQuZXZcnE-AlfpZFJOyYhl9IkHALpIGE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "cc9b9d42-322c-4bdb-8270-1177d9712b30",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "eptRWdUko6Fy2WCg",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f6da8e4e-f3f9-48ed-bcfc-b8b52c10c7d7",
+              "leftValue": "={{ $json['Qualification Status'] }}",
+              "rightValue": "Qualified",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "17cf6694-dbe2-4b1e-ace8-280b2b941535",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1-3mwPYoZRZkkQuZXZcnE-AlfpZFJOyYhl9IkHALpIGE",
+          "mode": "list",
+          "cachedResultName": "Contact Identifier",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-3mwPYoZRZkkQuZXZcnE-AlfpZFJOyYhl9IkHALpIGE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1596705508,
+          "mode": "list",
+          "cachedResultName": "Contacts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo/edit#gid=1596705508"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company Name": "={{ $json['Company Name'] }}",
+            "Contact Name": "={{ $json['Contact Name'] }}",
+            "Job Title": "={{ $json['Job Title'] }}",
+            "Email Address": "={{ $json['Email Address'] }}",
+            "Phone Number": "={{ $json['Phone Number'] }}",
+            "LinkedIn URL": "={{ $json['LinkedIn URL'] }}",
+            "Campaign Status": "Unassigned"
+          },
+          "matchingColumns": [
+            "Contact Name"
+          ],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Contact Name",
+              "displayName": "Contact Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "LinkedIn URL",
+              "displayName": "LinkedIn URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Campaign Status",
+              "displayName": "Campaign Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        272,
+        208
+      ],
+      "id": "aa4b1d87-e6f3-4b05-92b1-f28163464425",
+      "name": "Save Contact Info",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apollo.io/api/v1/mixed_people/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "name": "x-api-key",
+              "value": "<YOUR_API_KEY>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"person_titles\": {{ JSON.stringify($json.person_titles) }},\n  \"q_organization_name\": \"{{ $json[\"Company Name\"] }}\",\n  \"q_organization_location\": \"{{ $json[\"Address \"] }}\",\n  \"page\": 1,\n  \"per_page\": 5\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        464,
+        0
+      ],
+      "id": "00dca86c-7942-465f-b46f-7f79323b80ab",
+      "name": "Search People in Apollo"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access the full JSON from previous node\nconst data = $json; \n\n// Extract the people array from the JSON object\nconst people = data.people;\n\n// Define seniority ranking (lower number = higher seniority)\nconst seniorityRank = {\n  \"c_level\": 1,\n  \"vp\": 2,\n  \"director\": 3,\n  \"manager\": 4,\n \"senior\": 5,\n  \"staff\": 6,\n  \"entry\": 7,\n  \"intern\": 8\n};\n\n// Sort people by seniority rank\npeople.sort((a, b) => {\n  const aSeniority = a.seniority?.toLowerCase();\n  const bSeniority = b.seniority?.toLowerCase();\n\n  const aRank = seniorityRank[aSeniority];\n  const bRank = seniorityRank[bSeniority];\n\n  // If both are in the ranking list, sort by rank\n  if (aRank !== undefined && bRank !== undefined) {\n    return aRank - bRank;\n  }\n  \n  // If a is ranked but b is not, a goes first\n  if (aRank !== undefined && bRank === undefined) {\n    // b is unknown but not null, so a before b\n    // unless b is null or empty string\n    if (bSeniority === null || bSeniority === undefined || bSeniority === \"\") {\n      return -1; // a before b\n    }\n    return -1; // a before b\n  }\n  \n  // If b is ranked but a is not, b goes first\n  if (aRank === undefined && bRank !== undefined) {\n    if (aSeniority === null || aSeniority === undefined || aSeniority === \"\") {\n      return 1; // b before a\n    }\n    return 1; // b before a\n  }\n\n  // Both not ranked, check for null or empty\n  const aIsNull = (aSeniority === null || aSeniority === undefined || aSeniority === \"\");\n  const bIsNull = (bSeniority === null || bSeniority === undefined || bSeniority === \"\");\n\n  if (aIsNull && !bIsNull) {\n    return 1; // b before a\n  }\n  if (!aIsNull && bIsNull) {\n    return -1; // a before b\n  }\n  if (aIsNull && bIsNull) {\n    return 0; // equal\n  }\n\n  // Both unknown but not null/empty - sort alphabetically\n  return aSeniority.localeCompare(bSeniority);\n});\n\n// Return the sorted people as separate items for n8n\nreturn people.map(person => {\n  return {\n    json: person\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        208
+      ],
+      "id": "c6b11488-97d9-4ad2-a2aa-6e1a4693f66f",
+      "name": "Rank Job Titles"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1-3mwPYoZRZkkQuZXZcnE-AlfpZFJOyYhl9IkHALpIGE",
+          "mode": "list",
+          "cachedResultName": "Contact Identifier",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-3mwPYoZRZkkQuZXZcnE-AlfpZFJOyYhl9IkHALpIGE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1973977449,
+          "mode": "list",
+          "cachedResultName": "Apollo Scaped Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo/edit#gid=1973977449"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Qualification Status": "Contact Found",
+            "Company Name": "={{ $json['Company Name'] }}"
+          },
+          "matchingColumns": [
+            "Company Name"
+          ],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Company Size",
+              "displayName": "Company Size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Revenue",
+              "displayName": "Revenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Key Contacts",
+              "displayName": "Key Contacts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Qualification Status",
+              "displayName": "Qualification Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Address ",
+              "displayName": "Address ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        576,
+        208
+      ],
+      "id": "25a8d5c1-1253-4507-bb68-dcfda4199c1a",
+      "name": "Update Status: Contact Info Found",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const titles = item.json[\"Job Title\"]\n    ? item.json[\"Job Title\"].split(\",\").map(x => x.trim())\n    : [];\n  return {\n    json: {\n      ...item.json,\n      person_titles: titles\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "b2bb4996-a204-4d99-939f-4429176d80e8",
+      "name": "Initialize Job Titles"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Save Contact Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Initialize Job Titles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Contact Info": {
+      "main": [
+        [
+          {
+            "node": "Update Status: Contact Info Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search People in Apollo": {
+      "main": [
+        [
+          {
+            "node": "Rank Job Titles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank Job Titles": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize Job Titles": {
+      "main": [
+        [
+          {
+            "node": "Search People in Apollo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9068e47d-4740-4fa2-bf2c-9ee948286cd0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "GOfAuqWavndg4ypK",
+  "tags": []
+}

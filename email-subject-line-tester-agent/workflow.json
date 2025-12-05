@@ -1,0 +1,1427 @@
+{
+  "name": "Email Subject Line Tester",
+  "nodes": [
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.from.id }}",
+        "text": "=👋 Hi {{ $json.message.from.first_name }}!\nI’m your Email Subject Line Assistant 🚀\n\nHere’s how to use me: \n1️⃣ Type /start to start generating subject lines.  \n2️⃣ I’ll ask for your email body.   \n3️⃣ Then I’ll ask for your target audience.  \n4️⃣ I’ll suggest 5 trending subject lines with scores. \n\nTip: Always provide a clear email body for best suggestions!",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        592,
+        -208
+      ],
+      "id": "a192198d-688f-410e-adec-a6894bfddaad",
+      "name": "/help",
+      "webhookId": "52fe4bdd-2537-48a0-a0fa-dc2f25a3ed87",
+      "credentials": {
+        "telegramApi": {
+          "id": "XVvA58ZffHBgzzKP",
+          "name": "EmailSubjectLineTesterBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.recommended_subject }}",
+        "emailType": "html",
+        "message": "={{ $json.email_bodyhtml }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1488,
+        0
+      ],
+      "id": "d143bcee-ebd8-43d8-9198-a8944cefaa61",
+      "name": "Create a draft",
+      "webhookId": "70143e34-a437-43fe-90c1-d337422eac72",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "XlKHnasVb0c83bGT",
+          "name": "Gmail [Gabriel]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatID }}",
+        "text": "✅ Got it! Now, please tell me your target audience.  \n\nFor example: \"New subscribers\", \"Premium customers\", etc.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1648,
+        560
+      ],
+      "id": "bb200d8e-ee4a-4221-b29e-020ac1a3c37c",
+      "name": "Send Target Audience message",
+      "webhookId": "af33235c-018e-4a22-baaa-fbba1d1a3ebd",
+      "credentials": {
+        "telegramApi": {
+          "id": "XVvA58ZffHBgzzKP",
+          "name": "EmailSubjectLineTesterBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.from.id }}",
+        "text": "✅  Please send me your email body in your next message.\n\nJust type or paste your email content and hit send - I'll be waiting to receive it!\n\nExample:\"Dear valued customers, we are excited to announce our new product launch...\"\n\nOnce I receive your email body, I'll ask you for the target audience next.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        592,
+        -16
+      ],
+      "id": "45886417-caac-4522-bd7a-8c42b4372dc8",
+      "name": "Send Email Body message",
+      "webhookId": "6b238f5c-8f1d-4d7f-b58d-bb33f3ffd1a6",
+      "credentials": {
+        "telegramApi": {
+          "id": "XVvA58ZffHBgzzKP",
+          "name": "EmailSubjectLineTesterBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('User Command Listener').item.json.message.from.id }}",
+        "text": "I didn’t understand that 🤖.\n\nType /help to see instructions again or /start to generate subject lines.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        768
+      ],
+      "id": "c0100ffd-c231-4ff0-99ee-6e7d6e422114",
+      "name": "Error handling",
+      "webhookId": "2b317c7c-82fe-472a-924a-948d86e34aaf",
+      "credentials": {
+        "telegramApi": {
+          "id": "XVvA58ZffHBgzzKP",
+          "name": "EmailSubjectLineTesterBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatID }}",
+        "text": "Your subject lines are being created. 🔥",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1648,
+        736
+      ],
+      "id": "667a3b98-bd31-43b6-af38-d98920e2b9cf",
+      "name": "Reassurance for user",
+      "webhookId": "77ccf81f-e735-4885-a61c-6d6030f832b9",
+      "credentials": {
+        "telegramApi": {
+          "id": "XVvA58ZffHBgzzKP",
+          "name": "EmailSubjectLineTesterBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $if($('Set Contents').isExecuted, $('Set Contents').item.json.chatID, $('Setting Prompt').item.json.chat_Id) }}",
+        "text": "=🎯 Here are 5 optimized subject lines for your email:\n\n1️⃣ Subject: {{ $json.result[0].subject }} \n💯 OR Score: {{ $json.result[0].score }}\n💡 Explanation: {{ $json.result[0].explanation }}\n\n2️⃣ Subject: {{ $json.result[1].subject }} \n💯 OR Score: {{ $json.result[1].score }}\n💡 Explanation: {{ $json.result[1].explanation }}\n\n3️⃣ Subject: {{ $json.result[2].subject }} \n💯 Score: {{ $json.result[2].score }}\n💡 Explanation: {{ $json.result[2].explanation }}\n\n4️⃣ Subject: {{ $json.result[3].subject }} \n💯 Score: {{ $json.result[3].score }}\n💡 Explanation: {{ $json.result[3].explanation }}\n\n5️⃣ Subject: {{ $json.result[4].subject }} \n💯 Score: {{ $json.result[4].score }}\n💡 Explanation: {{ $json.result[4].explanation }}\n",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2464,
+        208
+      ],
+      "id": "390f7de3-3cd6-4231-bb01-46437b96482c",
+      "name": "Send 5 Subject Lines",
+      "webhookId": "4b4c6e6c-9483-41c9-9f86-e8ac74a624d3",
+      "credentials": {
+        "telegramApi": {
+          "id": "XVvA58ZffHBgzzKP",
+          "name": "EmailSubjectLineTesterBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('User Command Listener').item.json.message?.chat?.id ?? $('User Command Listener').item.json.callback_query?.message?.chat?.id ?? null }}",
+        "text": "=This is the highest open rate among the 5 subject lines.\n\n{{ $json.recommendedSubject }}\n\nCreate an Email draft or Generate another?",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "✅ Create Draft",
+                    "additionalFields": {
+                      "callback_data": "create_draft"
+                    }
+                  },
+                  {
+                    "text": "🔄 Generate Another",
+                    "additionalFields": {
+                      "callback_data": "generate_another"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2880,
+        208
+      ],
+      "id": "a73785bc-c681-4563-af23-a62b855add2d",
+      "name": "Send Highest Score Subject Line",
+      "webhookId": "ade8e1e4-dc95-4327-a940-30cc2fdcf224",
+      "credentials": {
+        "telegramApi": {
+          "id": "XVvA58ZffHBgzzKP",
+          "name": "EmailSubjectLineTesterBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "Cooking up fresh email subjects for you! ✨🔥",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1488,
+        208
+      ],
+      "id": "a8ee003e-aa9f-40f3-ab87-98457ca5649b",
+      "name": "Generates New Email Subject Line",
+      "webhookId": "a395827e-200c-4ff8-924c-7f1fdfbb09b6",
+      "credentials": {
+        "telegramApi": {
+          "id": "XVvA58ZffHBgzzKP",
+          "name": "EmailSubjectLineTesterBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e74011c5-a52a-496b-afa5-6873fe321337",
+              "name": "=email_body",
+              "value": "={{ $('Parse redis data1').item.json.email_body }}",
+              "type": "string"
+            },
+            {
+              "id": "ca9f35af-5831-4f58-8fec-4d9f2eb18e2a",
+              "name": "target_audience",
+              "value": "={{ $('Parse redis data1').item.json.target_audience }}",
+              "type": "string"
+            },
+            {
+              "id": "83e26925-d0c6-487f-aa8a-1208450af0c4",
+              "name": "chat_Id",
+              "value": "={{ $('Parse redis data1').item.json.chat_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1680,
+        208
+      ],
+      "id": "e1426b1b-6043-4fc2-baec-72919db616d4",
+      "name": "Setting Prompt"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1e5c2114-00e7-475f-9903-ea2f66a5d321",
+              "name": "=draftURL",
+              "value": "=https://mail.google.com/mail/u/0/#drafts/{{ $json[\"id\"] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1680,
+        0
+      ],
+      "id": "a1934f07-c905-4a65-b4e1-c152f2368387",
+      "name": "Set URL"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Draft or Generate').item.json.chat_id }}",
+        "text": "=Draft created! View it here: \n\n{{ $json.draftURL }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1872,
+        0
+      ],
+      "id": "a6fdb2b4-bac2-49e7-a46b-c1db84bc1239",
+      "name": "Send Draft Email URL",
+      "webhookId": "0342a138-98d3-44b1-a451-aa5e626bc93f",
+      "credentials": {
+        "telegramApi": {
+          "id": "XVvA58ZffHBgzzKP",
+          "name": "EmailSubjectLineTesterBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert email marketer with access to a Google Search tool.\n\nInputs:\n- Email Body: {{ $if($('Set Contents').isExecuted, $('Set Contents').item.json.emailBody, $json.email_body) }}\n- Target Audience: {{ $if($('Set Contents').isExecuted, $('Set Contents').item.json.targetAudience, $json.target_audience) }}\n\nInstructions:\n1. First, summarize the Email Body in 1–2 sentences (do not include details not in the text).\n2. Use this summary + the Target Audience to build a relevant search query and call the googleSearch tool. \n   Example format: \"best email subject lines for [Target Audience] about [Summary]\"\n3. Analyze the search results and combine them with the original Email Body + Target Audience context.\n4. Generate 5 optimized subject lines. For each, include:\n   - subject\n   - score (0–100 open rate likelihood)\n   - explanation (1–2 sentences why it will work)\n5. Convert the Email Body into HTML with <p>, <br>, inline style (font-family Arial, color #333, line-height 1.5).\n\nOutput JSON format:\n{\n  \"result\": [\n    {\"subject\": \"Subject line 1\", \"score\": 95, \"explanation\": \"Explanation here.\"},\n    {\"subject\": \"Subject line 2\", \"score\": 92, \"explanation\": \"Explanation here.\"},\n    {\"subject\": \"Subject line 3\", \"score\": 94, \"explanation\": \"Explanation here.\"},\n    {\"subject\": \"Subject line 4\", \"score\": 93, \"explanation\": \"Explanation here.\"},\n    {\"subject\": \"Subject line 5\", \"score\": 90, \"explanation\": \"Explanation here.\"}\n  ],\n  \"htmlBody\": \"<p>Your formatted email body here</p>\",\n  \"emailbody\": {{ $if($('Set Contents').isExecuted, $('Set Contents').item.json.emailBody, $json.email_body) }},\n  \"target_audience\": {{ $if($('Set Contents').isExecuted, $('Set Contents').item.json.targetAudience, $json.target_audience) }}\n}\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        208
+      ],
+      "id": "3be31767-8584-4c58-ae71-784e43a5d122",
+      "name": "Email Marketer Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        400
+      ],
+      "id": "0f6f6f17-d269-49c8-aa44-2cab5ef3d5aa",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "bvCZ2nWZpZLIyQAY",
+          "name": "OpenAi [ Gabriel ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Telegram Trigger for commands & Capturing Email Contents for Subject Line Generator / Testing\n- Listens for incoming message / command (/help, /start).\n- Starts the workflow when a command is triggered or notify user to use the commands by sending instructions.\n- If /help sends instructions again. If /start it will asks the user to give the email body and the target audience.\n- Prepare the contents for the generation of high-performing email subject lines.\n- Using redis for storing context for each step",
+        "height": 448,
+        "width": 752
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -432,
+        -112
+      ],
+      "typeVersion": 1,
+      "id": "efa36282-302f-4daf-a77f-947a54b006c1",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Email Marketer Agent \n- Browses the internet to identify trending and high-performing subject line styles (High OR). \n- Sends the 5 high-performing subject lines along with their OR score and explanation.\n- Sends the highest among the 5 subject lines. ",
+        "height": 128,
+        "width": 656,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2272,
+        416
+      ],
+      "typeVersion": 1,
+      "id": "cc8851ff-fc91-49b6-a5e7-1df2931f7296",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Decision Flow\n- If user clicks the create draft email button it will send the url draft to the user. \n## Note: The draft will be tied to the Gmail account credentials connected in this workflow.\n- If user clicks the generate again button it will repeat the process and refine the email subject line again until the user approves on it.",
+        "height": 240,
+        "width": 608
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1520,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "096c769e-7b97-4808-9506-98087528e4b9",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Search Google Custom Search for latest insights on email marketing.",
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyBg4U3Ck7zMjYFzbqW733QRiyezgdI1lP0"
+            },
+            {
+              "name": "cx",
+              "value": "6760e1d57f34c4d73"
+            },
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2096,
+        400
+      ],
+      "id": "ce18c2b7-9c32-46bb-a33f-5d5cb6e90db4",
+      "name": "Google Search"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a3890268-d0b3-4269-b111-d8011f8e9b99",
+              "name": "=targetAudience",
+              "value": "={{ $json.user_message }}",
+              "type": "string"
+            },
+            {
+              "id": "ff0b7aa2-5e73-4c04-9642-658845cff7e1",
+              "name": "chatID",
+              "value": "={{ $json.chat_id }}",
+              "type": "string"
+            },
+            {
+              "id": "31a6bd8f-baf3-44de-a9a1-6b6e835a43d8",
+              "name": "emailBody",
+              "value": "={{ $json.email_body }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        736
+      ],
+      "id": "b6656da7-33ca-4e75-8a04-1cac59c1e65d",
+      "name": "Set Contents"
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $('User Command Listener').item.json.callback_query.id }}",
+        "additionalFields": {
+          "show_alert": false,
+          "text": "Processing..."
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        592,
+        192
+      ],
+      "id": "24797387-6832-40dc-882e-dd5f45b6c993",
+      "name": "Answer Query a callback2",
+      "webhookId": "cb3558de-7ad4-48af-9792-00e5133831b5",
+      "credentials": {
+        "telegramApi": {
+          "id": "XVvA58ZffHBgzzKP",
+          "name": "EmailSubjectLineTesterBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the Redis response\nlet redisData = $input.first().json.propertyName;\n\n// If propertyName is null, return null immediately\nif (redisData === null || redisData === undefined) {\n  return null;\n}\n\n// Fix: Properly escape control characters before parsing\nredisData = redisData.replace(/\\n/g, '\\\\n').replace(/\\r/g, '\\\\r').replace(/\\t/g, '\\\\t');\n\n// Parse it from string to JSON object\nconst state = JSON.parse(redisData);\n\nreturn [\n  {\n    json: {\n      step: state.step,\n      started_at: state.started_at,\n      email_body: state.email_body || null,\n      target_audience: state.target_audience || null,\n      chat_id: $('User Command Listener').first().json.message.chat.id,\n      user_message: $('User Command Listener').first().json.message.text\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        576
+      ],
+      "id": "afd332a3-ac22-47f8-b818-107ed0d1333b",
+      "name": "Parse redis data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ab1bad27-408f-4b3b-8a17-e68a313bd52f",
+              "name": "email_body",
+              "value": "={{ $('User Command Listener').item.json.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "8de2d6c3-eae4-43f6-8862-1944e0686d6b",
+              "name": "chatID",
+              "value": "={{ $('User Command Listener').item.json.message.from.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        560
+      ],
+      "id": "47d41140-6840-49dd-a032-9d8064cffc64",
+      "name": "Set email body"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('User Command Listener').item.json.callback_query.data }}",
+                    "rightValue": "create_draft",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ed0db1bb-2df8-4feb-ac75-e0458822fdeb"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Create Draft"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9e6e99d1-d857-4611-9d49-a12b1fa7146d",
+                    "leftValue": "={{ $('User Command Listener').item.json.callback_query.data }}",
+                    "rightValue": "generate_another",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Generate Another"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1216,
+        192
+      ],
+      "id": "c05d40d4-6c1f-49b4-928f-011c28472583",
+      "name": "Draft or Generate"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=telegram_state:{{$json.chat_id}}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2080,
+        0
+      ],
+      "id": "0b5508b7-f1ad-4474-8be3-624275aa6d7c",
+      "name": "delete redis data",
+      "credentials": {
+        "redis": {
+          "id": "fZxGJw7neT5ojZYS",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the Redis response\nlet redisData = $input.first().json.propertyName;\n\n// If it's a string, escape control characters before parsing\nif (typeof redisData === 'string') {\n  // Replace literal newlines, carriage returns, and tabs with their escaped versions\n  redisData = redisData\n    .replace(/\\n/g, '\\\\n')\n    .replace(/\\r/g, '\\\\r')\n    .replace(/\\t/g, '\\\\t');\n  \n  // Now parse it\n  var state = JSON.parse(redisData);\n} else {\n  // Already an object\n  var state = redisData;\n}\n\n// Get chat_id - works for both messages and callback queries\nconst chatId = $('User Command Listener').first().json.callback_query \n  ? $('User Command Listener').first().json.callback_query.message.chat.id\n  : $('User Command Listener').first().json.message.chat.id;\n\nreturn [\n  {\n    json: {\n      step: state.step,\n      email_body: state.email_body,\n      email_bodyhtml: state.email_bodyhtml,\n      target_audience: state.target_audience,\n      recommended_subject: state.recommended_subject,\n      started_at: state.started_at || null,\n      chat_id: chatId\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        192
+      ],
+      "id": "1130802f-54a5-4c4e-a972-59850c0e6434",
+      "name": "Parse redis data1"
+    },
+    {
+      "parameters": {
+        "content": "## Fallback if there's no command being triggered\n- Only execute when there's a step, if there's none provide the commands to user.\n- This part is for email body and target audience executions",
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -128,
+        656
+      ],
+      "typeVersion": 1,
+      "id": "744302b2-3c26-4ebe-b630-28cf712fcc8f",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=telegram_state:{{ $json.result.chat.id }}",
+        "value": "={\"step\":\"waiting_email_body\",\"started_at\":\"{{$now.toISO()}}\"}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -16
+      ],
+      "id": "ace839f4-528b-4014-bc80-1910b2c6449b",
+      "name": "Set step email body",
+      "credentials": {
+        "redis": {
+          "id": "fZxGJw7neT5ojZYS",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=telegram_state:{{ $('Set email body').item.json.chatID }}",
+        "value": "={\"step\":\"waiting_target_audience\",\"email_body\":\"{{ $('Set email body').item.json.email_body }}\",\"started_at\":\"{{$now.toISO()}}\"}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1856,
+        560
+      ],
+      "id": "caf059a4-ef7b-4fb9-9121-7258cb5950cc",
+      "name": "Set step target audience",
+      "credentials": {
+        "redis": {
+          "id": "fZxGJw7neT5ojZYS",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=telegram_state:{{ $('Send 5 Subject Lines').item.json.result.chat.id }}",
+        "value": "={{JSON.stringify({\n\"step\": \"awaiting_approval\", \"email_body\": $('AI Response Parser').item.json.emailbody,  \"email_bodyhtml\": $('AI Response Parser').item.json.htmlBody,   \"target_audience\": $('AI Response Parser').item.json.targetaud,   \"recommended_subject\": $('Top Subject Sorter').item.json.recommendedSubject})}}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3072,
+        208
+      ],
+      "id": "4391f8df-6994-4446-af8d-a85f631f4dc9",
+      "name": "Set step user approval",
+      "alwaysOutputData": true,
+      "credentials": {
+        "redis": {
+          "id": "fZxGJw7neT5ojZYS",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=telegram_state:{{ $('User Command Listener').item.json.callback_query.message.chat.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        800,
+        192
+      ],
+      "id": "71181209-f2f3-4991-97c9-57c2e8a5d060",
+      "name": "Get redis data (button)",
+      "credentials": {
+        "redis": {
+          "id": "fZxGJw7neT5ojZYS",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=telegram_state:{{$json.message.chat.id}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        576,
+        688
+      ],
+      "id": "1ab3a369-9909-4aa4-98f8-8cff466ba775",
+      "name": "Get redis data (step)",
+      "credentials": {
+        "redis": {
+          "id": "fZxGJw7neT5ojZYS",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a738ed62-ad5d-4f23-aa8b-ace710c78a79",
+              "leftValue": "={{ $json.propertyName }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        784,
+        688
+      ],
+      "id": "d6011f39-5edd-4beb-b494-3ec46c77ece0",
+      "name": "If (step)"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.step}}",
+                    "rightValue": "waiting_email_body",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "097aae7d-3830-4964-8f55-7c109646b6fc"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Email Body"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "89e47923-4328-49d4-83fd-e6937e6eb37a",
+                    "leftValue": "={{$json.step}}",
+                    "rightValue": "waiting_target_audience",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Target Audience"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1216,
+        576
+      ],
+      "id": "5b48c1cc-9f8a-49b8-9797-73676149177d",
+      "name": "Email body or Target audience"
+    },
+    {
+      "parameters": {
+        "content": "## Get the redis data and check if it exists.\n- If there's a redis data then parse it and proceed on the usual flow.\n- If not then throw instructions.",
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        528,
+        480
+      ],
+      "typeVersion": 1,
+      "id": "6a1eba70-e926-47bd-8a3e-bceca24e51d5",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## The use of Redis\n- Redis is used as a small, fast store that the workflow uses to cache data (Context) for user messages and processing it to different fallback.",
+        "height": 112,
+        "width": 496
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        816,
+        -192
+      ],
+      "typeVersion": 1,
+      "id": "b7cdf1bb-04fa-4ce8-bc88-d4cdbf6e0594",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        144
+      ],
+      "id": "0be65689-3d3d-4920-ba6e-cc1ef9921260",
+      "name": "User Command Listener",
+      "webhookId": "6dd0c1a0-0c0d-4981-9a0e-02fb058f9c9a",
+      "credentials": {
+        "telegramApi": {
+          "id": "XVvA58ZffHBgzzKP",
+          "name": "EmailSubjectLineTesterBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/help",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4a95c2d7-6824-4978-923e-68c1273ad132"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "/help"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "287b3369-a51e-449e-bdfe-7361960494b0",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "/start"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5c2fa310-596b-441b-9898-bb2c51e5dba8",
+                    "leftValue": "={{$json.callback_query}}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Buttons Callback"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "8bb0f568-5356-4b69-a8ea-d5a46d2f0291",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Fallback"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -16,
+        112
+      ],
+      "id": "2902f9be-ba35-4ca1-b8ee-8a80c998aadf",
+      "name": "Command Router"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the raw output from the AI node\nlet raw = $json.output;\n\n// Remove Markdown and unwanted text\nraw = raw.replace(/```json|```/g, '').trim();\n\n// Parse as JSON\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  return [{ json: { error: 'Failed to parse AI output', raw } }];\n}\n\n// Extract subjects, scores, and explanations\nlet result = parsed.result.map(item => ({\n  subject: item.subject,\n  score: item.score,\n  explanation: item.explanation || \"\"\n}));\n\n// Extract htmlBody\nlet htmlBody = parsed.htmlBody || \"\";\n\nlet emailbody = parsed.emailbody || \"\";\nlet targetaud = parsed.target_audience || \"\";\n// Return result and htmlBody\nreturn [{ json: { result, htmlBody, emailbody, targetaud } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2256,
+        208
+      ],
+      "id": "8ac9cafe-0843-47b8-8c56-9965b6be3df9",
+      "name": "AI Response Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access the result array from the previous node\nconst prevNode = $('AI Response Parser').first();\nconst result = prevNode?.json?.result;\n\n// Check if array is valid\nif (!Array.isArray(result) || result.length === 0) {\n    return [{ json: { error: \"No subject lines available\" } }];\n}\n\n// Sort descending by score\nconst sorted = result.slice().sort((a, b) => b.score - a.score);\n\n// Pick the top scored subject\nconst top = sorted[0];\n\n// Return as a single item\nreturn [{\n    json: {\n        recommendedSubject: top.subject,\n        score: top.score\n    }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2672,
+        208
+      ],
+      "id": "d46fd608-d6a0-4f61-99bd-eaebfe0117af",
+      "name": "Top Subject Sorter"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Set URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Target Audience message": {
+      "main": [
+        [
+          {
+            "node": "Set step target audience",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Body message": {
+      "main": [
+        [
+          {
+            "node": "Set step email body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reassurance for user": {
+      "main": [
+        [
+          {
+            "node": "Email Marketer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send 5 Subject Lines": {
+      "main": [
+        [
+          {
+            "node": "Top Subject Sorter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Highest Score Subject Line": {
+      "main": [
+        [
+          {
+            "node": "Set step user approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generates New Email Subject Line": {
+      "main": [
+        [
+          {
+            "node": "Setting Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Setting Prompt": {
+      "main": [
+        [
+          {
+            "node": "Email Marketer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set URL": {
+      "main": [
+        [
+          {
+            "node": "Send Draft Email URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Marketer Agent": {
+      "main": [
+        [
+          {
+            "node": "AI Response Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Marketer Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Marketer Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error handling": {
+      "main": [
+        []
+      ]
+    },
+    "Set Contents": {
+      "main": [
+        [
+          {
+            "node": "Reassurance for user",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Draft Email URL": {
+      "main": [
+        [
+          {
+            "node": "delete redis data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Query a callback2": {
+      "main": [
+        [
+          {
+            "node": "Get redis data (button)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse redis data": {
+      "main": [
+        [
+          {
+            "node": "Email body or Target audience",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set email body": {
+      "main": [
+        [
+          {
+            "node": "Send Target Audience message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft or Generate": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generates New Email Subject Line",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse redis data1": {
+      "main": [
+        [
+          {
+            "node": "Draft or Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set step user approval": {
+      "main": [
+        []
+      ]
+    },
+    "Get redis data (button)": {
+      "main": [
+        [
+          {
+            "node": "Parse redis data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get redis data (step)": {
+      "main": [
+        [
+          {
+            "node": "If (step)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If (step)": {
+      "main": [
+        [
+          {
+            "node": "Parse redis data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error handling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email body or Target audience": {
+      "main": [
+        [
+          {
+            "node": "Set email body",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Contents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Command Listener": {
+      "main": [
+        [
+          {
+            "node": "Command Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Command Router": {
+      "main": [
+        [
+          {
+            "node": "/help",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Email Body message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Answer Query a callback2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get redis data (step)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Response Parser": {
+      "main": [
+        [
+          {
+            "node": "Send 5 Subject Lines",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Top Subject Sorter": {
+      "main": [
+        [
+          {
+            "node": "Send Highest Score Subject Line",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "534781fe-9a8c-4813-9a25-ff6c7138bcf9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "AuI2j1e3BrgX3xwH",
+  "tags": []
+}

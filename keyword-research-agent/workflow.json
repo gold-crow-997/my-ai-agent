@@ -1,0 +1,948 @@
+{
+  "name": "Keyword Research Agent V1",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.GOOGLE_SEARCH_API_KEY }}"
+            },
+            {
+              "name": "cx",
+              "value": "={{ $env.GOOGLE_SEARCH_CX }}"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.data }}"
+            },
+            {
+              "name": "num",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1056,
+        224
+      ],
+      "id": "b064afae-e668-47bc-ae5a-1fa8612e3201",
+      "name": "Google Custom Search"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1bvbE9_NbLyQYIkzylHjhzaRbVu0D6uBncWI5T64JKf4",
+          "mode": "list",
+          "cachedResultName": "Load Your Seed Keywords",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bvbE9_NbLyQYIkzylHjhzaRbVu0D6uBncWI5T64JKf4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bvbE9_NbLyQYIkzylHjhzaRbVu0D6uBncWI5T64JKf4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        16,
+        160
+      ],
+      "id": "6391ddd0-6345-4424-8483-920a9384556c",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://suggestqueries.google.com/complete/search?client=firefox&q={{$json[\"keyword\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        224
+      ],
+      "id": "f6858465-099b-46dd-b53b-4345e233ec0e",
+      "name": "Generate Keyword Ideas"
+    },
+    {
+      "parameters": {
+        "url": "=https://trends.google.com/trends/api/explore?hl=en-US&tz=0&req={\"comparisonItem\":[{\"keyword\":\"{{ $json.keyword }}\",\"geo\":\"\",\"time\":\"today 12-m\"}],\"category\":0,\"property\":\"\"}\n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "*/*"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "en-US,en;q=0.9"
+            },
+            {
+              "name": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "name": "Referer",
+              "value": "https://trends.google.com/"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1648,
+        272
+      ],
+      "id": "d9700a4b-d209-4e9f-a28a-1b07ba668a69",
+      "name": "HTTP Request #1 (Get Explore Token)"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        240,
+        160
+      ],
+      "id": "399da9d4-3bb7-4545-9e25-a13ebd2a4379",
+      "name": "Loop Over Items",
+      "executeOnce": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        496,
+        224
+      ],
+      "id": "3b195812-1e01-4fe4-8af2-f4b11f8f7bbc"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = items[0].json.body || \"\";\nconst clean = raw.replace(\")]}',\", \"\");\nconst data = JSON.parse(clean);\nconst token = data.widgets[0].token;\n\nreturn [{ json: { keyword: $json.keyword, SERPDifficulty: $json.SERPDifficulty, token } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        624
+      ],
+      "id": "22be395b-30e9-498e-9cb5-a18ba2c5404d",
+      "name": "Function Node (Extract Token)"
+    },
+    {
+      "parameters": {
+        "url": "=https://trends.google.com/trends/api/widgetdata/multiline?hl=en-US&tz=0&req={\"time\":\"today 12-m\",\"resolution\":\"MONTH\",\"locale\":\"en-US\",\"comparisonItem\":[{\"geo\":\"\",\"complexKeywordsRestriction\":{\"keyword\":[{\"type\":\"BROAD\",\"value\":\"{{$json[\"keyword\"]}}\"}]}}],\"requestOptions\":{\"property\":\"\",\"backend\":\"IZG\",\"category\":0}}&token={{$json[\"token\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        496,
+        512
+      ],
+      "id": "4ca0f743-e0c8-4587-ac8d-ccde8f02b1d3",
+      "name": "HTTP Request #2 (Get Trend Data)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = items[0].json.body;\nconst clean = raw.replace(\")]}',\", \"\");\nconst data = JSON.parse(clean);\n\nconst values = data.default.timelineData.map(v => Number(v.value[0]));\nconst avg = Math.round(values.reduce((a,b)=>a+b,0) / values.length);\nconst last = values[values.length-1];\n\nreturn [{\n  json: {\n    keyword: $json.keyword,\n    SERPDifficulty: $json.SERPDifficulty,\n    trendAvg: avg,\n    trendLast: last\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        640
+      ],
+      "id": "03dc53dd-2c2f-4e13-96e0-594fdf1414c4",
+      "name": "Extract Trend Score (Function Node)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const serp = items[0].json.items || [];\n\nlet strong = 0;\nlet medium = 0;\nlet weak = 0;\n\nfor (const r of serp) {\n  const url = r.link || \"\";\n  const snippet = r.snippet || \"\";\n\n  if (url.includes(\".gov\") || url.includes(\".edu\") || url.includes(\"wikipedia.org\")) {\n    strong += 2;\n  }\n\n  else if (\n    url.includes(\".com\") &&\n    (url.includes(\"microsoft\") || url.includes(\"oracle\") || url.includes(\"adobe\"))\n  ) {\n    medium += 1;\n  }\n\n  else if (\n    url.includes(\"reddit\") ||\n    url.includes(\"quora\") ||\n    snippet.length < 100 ||\n    url.endsWith(\".pdf\")\n  ) {\n    weak += 2;\n  }\n}\n\nconst difficulty = Math.max(1, strong*2 + medium - weak);\n\nreturn [{\n  json: {\n    keyword: $('Get row(s) in sheet').first().json.keyword,\n    SERPDifficulty: difficulty\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        224
+      ],
+      "id": "ce25ddf1-6773-4971-82ff-764fab316689",
+      "name": "Extract SERP Difficulty"
+    },
+    {
+      "parameters": {
+        "jsCode": "const trend = ($json.trendAvg * 0.7) + ($json.trendLast * 0.3);\nconst diff = $json.SERPDifficulty;\nconst HVLC = Math.round((trend / diff) * 100) / 100;\n\nreturn [{\n  json: {\n    keyword: $json.keyword,\n    SERPDifficulty: $json.SERPDifficulty,\n    trendAvg: $json.trendAvg,\n    trendLast: $json.trendLast,\n    HVLC\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        512
+      ],
+      "id": "d69dde1c-9456-4017-9d0e-bc2988a07797",
+      "name": "Combine Trend Score + SERP Difficulty → HVLC Final Score"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1bvbE9_NbLyQYIkzylHjhzaRbVu0D6uBncWI5T64JKf4",
+          "mode": "list",
+          "cachedResultName": "Load Your Seed Keywords",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bvbE9_NbLyQYIkzylHjhzaRbVu0D6uBncWI5T64JKf4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bvbE9_NbLyQYIkzylHjhzaRbVu0D6uBncWI5T64JKf4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "keyword": "={{$json.keyword}}",
+            "SERP difficulty": "={{$json.SERPDifficulty}}",
+            "trend average": "={{$json.trendAvg}}",
+            "trend last": "={{$json.trendLast}}",
+            "HVLC score": "={{$json.HVLC}}",
+            "timestamp": "={{new Date().toISOString()}}"
+          },
+          "matchingColumns": [
+            "keyword"
+          ],
+          "schema": [
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SERP difficulty",
+              "displayName": "SERP difficulty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "trend average",
+              "displayName": "trend average",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "trend last",
+              "displayName": "trend last",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "HVLC score",
+              "displayName": "HVLC score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2240,
+        480
+      ],
+      "id": "829060ce-8fea-4159-a3c7-29a74048335c",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        304
+      ],
+      "id": "cea4b821-bdc7-4e01-801d-63a4987022f2",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "ranilo@popai.agency",
+        "subject": "Error-Keyword_research_Agent",
+        "emailType": "text",
+        "message": "=An error occurred in the Keyword Research Agent.  \n\nNode: {{ $json.workflow.name }} \nError Message: {{ $json.execution.error.message }} \nStack Trace: {{ $json.execution.error.stack }}  \n\nPlease review the workflow and fix the issue.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2176,
+        304
+      ],
+      "id": "bd4e200a-3ddf-4a3d-a540-c1125404804e",
+      "name": "Send a message1",
+      "webhookId": "952a5797-727b-4a85-8d94-27aa45773801",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "ranilo@popai.agency",
+        "subject": "Keyword Research Agent",
+        "emailType": "text",
+        "message": "=🔍 Keyword Research Agent — Weekly Report Ready!\n\nTop Opportunities Found:\nYour Keyword Research Agent has completed its weekly scan.\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1680,
+        736
+      ],
+      "id": "3c669e57-e2a9-4933-b365-e19486cb24d0",
+      "name": "Send a message2",
+      "webhookId": "c1425c11-9e1e-44a3-b704-c8675a88d050",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mQXdqF-TPctnRLWLIx3SLCGuRWSX4vRx2wEtDACgTHU",
+          "mode": "list",
+          "cachedResultName": "content_inventory",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mQXdqF-TPctnRLWLIx3SLCGuRWSX4vRx2wEtDACgTHU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mQXdqF-TPctnRLWLIx3SLCGuRWSX4vRx2wEtDACgTHU/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1504,
+        496
+      ],
+      "id": "2bb5c13b-0726-4ce5-9eea-131318c54d3d",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. keyword coming from previous node\nconst keyword = $json.keyword.toLowerCase();\n\n// 2. content inventory from the Google Sheets node\nconst inventory = $items(\"Google Sheets (content_inventory)\").map(i =>\n  i.json.content.toLowerCase()\n);\n\n// 3. check if keyword already exists in content list\nconst exists = inventory.some(item =>\n  keyword.includes(item) || item.includes(keyword)\n);\n\n// 4. return result\nreturn [{\n  json: {\n    ...$json,\n    contentExists: exists\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        496
+      ],
+      "id": "1378886e-5529-44f4-bb4d-d1bdf2570485",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2624,
+        704
+      ],
+      "id": "33c3b4ca-cc57-4348-8c9b-399f39e02423",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert SEO strategist. Generate a complete SEO content brief for the following keyword:\n\nKeyword: {{$json.keyword}}\n\nInclude:\n\n1. **Search Intent** – define what the user is trying to achieve.\n2. **Primary Keyword** – {{$json.keyword}}\n3. **Secondary Keywords** – List 10–15 related terms.\n4. **Content Outline (H2 + H3)** – Include SERP-derived structure.\n5. **Competitor Weaknesses** – List what current top results are missing.\n6. **Recommended Word Count** – Based on SERP length.\n7. **3 Title Suggestions**\n8. **Meta Description** (150–160 characters)\n\nFormat everything cleanly in markdown.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        864,
+        -128
+      ],
+      "id": "4cc18ed7-bc0c-437f-8120-6a437c5bf7f3",
+      "name": "AI Agent",
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "folderId": "1NH49uv-d8F2eHoPoP3PdbKPXgaWYWZ54",
+        "title": "=Keyword Research Agent"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        0
+      ],
+      "id": "7b8e431d-0189-4e62-887b-e4a5e9d52eba",
+      "name": "Create a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "yDN1LPDdBCB7q1Zy",
+          "name": "Google Docs [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{$json.result}} || {{$json.output}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        0
+      ],
+      "id": "2f8d173e-0d44-4559-a053-6ba8931cfda5",
+      "name": "Update a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "yDN1LPDdBCB7q1Zy",
+          "name": "Google Docs [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxOutputTokens": 2000,
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        768,
+        64
+      ],
+      "id": "18aa4c90-15d8-4908-89b3-d70a4d326bf4",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "ranilo@popai.agency",
+        "subject": "Keyword Research Agent",
+        "emailType": "text",
+        "message": "=🔍 Keyword Research Agent — Weekly Report Ready!\n\nTop Opportunities Found:\nYour Keyword Research Agent has completed its weekly scan.\n\nKeyword: {{ $json.keyword }}\nSERP Difficulty: {{ $json['SERP difficulty'] }}\nTrend Avg: {{ $json['trend average'] }}\nTrend Last: {{ $json['trend last'] }}\nHVLC Score: {{ $json['HVLC score'] }}\ntime: {{ $json.timestamp }}\n\n👉 Check Google Sheet for full list.\nhttps://docs.google.com/spreadsheets/d/1bvbE9_NbLyQYIkzylHjhzaRbVu0D6uBncWI5T64JKf4/edit?gid=0#gid=0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2432,
+        480
+      ],
+      "id": "7b6bb1c2-1f87-4a5b-a1d2-c0bd2dae95b9",
+      "name": "Send a message",
+      "webhookId": "c1425c11-9e1e-44a3-b704-c8675a88d050",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "db5ac4b2-9f23-4bcc-a074-f46c3c5c79f0",
+              "leftValue": "={{$json[\"HVLC\"]}}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        512
+      ],
+      "id": "f1d2850e-066f-4cd0-a1ca-53a8ab6b8aa3",
+      "name": "HVLC>5"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "88af515b-93c1-4e55-a80b-246e07fd794f",
+              "leftValue": "={{$json[\"contentExists\"]}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1952,
+        496
+      ],
+      "id": "88243b65-8b59-4edf-aa9c-5aff127dc072",
+      "name": "contentExists false"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -224,
+        160
+      ],
+      "id": "de8f47c6-60ba-49a7-b994-c35176384169",
+      "name": "every Monday 9:00 am"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Keyword Ideas": {
+      "main": [
+        [
+          {
+            "node": "Google Custom Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Custom Search": {
+      "main": [
+        [
+          {
+            "node": "Extract SERP Difficulty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Generate Keyword Ideas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request #1 (Get Explore Token)": {
+      "main": [
+        [
+          {
+            "node": "Function Node (Extract Token)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function Node (Extract Token)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request #2 (Get Trend Data)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request #2 (Get Trend Data)": {
+      "main": [
+        [
+          {
+            "node": "Extract Trend Score (Function Node)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Trend Score (Function Node)": {
+      "main": [
+        [
+          {
+            "node": "Combine Trend Score + SERP Difficulty → HVLC Final Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract SERP Difficulty": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request #1 (Get Explore Token)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Trend Score + SERP Difficulty → HVLC Final Score": {
+      "main": [
+        [
+          {
+            "node": "HVLC>5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "contentExists false",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a document": {
+      "main": [
+        [
+          {
+            "node": "Update a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HVLC>5": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "contentExists false": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Send a message2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "every Monday 9:00 am": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "28610051-726c-4a31-a8f4-1885112da11b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "f95nrGPpigMQLX9l",
+  "tags": []
+}

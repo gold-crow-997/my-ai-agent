@@ -1,0 +1,1021 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "function isEmpty(val = '') {\n  return val == null || val?.trim() === '';\n}\n\nlet hasError = false;\n\nconst results = [];\nconst itemDetails = $('Webhook - data').first().json.data;\n\nfor (let i = 0; i < itemDetails.length; i++) {\n  const item = itemDetails[i];\n  const id = item.id || '';\n  const txt = item.text;\n\n  if (!id || isEmpty(txt)) {\n    hasError = true;\n    break;\n  }\n\n  results.push({\n    json: {\n      id,\n      text: txt\n    }\n  });\n}\n\nreturn hasError ? {status: 400, message: 'id and text \"keys/column\" are required.'} : results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1168, 624],
+      "id": "07c49cd1-9f88-4108-9d9e-36cf476eb599",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [-416, 864],
+      "id": "c7e842f5-1c27-4ec6-956c-897377d4a14a",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "={{ $('GetTable').item.json.table_name }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [-560, 640],
+      "id": "ce424c76-f225-4263-8d10-a1f883153bbd",
+      "name": "Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "archivist-rag",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-2192, 640],
+      "id": "aeb18873-e35f-404d-90ea-ee5f4275cbac",
+      "name": "Webhook",
+      "webhookId": "3ed2c052-8753-4fb6-849a-64bc6993deca"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-2384, -512],
+      "id": "41dddec3-cdcc-421a-956c-34430bf20983",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO user_table_access (token, name, table_name) VALUES\n(\n  '{{ $json.token }}',\n  '{{ $json.name }}',\n  '{{ $json.tableName }}'\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-800, -240],
+      "id": "5eb60f3d-2aca-4027-97b8-0b65820b3afa",
+      "name": "Insert new access details",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Inputs\nconst prefix = \"uat-\";\nconst tableName = $input.first().json.table_name; // <-- you can set dynamically\nconst name = $input.first().json.name; // <-- you can set dynamically\n\n// Allowed characters\nconst chars = \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\";\n\n// Create a salt from table name (simple hash)\nfunction simpleHash(str) {\n  let hash = 0;\n  for (let i = 0; i < str.length; i++) {\n    hash = (hash << 5) - hash + str.charCodeAt(i);\n    hash |= 0; // Convert to 32bit integer\n  }\n  return Math.abs(hash).toString(36); // base36 for compact salt\n}\n\nconst salt = simpleHash(tableName).slice(0, 8); // keep it short\n\n// Generate 40 random chars (so total = 48 when combined with salt)\nlet randomStr = \"\";\nfor (let i = 0; i < 40; i++) {\n  randomStr += chars.charAt(Math.floor(Math.random() * chars.length));\n}\n\n// Final token = prefix + salt + random\nconst token = `${prefix}${salt}${randomStr}`;\n\nreturn [{ token, tableName, name }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1024, -240],
+      "id": "07394230-03a3-4d02-84e9-b2aafe33f391",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0843143d-cf6a-4b03-a8e9-bb118585aa12",
+              "leftValue": "={{ $json.token }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1456, 640],
+      "id": "3ca296b9-b0ae-47c9-8a06-6c969dd5d153",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": {{ $json.status }},\n  \"message\": \"{{ $json.message }}\"\n} ",
+        "options": {
+          "responseCode": "={{ $json.status }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [-80, 160],
+      "id": "965b08a0-09d0-4a47-a4b5-8346beb17006",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "936e0d7a-bf49-4e97-9625-ed4270dd0712",
+              "name": "token",
+              "value": "={{ $json.headers[\"x-api-token\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "beb2a68b-9eb7-4105-b1bb-86b46d7ba6ff",
+              "name": "data",
+              "value": "={{ $json.body.data }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1904, 640],
+      "id": "3200e7dd-299e-4212-8622-2561206ed1fe",
+      "name": "Webhook - data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a1c7262a-75b6-467d-ae5f-859e2989a345",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-960, 624],
+      "id": "6fde0a81-ead9-40d9-8590-0e4900026715",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "78216054-7b55-4133-b193-16c457308b50",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-576, -336],
+      "id": "5ec7ab9b-c636-4839-bba8-a29d66994509",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Create a table to store your documents\ncreate table {{ $('Payload').item.json.table_name }} (\n  id bigserial primary key,\n  text text, -- corresponds to Document.pageContent\n  metadata jsonb, -- corresponds to Document.metadata\n  embedding vector({{ $('Payload').item.json.embedding_dimension }}) --  change if needed\n);\n\n-- Create a function to search for documents\ncreate function match_{{ $('Payload').item.json.table_name }} (\n  query_embedding vector({{ $('Payload').item.json.embedding_dimension }}),\n  match_count int default null,\n  filter jsonb DEFAULT '{}'\n) returns table (\n  id bigint,\n  content text,\n  metadata jsonb,\n  similarity float\n)\nlanguage plpgsql\nas $$\n#variable_conflict use_column\nbegin\n  return query\n  select\n    id,\n    content,\n    metadata,\n    1 - ({{ $('Payload').item.json.table_name }}.embedding <=> query_embedding) as similarity\n  from {{ $('Payload').item.json.table_name }}\n  where metadata @> filter\n  order by {{ $('Payload').item.json.table_name }}.embedding <=> query_embedding\n  limit match_count;\nend;\n$$;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-352, -336],
+      "id": "ab492dbb-2bae-46ba-877b-da685d96a484",
+      "name": "Create Document Metadata Table",
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "60cccf40-a2dd-4913-b96c-23206c77f2aa",
+              "name": "table_name",
+              "value": "={{ $json['Table name'].trim().replace(/_/g, '_').toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "766b0f45-9a9e-45df-9271-d3fc43d4cab5",
+              "name": "name",
+              "value": "={{ $json.Name }}",
+              "type": "string"
+            },
+            {
+              "id": "c0af7082-741d-4c67-86cb-dd373272f342",
+              "name": "embedding_dimension",
+              "value": "1024",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1248, -240],
+      "id": "f67e2272-6e0e-44fa-84e1-418dbfc92655",
+      "name": "Payload"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "user_table_access",
+          "mode": "list",
+          "cachedResultName": "user_table_access"
+        },
+        "limit": 1,
+        "where": {
+          "values": [
+            {
+              "column": "token",
+              "value": "={{ $json.token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-1680, 640],
+      "id": "24dedefa-f7f6-478e-89d4-b08e48a41b68",
+      "name": "GetTable",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Execute Only Once\n",
+        "width": 224,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-2176, -656],
+      "typeVersion": 1,
+      "id": "42fd6dba-7c1d-423b-80f2-14612216963d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "formTitle": "RAG Creator",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Password",
+              "fieldType": "password",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [-2144, -144],
+      "id": "4963aa7e-cdd5-4009-89d1-c6e35d35adcc",
+      "name": "On form submission",
+      "webhookId": "44534c14-bdbd-4ef0-96bb-5932884acf64"
+    },
+    {
+      "parameters": {
+        "content": "Execute when adding new user\n",
+        "height": 176,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-2176, -448],
+      "typeVersion": 1,
+      "id": "33aae191-b281-4a8b-b78d-17a59b5ed350",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "placeholder": "Knowledge Base",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Table name",
+              "placeholder": "eg. documents_knowledge_base",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.3,
+      "position": [-1472, -240],
+      "id": "2947ed77-0a17-4479-87d6-2f1e54bcf41e",
+      "name": "Form",
+      "webhookId": "e64e94ce-3398-4af4-b01c-aaf561098915"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fbdf0fbe-5e3c-4538-9060-551960abe850",
+              "name": "email",
+              "value": "jayditch@popai.agency",
+              "type": "string"
+            },
+            {
+              "id": "4e353fea-b868-4106-ad05-7d4f2d422792",
+              "name": "password",
+              "value": "8pJ2019byQ1M",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "ignoreConversionErrors": true
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-2144, -416],
+      "id": "6e0019b2-c228-49a1-a377-bb7433cb87a0",
+      "name": "User"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT password = crypt('{{ $json.Password }}', password) \nAS is_match\nFROM users\nWHERE email = '{{ $json.Email }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-1920, -144],
+      "id": "5bf2cee3-d970-4951-b811-203119329d73",
+      "name": "Check Creds",
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "942701d6-587b-4478-a25f-68d2f8ac081b",
+              "leftValue": "={{ $json.is_match }}",
+              "rightValue": "xRK53tuwD6Ie",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1696, -144],
+      "id": "d13ea9f9-9a26-411c-b331-be79c8337ee6",
+      "name": "Is Authenticated?"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Done",
+        "completionMessage": "=Please copy and paste the `TOKEN` and keep it confidential.<br/>\n<b>TOKEN:</b> <code>{{ $('Code in JavaScript').item.json.token }}</code>\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.3,
+      "position": [-128, -336],
+      "id": "2f0a58aa-c134-4908-aa1b-b9e0bc741511",
+      "name": "Form:Token",
+      "webhookId": "afdb8512-6b8a-4516-b222-74ce1b7ce234"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Unauthorized",
+        "completionMessage": "Please Wait: An error occurred",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.3,
+      "position": [-576, -144],
+      "id": "4c039287-8660-4fc4-8137-99eb0bdadec7",
+      "name": "Form:Error",
+      "webhookId": "064d6af7-0add-4fe5-b0df-46d408536182"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Unauthorized",
+        "completionMessage": "Invalid email or password",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.3,
+      "position": [-1472, -48],
+      "id": "0ebad1c8-f0a9-4e93-9a49-1161c98788b8",
+      "name": "Form:Unauthorized",
+      "webhookId": "064d6af7-0add-4fe5-b0df-46d408536182"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO users (email, password)\nVALUES (\n  '{{ $json.email }}',\n  crypt('{{ $json.password }}', gen_salt('bf', 12))\n)\nON CONFLICT (email) \nDO UPDATE SET \n  password = EXCLUDED.password;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-1936, -416],
+      "id": "ac8cf3bc-1a0e-4229-ac13-50a70a02bb29",
+      "name": "Create or Update user",
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Create new table\n",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-2432, -128],
+      "typeVersion": 1,
+      "id": "75132d44-de0e-40b7-b31e-990f11fe6d2b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DROP TABLE IF EXISTS user_table_access;\n\nCREATE TABLE user_table_access (\n    id SERIAL PRIMARY KEY,\n    token VARCHAR(255) UNIQUE NOT NULL,       -- 🔑 unique & never null\n    name VARCHAR(150) NOT NULL,               -- 🧑 user/role name required\n    table_name VARCHAR(150) UNIQUE NOT NULL,  -- 📂 each table only once\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n);\n\nDROP TABLE IF EXISTS users;\n\nCREATE TABLE users (\n    id SERIAL PRIMARY KEY,\n    email VARCHAR(255) UNIQUE NOT NULL,     -- 📧 unique email\n    password TEXT NOT NULL,            -- 🔒 hashed password\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-2144, -624],
+      "id": "7178253f-0501-4d32-8ecd-a6002629f65f",
+      "name": "Create `user_table_access` and `users`",
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Main workflow 👉\n\nNote:\nTo access the endpoint, include the provided token during table creation and add it to the endpoint headers as `X-API-TOKEN`\n",
+        "height": 144,
+        "width": 352,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-2736, 576],
+      "typeVersion": 1,
+      "id": "d95ce72f-1a80-430e-8607-e4766c24f9c5",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "documents_ai_chat_hr",
+          "mode": "list",
+          "cachedResultName": "documents_ai_chat_hr"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-2160, -832],
+      "id": "3980b9a4-adfe-40fc-8f15-1cb2b17305dd",
+      "name": "Truncate table",
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b2eb258f-1e9d-403e-87c0-7399c9c47e61",
+              "name": "status",
+              "value": "=401",
+              "type": "number"
+            },
+            {
+              "id": "a0ee4d29-d163-4b17-b311-69b66fd7d5a2",
+              "name": "message",
+              "value": "=Unauthorized",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-944, 240],
+      "id": "663cceaa-fd08-4b1a-b4c0-cb7a03793e95",
+      "name": "Status:Unauthorized"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b2eb258f-1e9d-403e-87c0-7399c9c47e61",
+              "name": "status",
+              "value": "={{ $json.status }}",
+              "type": "number"
+            },
+            {
+              "id": "a0ee4d29-d163-4b17-b311-69b66fd7d5a2",
+              "name": "message",
+              "value": "={{ $json.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-784, 432],
+      "id": "3099c70d-1b5d-4663-a151-19742566d160",
+      "name": "Status:Error"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DO $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = '{{ $('GetTable').item.json.table_name }}') THEN\n        EXECUTE 'DELETE FROM {{ $('GetTable').item.json.table_name }} WHERE metadata->>''id'' LIKE ''%' || $1 || '%''';\n    END IF;\nEND\n$$;",
+        "options": {
+          "queryReplacement": "={{ $json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-512, 464],
+      "id": "069440a4-707d-4199-a263-5742b86021e1",
+      "name": "Delete Data",
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b2eb258f-1e9d-403e-87c0-7399c9c47e61",
+              "name": "status",
+              "value": "=200",
+              "type": "number"
+            },
+            {
+              "id": "a0ee4d29-d163-4b17-b311-69b66fd7d5a2",
+              "name": "message",
+              "value": "=The data has been stored",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-208, 592],
+      "id": "8313f389-5229-4534-b1f2-f6fadb5da86f",
+      "name": "Status:Success"
+    },
+    {
+      "parameters": {
+        "modelName": "embed-multilingual-v3.0"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsCohere",
+      "typeVersion": 1,
+      "position": [-624, 864],
+      "id": "6a168993-8b52-48c2-b226-dc4a4531ea34",
+      "name": "Embeddings Cohere",
+      "credentials": {
+        "cohereApi": {
+          "id": "pIE5hEKmpufDQ5j1",
+          "name": "CohereApi PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### 🔐 Setup Instructions\n- ✅ **Step 1:** Ensure n8n environment is connected with PostgreSQL credentials having access to your database.\n- ✅ **Step 2:** Configure Cohere API credentials (`cohereApi`) in n8n for embedding generation.\n- ✅ **Step 3:** Run the workflow or parts thereof that create necessary tables:\n  - `users` — Stores user emails and hashed passwords.\n  - `user_table_access` — Stores tokens, user/table mapping.\n  - Dynamic document metadata tables with vector embedding columns.\n- ✅ **Step 4:** Add users via the form or directly to the `users` table (passwords hashed via `crypt`).\n- ✅ **Step 5:** Generate and retrieve API tokens via the workflow. Tokens are to be included in the `X-API-TOKEN` header in API calls to `/archivist-rag`.\n- ✅ **Step 6:** Deploy the workflow active with webhook URL accessible.\n- ✅ **Step 7:** Send POST requests with JSON payload containing document records `{id, text}` arrays to indexed document tables.",
+        "height": 512,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-2752, 752],
+      "typeVersion": 1,
+      "id": "22d6a69a-09c9-4377-aa98-7e3076e6da68",
+      "name": "Sticky Note4"
+    }
+  ],
+  "connections": {
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres PGVector Store": {
+      "main": [
+        [
+          {
+            "node": "Status:Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Webhook - data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [[]]
+    },
+    "Insert new access details": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Form:Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Insert new access details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Status:Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - data": {
+      "main": [
+        [
+          {
+            "node": "GetTable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Status:Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Delete Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Create Document Metadata Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Document Metadata Table": {
+      "main": [
+        [
+          {
+            "node": "Form:Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetTable": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Check Creds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form": {
+      "main": [
+        [
+          {
+            "node": "Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User": {
+      "main": [
+        [
+          {
+            "node": "Create or Update user",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Creds": {
+      "main": [
+        [
+          {
+            "node": "Is Authenticated?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Authenticated?": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Form:Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create `user_table_access` and `users`": {
+      "main": [[]]
+    },
+    "Status:Unauthorized": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status:Error": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status:Success": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Cohere": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  }
+}

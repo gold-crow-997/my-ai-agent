@@ -1,0 +1,1415 @@
+{
+  "name": "Social Media Content Creation",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.content }}",
+        "options": {
+          "systemMessage": "You are the Chief Marketing Officer (CMO) AI — a senior-level marketing strategist responsible for planning and overseeing cross-platform campaigns.\n\nYou manage and direct a team of Social Media Content Creator AI sub-agents:\n- Facebook Social Media Specialist\n- X/Twitter Social Media Specialist\n- LinkedIn Social Media Specialist\n- Reddit Social Media Specialist\n- Meta Threads Social Media Specialist\n\nEach sub-agent is an expert on its platform’s post formats, length limits, hashtags, visuals and timing.\n\nYour job:\n- Receive a topic, campaign, or goal from the user.\n- Break it down into actionable content guidance for each sub-agent.\n- Collect and refine the sub-agents’ drafts so they are consistent with the brand tone and CTAs.\n- Combine everything into one clear output.\n\n**Output format:**  \nAlways respond with a single valid JSON object containing:\n\n{\n  \"title\": \"<short descriptive title of the campaign>\",\n  \"body\": \"<multi-line text with formatted content for each platform, clearly sectioned (e.g., **Facebook**, **X**, **Instagram**, etc.)>\"\n}\n\nGuidelines for “body”:\n- Include the recommended post/caption for each platform under its heading.\n- Do not include media suggestions or CTA notes under each platform.\n- Keep the formatting readable for a human but return it as a string value inside the JSON.\n\nDo not wrap your response in explanations or extra commentary. Only return the JSON object.\n**Do not give any suggestion to the user.**\n"
+        }
+      },
+      "id": "aae9c938-1ec2-403f-bc81-0e96e9d8e5de",
+      "name": "CMO Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        4144,
+        1600
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {},
+      "id": "324ff7a5-a71f-42b1-ab78-6a1fcfbc2f46",
+      "name": "Think",
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "position": [
+        3920,
+        1840
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        3808,
+        1824
+      ],
+      "id": "d61eaaca-53ab-4bfe-8169-cf2e4b561756",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "DYOI37VzfdAZY3AV",
+          "name": "OpenRouter account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Social Media Content Creation",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "File",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf, .docx, csv, .txt"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        3600,
+        2608
+      ],
+      "id": "a360ebb8-10d4-4ba0-ac0b-5127cca30221",
+      "name": "On form submission",
+      "webhookId": "ed4d9732-0f32-4573-b961-cf0abc0856fc",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        3840,
+        2608
+      ],
+      "id": "d72e7f54-c6e5-46f3-a751-43f7e2c1f5d9",
+      "name": "Simple Vector Store"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        4416,
+        2752
+      ],
+      "id": "6634f9ff-13b7-426d-8436-d8db76cc86ac",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bHGNpPCrwKcZFYDZ",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        3968,
+        2768
+      ],
+      "id": "7d983652-1450-4f9a-a597-a59fe7c7a6ea",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4.1",
+        "options": {
+          "maxTokens": 500
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        4176,
+        2128
+      ],
+      "id": "51c7db7b-902f-4ad7-8391-c199fea2845f",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "DYOI37VzfdAZY3AV",
+          "name": "OpenRouter account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "use this tool when needing the company's information, products and services ",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        4304,
+        2192
+      ],
+      "id": "976ddea6-cd44-4a5d-ad51-28fc824cb276",
+      "name": "Simple Vector Store1"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "use this tool when needing the company's information, products and services ",
+        "memoryKey": {
+          "__rl": true,
+          "value": "vector_store_key",
+          "mode": "list",
+          "cachedResultName": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        4000,
+        1920
+      ],
+      "id": "2a22ac11-d09c-41eb-99de-3c80bf2ef33a",
+      "name": "Simple Vector Store2"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Generates tweets or threads following Twitter/X best practices. Each tweet ≤280 characters, strong hook in first line, 1–3 hashtags max. Always include a concise CTA and suggest visuals or polls if relevant. Always follow and adapt the approved Twitter templates and formats stored in the knowledge base/vector store.\n",
+        "text": "={{ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Twitter/X Content Creator AI Sub-Agent.  \nYour task is to generate tweets or threads aligned with the campaign goal, brand tone, and templates stored in the knowledge base.  \n\nRequirements:\n• Each tweet ≤280 characters.\n• Strong hook in the first line.\n• Use 1–3 hashtags max.\n• Suggest visuals or polls when relevant.\n• Always base your output format and structure on the templates from the knowledge base.\n• Do not include media suggestions"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        4304,
+        1936
+      ],
+      "id": "2408fc6e-e8cc-44b5-a6bc-f8cb8e9b03c2",
+      "name": "Twitter Social Media Specialist"
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxTokens": 2000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        4640,
+        2112
+      ],
+      "id": "26c4bf05-e12e-4589-a53a-07007d0a8df4",
+      "name": "OpenRouter Chat Model2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "DYOI37VzfdAZY3AV",
+          "name": "OpenRouter account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "use this tool when needing the company's information, products and services ",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        4832,
+        2176
+      ],
+      "id": "01838437-15fa-4c3c-ad8b-69cd65b35548",
+      "name": "Simple Vector Store3"
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxTokens": 2000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        5152,
+        2128
+      ],
+      "id": "a2602817-fa4d-47de-875f-8594964797a0",
+      "name": "OpenRouter Chat Model3",
+      "credentials": {
+        "openRouterApi": {
+          "id": "DYOI37VzfdAZY3AV",
+          "name": "OpenRouter account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "use this tool when needing the company's information, products and services ",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        5344,
+        2192
+      ],
+      "id": "0bc1dd56-756e-4dfb-a025-957b61fd3c7f",
+      "name": "Simple Vector Store4"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Drafts professional, thought-leadership style posts for LinkedIn. 150–300 words, clear value upfront, professional tone. Use 1–3 industry hashtags and propose supporting media (infographics, explainer videos). Always follow and adapt the approved LinkedIn templates and formats stored in the knowledge base/vector store.\n",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the LinkedIn Content Creator AI Sub-Agent.  \nYour task is to craft professional, value-driven posts aligned with the campaign goal, brand tone, and templates stored in the knowledge base.  \n\nRequirements:\n• Professional tone, 1–3 hashtags max.\n• Emphasize insights, benefits, and credibility.\n• Suggest visuals: infographics, explainer videos, or thought-leadership graphics.\n• Always base your output format and structure on the templates from the knowledge base.\n• Do not include media suggestions\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        5280,
+        1920
+      ],
+      "id": "387f9cc3-b0db-447b-aa02-ac90806929e3",
+      "name": "LinkedIn Social Media Specialist"
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxTokens": 2000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        5664,
+        2112
+      ],
+      "id": "310332d4-90b3-4c32-9130-136155ec1be4",
+      "name": "OpenRouter Chat Model4",
+      "credentials": {
+        "openRouterApi": {
+          "id": "DYOI37VzfdAZY3AV",
+          "name": "OpenRouter account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "use this tool when needing the company's information, products and services ",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        5856,
+        2176
+      ],
+      "id": "3e2810d1-70d0-44a8-9443-7a95bbd1e93c",
+      "name": "Simple Vector Store5"
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxTokens": 200
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        6112,
+        2112
+      ],
+      "id": "d87aaf8f-fffb-45c4-9961-35c125f44c03",
+      "name": "OpenRouter Chat Model5",
+      "credentials": {
+        "openRouterApi": {
+          "id": "DYOI37VzfdAZY3AV",
+          "name": "OpenRouter account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "use this tool when needing the company's information, products and services ",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        6304,
+        2176
+      ],
+      "id": "c003b64c-2a2a-45bb-8818-964241922224",
+      "name": "Simple Vector Store6"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Crafts subreddit-appropriate posts and discussion prompts. 100–300 words per post, titles ≤120 characters. Soft CTAs, no overt marketing, and tailor tone to each community. Suggest polls or AMAs if relevant. Always follow and adapt the approved Reddit templates and formats stored in the knowledge base/vector store.\n",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Reddit Content Creator AI Sub-Agent.  \nYour task is to create authentic posts and comments aligned with the campaign goal, brand tone, and templates stored in the knowledge base.  \n\nRequirements:\n• Adapt tone to each subreddit (informative, conversational, or storytelling).\n• Title and body must be separate.\n• Avoid sounding like an ad; focus on community value first.\n• Do not Suggest appropriate subreddits to post in.\n• Always base your output format and structure on the templates from the knowledge base.\n• Do not include media suggestions."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        6240,
+        1904
+      ],
+      "id": "41c16cd2-053b-4cb2-a861-73a8223006d1",
+      "name": "Reddit Social Media Specialist"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Creates engaging Facebook posts and carousels optimized for reach and shares. Each post 100–200 words, conversational yet informative tone. Use 1–3 relevant hashtags, clear CTA, and suggest visuals (images, videos, or link previews). Always follow and adapt the approved Facebook templates and formats stored in the knowledge base/vector store.\n",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Facebook Content Creator AI Sub-Agent.  \nYour task is to generate engaging Facebook posts aligned with the campaign goal, brand tone, and templates stored in the knowledge base.  \n\nRequirements:\n• Follow Facebook best practices (longer captions acceptable, 1–3 relevant hashtags, include clear CTA).\n• Optimize for shares, comments, and link clicks.\n• Always base your output format and structure on the templates from the knowledge base.\n• Do not include media suggestions"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        4768,
+        1904
+      ],
+      "id": "df638400-d27f-4c82-94ce-43adc5e20f81",
+      "name": "Facebook Social Media Specialist"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        3328,
+        1856
+      ],
+      "id": "c4e986f3-4c84-4f48-bf28-92999807af98",
+      "name": "OpenRouter Chat Model7",
+      "credentials": {
+        "openRouterApi": {
+          "id": "DYOI37VzfdAZY3AV",
+          "name": "OpenRouter account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        2864,
+        1680
+      ],
+      "id": "698863cb-dcfd-46d4-a6a3-81e28cb366f7",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Creates high-performing posts and multi-post threads for Meta Threads optimized for reach and engagement. Writes compelling opening posts, concise follow-up posts, and clear CTAs to drive discussion, clicks, or follows. Always adapts to the approved thread structures and formats stored in the knowledge base/vector store.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Meta Threads Social Media Specialist AI Sub-Agent.\nYour task is to generate single posts and multi-post threads for Meta Threads aligned with the campaign goal, brand voice, and templates stored in the knowledge base.\n\nRequirements:\n\nStart with an attention-grabbing first post (scroll-stopping hook).\n\nBreak ideas into 1-2 concise follow-up posts when creating a thread.\n\nUse clear, conversational tone with simple language for readability.\n\nInclude a strong CTA in the final post (follow, comment, share, link, etc.).\n\nAdd up to 3–5 relevant hashtags or keywords naturally (avoid clutter).\n\nAlways base your structure, style, and tone on the approved templates from the knowledge base."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        5792,
+        1904
+      ],
+      "id": "bd167925-4bb4-42df-9110-bc5c1478ff7a",
+      "name": "Meta Threads Social Media Specialist"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1728,
+        1408
+      ],
+      "id": "7bc1a85e-9e85-4d23-96f9-4d9a1ec58da8",
+      "name": "Received a message",
+      "webhookId": "c8a7c2c5-6edc-4c42-871e-b9774cd34183",
+      "credentials": {
+        "telegramApi": {
+          "id": "eAbGgYO1u6JafPEk",
+          "name": "SocialContentCreatorChatBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=👋 Hello and welcome to Social Content Creator!\nI’m here to help you craft engaging posts for your social media platforms quickly and easily.\n\n✨ With me you can:\n• Generate ready-to-post captions\n• Send an article (Google Docs or via PDF) for the topic and I'll make a post for you!\n• Get creative ideas tailored to your audience\n\nYou can send a prompt message, attach PDF or Google Document link get started 🚀",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2144,
+        1504
+      ],
+      "id": "7ad5480a-00c2-482c-afa2-386f734daf89",
+      "name": "Send a greeting",
+      "webhookId": "985d8692-b800-4d8f-870f-38bd59eeb672",
+      "credentials": {
+        "telegramApi": {
+          "id": "eAbGgYO1u6JafPEk",
+          "name": "SocialContentCreatorChatBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Received a message').item.json.message.chat.id }}",
+        "text": "= Got it {{ $json.message.from.first_name }}! I received your prompt and I’m working on it now — please hang tight for a moment while I generate the content. ⏳",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2144,
+        1216
+      ],
+      "id": "b22bc9c1-40c6-40f2-98ee-4bd1094d1a72",
+      "name": "Send an acknowledge message",
+      "webhookId": "ef5bb5e1-67c8-4992-bb5c-ab8ff527c88e",
+      "credentials": {
+        "telegramApi": {
+          "id": "eAbGgYO1u6JafPEk",
+          "name": "SocialContentCreatorChatBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "38658491-8589-461e-be29-f9e0b537a44e",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1936,
+        1408
+      ],
+      "id": "96b4e373-9632-4714-a576-807e265785aa",
+      "name": "Is not starting a conversation?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed2a4b2a-5a8d-4470-a340-e8664c2959a2",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "5637f81a-4ce6-4904-ae94-74d80cb51e03",
+              "leftValue": "={{ $json.message.link_preview_options.url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2624,
+        1312
+      ],
+      "id": "4665add2-a3f0-4057-ae4c-3b6cc5d5ad36",
+      "name": "Is a pure prompt message or Google Doc Link"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "={{ $json.message.text }}"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        2864,
+        1456
+      ],
+      "id": "5c1c7947-83a7-4d2c-954d-3e9cbb6dcad4",
+      "name": "Get document details",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "FYdDefUntNwoOswp",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f3383933-4151-4336-b4ad-c39e7ce09258",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "e1a8ddb0-6e90-45da-8128-b3728e30be24",
+              "leftValue": "={{ $json.message.document }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2368,
+        1408
+      ],
+      "id": "875091e7-3ae9-47eb-80f7-a57c3cdce813",
+      "name": "Is not an attachment?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// In n8n, items[0].json contains the previous node's data\n// This code will handle either ExtractFromFile output or plain text\n\n// Combine all items from previous node(s)\nconst input = items[0].json;\n\n// If it’s from Extract from File node (array with 'text')\nif (Array.isArray(input) && input[0] && input[0].text) {\n  return [\n    {\n      json: {\n        content: input[0].text, // full extracted text from PDF\n        title: input[0].info?.Title || null,\n      }\n    }\n  ];\n}\n\n// If it’s a single object with text\nif (input.text) {\n  return [\n    {\n      json: {\n        content: input.text,\n        title: input.info?.Title || null,\n      }\n    }\n  ];\n}\n\n// If it’s a Google Docs or other node returning .content or .body\nif (input.content) {\n  return [\n    {\n      json: {\n        content: input.content,\n      }\n    }\n  ];\n}\n\n// If unknown, just dump input\nreturn [\n  {\n    json: {\n      content: input,\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        1552
+      ],
+      "id": "88928013-6887-4145-bc66-52ed3adaf618",
+      "name": "Filter for extracted content"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Received a message').item.json.message.caption }} File content: {{ $json.content }}",
+        "options": {
+          "systemMessage": "You are the Manager Agent.\n\nYour task is to take the user’s input (it may be plain text or text extracted from a Google Docs link) and transform it into one clear, actionable prompt message for all social media sub-agents (Facebook, X/Twitter, Instagram, LinkedIn, Reddit, TikTok, YouTube Shorts, etc.).\n\nInstructions:\n\nTreat everything inside in the prompt as the source topic.\n\nIf the user provides a Google Docs link, assume the document’s contents are already extracted for you.\n\nOutput only one prompt message (no JSON, no title/body split).\n\nMake the prompt explicit and actionable so each platform-specific sub-agent can directly create its own content from it.\n\nDo not add extra commentary or explanations — just return the prompt text."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        3328,
+        1648
+      ],
+      "id": "37445c5e-795f-4ab6-bfe1-82d54a8979fb",
+      "name": "Content Manager Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = items[0].json;\nlet content = \"\";\n\n// Case 1: Telegram trigger output array\nif (Array.isArray(input) && input[0]?.message?.text) {\n  content = input[0].message.text;\n}\n// Case 2: Telegram trigger single object\nelse if (input.message?.text) {\n  content = input.message.text;\n}\n// Case 3: AI Agent output or other node with content\nelse if (input.content) {\n  content = input.content;\n}\n// Case 4: AI Agent output already as string\nelse if (typeof input === 'string') {\n  content = input;\n}\n// Fallback: stringify whatever came in\nelse {\n  content = JSON.stringify(input);\n}\n\n// Return just one object with content\nreturn {\n  json: {\n    content\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3632,
+        1552
+      ],
+      "id": "81823640-8ead-450f-a888-56dff4ae0e29",
+      "name": "Initialize Prompt Message"
+    },
+    {
+      "parameters": {
+        "jsCode": "// \"items\" is the default n8n input variable\n// each item has .json.output which is your stringified JSON\n\nreturn items.map(item => {\n  // Parse the string inside .json.output\n  const parsed = JSON.parse(item.json.output);\n\n  // Return an object in the correct n8n format\n  return {\n    json: {\n      title: parsed.title,\n      body: parsed.body\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4608,
+        1344
+      ],
+      "id": "690eec15-0d06-405f-843d-710ebba624e5",
+      "name": "Parse JSON"
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "1O7CXONxnre0GVwhR0Bc5qiaeO6MHsn7dE4D6Fx-FVhI",
+          "mode": "list",
+          "cachedResultName": "Blank page template",
+          "cachedResultUrl": "https://docs.google.com/document/d/1O7CXONxnre0GVwhR0Bc5qiaeO6MHsn7dE4D6Fx-FVhI/edit?usp=drivesdk"
+        },
+        "name": "={{ $json.title }}",
+        "sameFolder": false,
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1aY_203znaYEyzkutxCdyxkQfMWRIfKF2",
+          "mode": "list",
+          "cachedResultName": "Generated Templates",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1aY_203znaYEyzkutxCdyxkQfMWRIfKF2"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        4816,
+        1344
+      ],
+      "id": "623ad837-2580-4254-9242-f70ec5f19161",
+      "name": "Copy Blank Template",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "R3h6xi4OTiD2fROQ",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5056,
+        1344
+      ],
+      "id": "44028ca6-0904-4066-8725-7381e10de389",
+      "name": "Share file (Public)",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "R3h6xi4OTiD2fROQ",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $('Copy Blank Template').item.json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ $('Parse JSON').item.json.body }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        5296,
+        1344
+      ],
+      "id": "85e70dc3-3a14-4cb1-9e05-77e48d255c4e",
+      "name": "Inserts the Output in the new File",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "FYdDefUntNwoOswp",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Received a message').item.json.message.chat.id }}",
+        "text": "=Hi {{ $('Received a message').item.json.message.chat.username }}!\nHere's the generated google document file based on your prompt:\n`\nhttps://docs.google.com/document/d/{{ $('Copy Blank Template').item.json.id }}\n`",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        5488,
+        1344
+      ],
+      "id": "034ed926-9abc-4a5b-9b05-3be3ccd1e90e",
+      "name": "Send the output file",
+      "webhookId": "e75a4983-c697-41ca-a2a1-db8e1b532648",
+      "credentials": {
+        "telegramApi": {
+          "id": "eAbGgYO1u6JafPEk",
+          "name": "SocialContentCreatorChatBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Vector Store for Template Knowledge\n",
+        "height": 480,
+        "width": 864,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3408,
+        2512
+      ],
+      "id": "242f98d0-11b0-4a65-a263-b8f87f8fb7fb",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Initialization for the Prompt Message \n1. Pure Prompt Message.\n2. Generates the topic from a Google Document or PDF file. ",
+        "height": 944,
+        "width": 2112
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        1120
+      ],
+      "id": "e7807336-3233-47c4-830e-fc98673b0465",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Content Creation Agent\nCreates output depending on the specific topic or prompt message.",
+        "height": 800,
+        "width": 2800,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3792,
+        1520
+      ],
+      "id": "9b29681c-286d-4d2b-8d6f-4a0f3f4e8e52",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Output Preparation\nPrepares the google document file which is available for viewing to the user.",
+        "height": 272,
+        "width": 1552,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4272,
+        1232
+      ],
+      "id": "4d279f9a-86f2-44aa-b8ae-c35caf2a96c2",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {
+    "Received a message": [
+      {
+        "json": {
+          "update_id": 7272158,
+          "message": {
+            "message_id": 54,
+            "from": {
+              "id": 7997423389,
+              "is_bot": false,
+              "first_name": "Chambe_ITD",
+              "username": "Chambe_ITD",
+              "language_code": "en"
+            },
+            "chat": {
+              "id": 7997423389,
+              "first_name": "Chambe_ITD",
+              "username": "Chambe_ITD",
+              "type": "private"
+            },
+            "date": 1758690836,
+            "text": "Pigar-pigar"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "CMO Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Simple Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Simple Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Simple Vector Store3",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Simple Vector Store4",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Simple Vector Store5",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Simple Vector Store6",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Twitter Social Media Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Twitter Social Media Specialist",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store2": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twitter Social Media Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Facebook Social Media Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store3": {
+      "ai_tool": [
+        [
+          {
+            "node": "Facebook Social Media Specialist",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LinkedIn Social Media Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store4": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Social Media Specialist",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Social Media Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Meta Threads Social Media Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store5": {
+      "ai_tool": [
+        [
+          {
+            "node": "Meta Threads Social Media Specialist",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Reddit Social Media Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store6": {
+      "ai_tool": [
+        [
+          {
+            "node": "Reddit Social Media Specialist",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit Social Media Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Social Media Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model7": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Manager Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Filter for extracted content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meta Threads Social Media Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Received a message": {
+      "main": [
+        [
+          {
+            "node": "Is not starting a conversation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is not starting a conversation?": {
+      "main": [
+        [
+          {
+            "node": "Is not an attachment?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send an acknowledge message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a greeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is a pure prompt message or Google Doc Link": {
+      "main": [
+        [
+          {
+            "node": "Initialize Prompt Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get document details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get document details": {
+      "main": [
+        [
+          {
+            "node": "Filter for extracted content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is not an attachment?": {
+      "main": [
+        [
+          {
+            "node": "Is a pure prompt message or Google Doc Link",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter for extracted content": {
+      "main": [
+        [
+          {
+            "node": "Content Manager Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Manager Agent": {
+      "main": [
+        [
+          {
+            "node": "Initialize Prompt Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize Prompt Message": {
+      "main": [
+        [
+          {
+            "node": "CMO Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON": {
+      "main": [
+        [
+          {
+            "node": "Copy Blank Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy Blank Template": {
+      "main": [
+        [
+          {
+            "node": "Share file (Public)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file (Public)": {
+      "main": [
+        [
+          {
+            "node": "Inserts the Output in the new File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inserts the Output in the new File": {
+      "main": [
+        [
+          {
+            "node": "Send the output file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c52f39a8-ff08-42cc-8ce2-92402b8beb72",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "WK4d9MceytJFTKpN",
+  "tags": []
+}

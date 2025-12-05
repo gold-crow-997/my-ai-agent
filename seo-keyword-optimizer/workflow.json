@@ -1,0 +1,345 @@
+{
+  "name": "SEO Keywords Optimizer",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        352,
+        224
+      ],
+      "id": "a3d2c875-8e39-4893-bac1-91c4e84bbeef",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"score\": \"<0-100>\",\n  \"missing_subtopics\": [\"...\"],\n  \"long_tail_keywords\": [\"...\"],\n  \"recommendations\": [\"...\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        224
+      ],
+      "id": "2bab346c-06e4-46f0-8227-1c65421bfbb2",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        0
+      ],
+      "id": "f52c030f-d1a9-47e5-a954-0769c1d00c72",
+      "name": "Start - Manual Trigger"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"content\": \"Artificial Intelligence is changing SEO rapidly...\",\n  \"keyword\": \"AI content optimization\",\n  \"persona\": \"Marketing professional\"\n}\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -336,
+        0
+      ],
+      "id": "34ee4f61-0077-4675-ad26-ec121b0ea7ec",
+      "name": "Input - Draft & Keyword"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.G_API_KEY }}"
+            },
+            {
+              "name": "cx",
+              "value": "={{ G_CX_ID }}"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.keyword }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "6741a3c3-b170-4710-b9d6-c633691c138f",
+      "name": "Google SERP Fetch"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $json.items || [];\nconst summaries = items.map(r => ({\n  title: r.title,\n  link: r.link,\n  snippet: r.snippet\n}));\nreturn [{ serpInsights: summaries }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        0
+      ],
+      "id": "46ee88e4-ae56-46f5-aeeb-75bce28ec6b7",
+      "name": "Parse SERP Results"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an SEO optimization expert.\nAnalyze the provided draft content for the keyword: \"{{ $('Input - Draft & Keyword').item.json.keyword }}\".\nCompare it to the top-ranking pages below.\n\nSERP Snippets:\n{{ $json.serpInsights }}\n\nDraft:\n{{ $('Input - Draft & Keyword').item.json.content }}\n\nReturn JSON only:\n{\n  \"score\": <0-100>,\n  \"missing_subtopics\": [\"...\"],\n  \"long_tail_keywords\": [\"...\"],\n  \"recommendations\": [\"...\"]\n}\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        0
+      ],
+      "id": "d92bb3fb-7a5e-4f51-ab6d-2ef9de344d89",
+      "name": "SEO Analyzer"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.output;\nconst keyword = $(\"Input - Draft & Keyword\").first().json.keyword;\n\nreturn [{\n  html: `\n  <div style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <h2 style=\"color: #2b6cb0;\">SEO Optimization Report</h2>\n    <p><strong>Keyword:</strong> ${keyword}</p>\n    <p><strong>Score:</strong> <span style=\"font-size: 18px; color: #16a34a;\">${data.score}/100</span></p>\n\n    <h3 style=\"color: #1d4ed8;\">Missing Subtopics</h3>\n    <ul>\n      ${data.missing_subtopics.map(t => `<li>${t}</li>`).join('')}\n    </ul>\n\n    <h3 style=\"color: #1d4ed8;\">Long-Tail Keywords</h3>\n    <ul>\n      ${data.long_tail_keywords.map(k => `<li>${k}</li>`).join('')}\n    </ul>\n\n    <h3 style=\"color: #1d4ed8;\">Recommendations</h3>\n    <ul>\n      ${data.recommendations.map(r => `<li>✅ ${r}</li>`).join('')}\n    </ul>\n\n    <hr style=\"margin:20px 0;\"/>\n    <p style=\"font-size: 12px; color: #888;\">Generated automatically by the SEO Keyword Optimizer Agent.</p>\n  </div>\n  `\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        0
+      ],
+      "id": "6d919918-b89a-48fb-a9b4-10dbb29ad9af",
+      "name": "Generate HTML Report"
+    },
+    {
+      "parameters": {
+        "sendTo": "ranilo@popai.agency",
+        "subject": "SEO Optimization Report",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        912,
+        0
+      ],
+      "id": "58bf058d-1077-454b-b44d-33ef4a8552e3",
+      "name": "Send SEO Report",
+      "webhookId": "aa19c683-12c5-454b-9b5e-730b4513512a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "seo-keywords-optimizer",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -256,
+        224
+      ],
+      "id": "01955cf6-a1c9-48f4-9070-5a74a699534e",
+      "name": "Webhook",
+      "webhookId": "e1e46b8d-fbb7-42ef-87fd-e0a67d91896e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const apiKey = $input.first().json.query.apikey;\nconst requiredKey = \"seo_optimizer_test_key\";\n\nif (!apiKey || apiKey !== requiredKey) {\n  throw new Error(\"Unauthorized — invalid API key\");\n}\n\nreturn [{ validated: true }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        224
+      ],
+      "id": "64ee85ce-0048-4cb2-8f31-be8c442d606b",
+      "name": "validation"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=📝 SEO Keywords Optimizer — Developer Notes\n🔹 How to Use This Agent\n\nThis workflow takes a content draft + target keyword, analyzes SERP competition, runs an SEO scoring process, and generates an HTML SEO report.\n\nThe workflow performs:\n\nSERP data fetch via Google Search API\n\nSERP parsing and competitor extraction\n\nSEO analysis using Gemini\n\nHTML summary generation\n\nSending the report via Gmail\n\nA Webhook Trigger is included for NMS-AI mandatory workflow standardization.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/seo-keywords-optimizer\n\nMethod: POST\n\nTest Payload Example:\n\n{\n  \"apiKey\": \"seo_optimizer_test_key\"\n}\n\n\nWebhook does NOT start the actual SEO workflow.\nReal execution starts from the Manual Trigger node (or later, a button/cron if added).\n\n🔹 Setup Instructions\n\nAdd environment variable:\n\nSEO_OPTIMIZER_API_KEY = seo_optimizer_test_key\n\n\nConfigure Google Custom Search API\n\nAPI Key: sample-google-search-key\nSearch Engine ID (CX): sample-cx-id-123\n\n\nConfigure Gmail OAuth Credential\n\nEmail: test@test.com\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\nClient Secret: sample-gmail-secret\n\n\nConfigure Gemini API Key\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nInput Requirements:\n\ndraft: text content being analyzed\n\nkeyword: target SEO keyword\n\n🔹 Required Credentials (Example placeholders)\n\nGoogle Custom Search API\n\nAPI Key: sample-google-search-key\nCX: sample-cx-id-123\n\n\nGmail OAuth\n\nEmail: test@test.com\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\nClient Secret: sample-gmail-secret\n\n\nGemini API\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nEnvironment Variable\n\nSEO_OPTIMIZER_API_KEY = seo_optimizer_test_key\n\n🔹 Notes\n\nWebhook + validation is mandatory for NMS compliance\n\nReal workflow logic begins from the Manual Trigger (Start)\n\nSticky note uses placeholder credentials ONLY\n\nReal secrets must be inside n8n Credential Manager and environment variables\n\nDo not remove the webhook section even if unused",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        224
+      ],
+      "id": "e202d93f-efb7-4ce9-bfe4-17e6a3052e8f",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "content": "📝 SEO Keywords Optimizer — Developer Notes\n🔹 How to Use This Agent\n\nThis workflow takes a content draft + target keyword, analyzes SERP competition, runs an SEO scoring process, and generates an HTML SEO report.\n\nThe workflow performs:\n\nSERP data fetch via Google Search API\n\nSERP parsing and competitor extraction\n\nSEO analysis using Gemini\n\nHTML summary generation\n\nSending the report via Gmail\n\nA Webhook Trigger is included for NMS-AI mandatory workflow standardization.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/seo-keywords-optimizer\n\nMethod: POST\n\nTest Payload Example:\n\n{\n  \"apiKey\": \"seo_optimizer_test_key\"\n}\n\n\nWebhook does NOT start the actual SEO workflow.\nReal execution starts from the Manual Trigger node (or later, a button/cron if added).\n\n🔹 Setup Instructions\n\nAdd environment variable:\n\nSEO_OPTIMIZER_API_KEY = seo_optimizer_test_key\n\n\nConfigure Google Custom Search API\n\nAPI Key: sample-google-search-key\nSearch Engine ID (CX): sample-cx-id-123\n\n\nConfigure Gmail OAuth Credential\n\nEmail: test@test.com\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\nClient Secret: sample-gmail-secret\n\n\nConfigure Gemini API Key\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nInput Requirements:\n\ndraft: text content being analyzed\n\nkeyword: target SEO keyword\n\n🔹 Required Credentials (Example placeholders)\n\nGoogle Custom Search API\n\nAPI Key: sample-google-search-key\nCX: sample-cx-id-123\n\n\nGmail OAuth\n\nEmail: test@test.com\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\nClient Secret: sample-gmail-secret\n\n\nGemini API\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nEnvironment Variable\n\nSEO_OPTIMIZER_API_KEY = seo_optimizer_test_key\n\n🔹 Notes\n\nWebhook + validation is mandatory for NMS compliance\n\nReal workflow logic begins from the Manual Trigger (Start)\n\nSticky note uses placeholder credentials ONLY\n\nReal secrets must be inside n8n Credential Manager and environment variables\n\nDo not remove the webhook section even if unused",
+        "height": 1872,
+        "width": 672
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1296,
+        -352
+      ],
+      "typeVersion": 1,
+      "id": "e8c2364b-9f4f-4878-9367-5767a97b988d",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "SEO Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "SEO Analyzer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start - Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Input - Draft & Keyword",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input - Draft & Keyword": {
+      "main": [
+        [
+          {
+            "node": "Google SERP Fetch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google SERP Fetch": {
+      "main": [
+        [
+          {
+            "node": "Parse SERP Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse SERP Results": {
+      "main": [
+        [
+          {
+            "node": "SEO Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SEO Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Generate HTML Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate HTML Report": {
+      "main": [
+        [
+          {
+            "node": "Send SEO Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f0bfe66f-e8aa-4991-8037-e1afe497bf85",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "wkdY0CPuGIj2aEmV",
+  "tags": []
+}

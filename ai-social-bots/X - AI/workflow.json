@@ -1,0 +1,2238 @@
+{
+  "name": "X - AI",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram X bot').item.json.callback_query.message.reply_to_message.chat.id }}",
+        "messageId": "={{ $('Telegram X bot').item.json.callback_query.message.message_id }}",
+        "replyMarkup": "inlineKeyboard",
+        "text": "=Successfully posted to X!",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "View Post",
+                    "additionalFields": {
+                      "url": "={{ ($json.text.match(/https?:\\/\\/[^\\s]+/) || [null])[0] }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        752
+      ],
+      "id": "aa8003c6-b266-4705-a74b-0320f5277df2",
+      "name": "Share live tweet",
+      "webhookId": "6ef81e56-a25a-41a3-b92f-0e146e82cb0a",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $('Prepare publish payload').item.json.caption }}",
+        "additionalFields": {
+          "attachments": "={{ $('Upload media to X').item.json.media_id_string }}"
+        }
+      },
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        848
+      ],
+      "id": "87de69ce-4662-499d-9ddf-a710d00ec3d8",
+      "name": "Publish to X",
+      "retryOnFail": true,
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "vw4gTcimA6qPQb6G",
+          "name": "X account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        848
+      ],
+      "id": "81c6e70a-6030-418e-9ff3-75176f233fcb",
+      "name": "Fetch approved media",
+      "webhookId": "92f02af2-ffc5-4da6-a88f-99ce89b45527",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        912,
+        848
+      ],
+      "id": "c20ee54f-bec6-48fe-9496-ffd83ef310f4",
+      "name": "Wait before publish",
+      "webhookId": "854cd0bd-239b-4512-9635-eb36c438be0d"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://upload.twitter.com/1.1/media/upload.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "twitterOAuth1Api",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "=media",
+              "inputDataFieldName": "=data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        704,
+        848
+      ],
+      "id": "0b42edf1-e2b8-4d51-ba5d-7d6de36df3b1",
+      "name": "Upload media to X",
+      "credentials": {
+        "twitterOAuth1Api": {
+          "id": "iIUsUGIbLg0HOeBj",
+          "name": "X OAuth1 account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Extract chat context').isExecuted ? $('Extract chat context').item.json.text : $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are a X Content Creator AI.\nYour goal is to generate short, engaging, and trendy Twitter captions based on current trending topics — to increase engagement and followers.\n\nSTEP 1: TREND RESEARCH (MANDATORY)\n\n**ALWAYS use the \"Google_search_engine\" tool FIRST before generating any content.**\n**You MUST perform at least 4 searches with different keywords to gather comprehensive trend data.**\n\nHOW TO RESEARCH TRENDS:\n1. Call Google_search_engine with the user's topic + \"trends {{ new Date($today).toLocaleString(\"default\", { month: \"long\", year: \"numeric\" }) }}\"\n2. Search for related hashtags: \"[topic] trending hashtags\"\n3. Search for engagement strategies: \"[topic] social media engagement\"\n4. Search for content formats: \"[topic] viral content {{ new Date($today).toLocaleString(\"default\", { month: \"long\", year: \"numeric\" }) }}\"\n5. Use Further_more_information (Wikipedia) tool if you need background context on the topic\n6. ANALYZE all search results to identify:\n   - Trending topics, hashtags, and themes\n   - Popular content formats (videos, memes, stories)\n   - High-engagement patterns\n   - Current conversations and user behavior\n\n**CRITICAL:** Always perform multiple searches with varied keywords. The more research, the better your content will perform.\n\nBased on your research, create content that:\n\n✓ Incorporates trending themes/topics from search results\n✓ Uses relevant trending hashtags discovered\n✓ Aligns with popular content formats found\n✓ Connects the user's topic to current social media trends\n✓ Is timely, relevant, and optimized for engagement\n\nCRITICAL OUTPUT RULES\n\n1️⃣ The \"captions\" field must contain **CLEAN TEXT ONLY** — strictly **no hashtags (#)** inside.\n2️⃣ The \"hashtags\" field must contain **ALL hashtags** as a **single string**, with **each hashtag starting with #** and separated by a single space.\n3️⃣ The \"hashtags\" field must include **5–7 relevant hashtags** (use trending ones from your research).\n4️⃣ The output must be **a valid JSON object** with **exactly** these four fields:\n   - \"captions\"\n   - \"hashtags\"\n   - \"image_prompt\"\n   - \"chat_id\"\n5️⃣ Do **not** include backticks, markdown formatting, explanations, or extra text.\n6️⃣ Captions must be under 230 characters, fun, casual, and audience-friendly.\n7️⃣ \"image_prompt\" must be 2-3 sentences maximum and incorporate NMS brand colors.\n\nIMAGE PROMPT - NMS BRAND GUIDELINES\n\nEvery \"image_prompt\" MUST include these NMS brand elements:\n\nREQUIRED COLOR PALETTE:\n✓ Vibrant red (#E52B2B) - dominant color\n✓ Warm orange (#FF6B35) - accent color  \n✓ Clean white background\n✓ High contrast, modern aesthetic\n\nVISUAL STYLE:\n✓ Bold, energetic, and eye-catching\n✓ Match trending content formats from your research\n✓ Professional yet approachable\n✓ Clean geometric shapes\n✓ Optimized for X feed (square or 16:9 ratio)\n\nKeep it CONCISE - describe the scene naturally while weaving in the colors.\n\nGOOD Example:\n\"Dynamic illustration of AI-powered interfaces with flowing data streams. Vibrant red (#E52B2B) geometric frames with orange (#FF6B35) glowing tech elements on white background. Modern, high-energy X-optimized composition.\"\n\nJSON OUTPUT FORMAT\n\n{\n  \"captions\": \"<short caption text without hashtags>\",\n  \"hashtags\": \"#hashtag1 #hashtag2 #hashtag3 #hashtag4 #hashtag5 #hashtag6\",\n  \"image_prompt\": \"<2-3 sentence NMS brand-aligned visual description with red/orange colors>\",\n  \"chat_id\": \"{{ $('Extract chat context').isExecuted ? $('Extract chat context').item.json.chatid : $json.chatid }}\"\n}\n\n⚠️ CRITICAL REMINDERS:\n- ALWAYS search Google at least 4 times with different keywords FIRST\n- READ all search results before creating content\n- ADAPT your content to match trends discovered in searches\n- Use trending hashtags from your research\n- Captions: under 230 chars, NO hashtags inside\n- Hashtags: separate field, 5-7 hashtags with # symbol\n- Image prompt: MUST use red (#E52B2B) + orange (#FF6B35) + white\n- Keep image_prompt concise (2-3 sentences)\n- Output ONLY valid JSON, no extra text"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        1616
+      ],
+      "id": "ad424b2e-ac4f-4ded-932c-c32187fee85b",
+      "name": "Generate tweet draft"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract chat context').isExecuted ? $('Extract chat context').item.json.chatid : $json.chatid }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        1808
+      ],
+      "id": "e7fa5aed-ab3a-44ee-811e-22ff4f36f574",
+      "name": "Conversation memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        480,
+        1808
+      ],
+      "id": "50227395-4599-458c-bb72-4db570b4a2f5",
+      "name": "Gemini caption model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kIf8f9beW222JuhO",
+          "name": "googel nms account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-preview-image-generation",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash-preview-image-generation"
+        },
+        "prompt": "={{ $json.output.image_prompt }}",
+        "options": {
+          "binaryPropertyOutput": "img"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        1616
+      ],
+      "id": "d032f06b-4d9b-439b-b4be-22be7b181bd4",
+      "name": "Render tweet image",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kIf8f9beW222JuhO",
+          "name": "googel nms account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "54f2260e-ef89-4dda-8f35-161c8304250f",
+              "name": "chatid",
+              "value": "={{ $json.result.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "01d7176a-c3ea-43af-ab07-769a7545a632",
+              "name": "caption",
+              "value": "={{ $('Telegram X bot').item.json.callback_query.message.reply_to_message.caption }}",
+              "type": "string"
+            },
+            {
+              "id": "9fb4d824-d1f8-411a-a6dd-07893a5986aa",
+              "name": "file_id",
+              "value": "={{ $('Telegram X bot').item.json.callback_query.message.reply_to_message.photo[3].file_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        848
+      ],
+      "id": "4fcc7a71-baa0-4d7d-a022-166084fd5428",
+      "name": "Prepare publish payload"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "be45b180-b32d-41ff-90ed-cdc59d74d4af",
+              "name": "chatid",
+              "value": "={{ $('Telegram X bot').item.json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "ba649496-8c67-49ae-8977-0dad41d72148",
+              "name": "text",
+              "value": "={{ $('Telegram X bot').item.json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        1616
+      ],
+      "id": "d8d9616d-7035-4334-8d21-05588407d8f9",
+      "name": "Extract chat context"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram X bot').item.json.message.chat.id }}",
+        "text": "=Please wait for a 2-3 minutes {{ $('Telegram X bot').item.json.message.chat.first_name }}, I will generate your content shortly...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        1616
+      ],
+      "id": "3fe5c82e-deaf-40ef-9cd9-ff7015da6a7f",
+      "name": "Acknowledge request",
+      "webhookId": "5b6e5c2c-0f1d-45d4-84a3-a2a12d78bf82",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram X bot').item.json.callback_query.message.reply_to_message.chat.id }}",
+        "text": "Would you like me to post this type of topics daily?🤗",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "✅ Yes",
+                    "additionalFields": {
+                      "callback_data": "yesDaily"
+                    }
+                  },
+                  {
+                    "text": "❌ No",
+                    "additionalFields": {
+                      "callback_data": "no"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "reply_to_message_id": "={{ $('Telegram X bot').item.json.callback_query.message.reply_to_message.message_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1552,
+        752
+      ],
+      "id": "63eceaab-4893-4038-8abc-2073faf191ba",
+      "name": "Ask about daily posting",
+      "webhookId": "beb849a6-aa53-485e-bb87-b8702377fd20",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM",
+          "mode": "list",
+          "cachedResultName": "Social Medias - Ai Agent (DAILY)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1551844441,
+          "mode": "list",
+          "cachedResultName": "Twitter",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM/edit#gid=1551844441"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -944,
+        2096
+      ],
+      "id": "d8078ae7-91b7-452d-b734-61a06e564a0d",
+      "name": "Fetch scheduled topics",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IzZFdKDy8iaOFYNG",
+          "name": "Google Sheets [ Gabriel ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.ChatID }}",
+        "text": "Time for your daily post! ⏰",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -736,
+        2096
+      ],
+      "id": "aa4b4a4d-5bbe-4096-a145-9f39ac99ea41",
+      "name": "Notify scheduled post",
+      "webhookId": "b584b62d-ead0-433c-bfbd-40a17b5493d0",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Fetch scheduled topics').item.json['Topic / Prompt'] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are a X Content Creator AI.\nYour goal is to generate short, engaging, and trendy Twitter captions based on current trending topics — to increase engagement and followers.\n\nSTEP 1: TREND RESEARCH (MANDATORY)\n\n**ALWAYS use the \"Google_search_engine\" tool FIRST before generating any content.**\n**You MUST perform at least 4 searches with different keywords to gather comprehensive trend data.**\n\nHOW TO RESEARCH TRENDS:\n1. Call Google_search_engine with the user's topic + \"trends {{ new Date($today).toLocaleString(\"default\", { month: \"long\", year: \"numeric\" }) }}\"\n2. Search for related hashtags: \"[topic] trending hashtags\"\n3. Search for engagement strategies: \"[topic] social media engagement\"\n4. Search for content formats: \"[topic] viral content {{ new Date($today).toLocaleString(\"default\", { month: \"long\", year: \"numeric\" }) }}\"\n5. Use Further_more_information (Wikipedia) tool if you need background context on the topic\n6. ANALYZE all search results to identify:\n   - Trending topics, hashtags, and themes\n   - Popular content formats (videos, memes, stories)\n   - High-engagement patterns\n   - Current conversations and user behavior\n\n**CRITICAL:** Always perform multiple searches with varied keywords. The more research, the better your content will perform.\n\nBased on your research, create content that:\n\n✓ Incorporates trending themes/topics from search results\n✓ Uses relevant trending hashtags discovered\n✓ Aligns with popular content formats found\n✓ Connects the user's topic to current social media trends\n✓ Is timely, relevant, and optimized for engagement\n\nCRITICAL OUTPUT RULES\n\n1️⃣ The \"captions\" field must contain **CLEAN TEXT ONLY** — strictly **no hashtags (#)** inside.\n2️⃣ The \"hashtags\" field must contain **ALL hashtags** as a **single string**, with **each hashtag starting with #** and separated by a single space.\n3️⃣ The \"hashtags\" field must include **5–7 relevant hashtags** (use trending ones from your research).\n4️⃣ The output must be **a valid JSON object** with **exactly** these four fields:\n   - \"captions\"\n   - \"hashtags\"\n   - \"image_prompt\"\n   - \"chat_id\"\n5️⃣ Do **not** include backticks, markdown formatting, explanations, or extra text.\n6️⃣ Captions must be under 230 characters, fun, casual, and audience-friendly.\n7️⃣ \"image_prompt\" must be 2-3 sentences maximum and incorporate NMS brand colors.\n\nIMAGE PROMPT - NMS BRAND GUIDELINES\n\nEvery \"image_prompt\" MUST include these NMS brand elements:\n\nREQUIRED COLOR PALETTE:\n✓ Vibrant red (#E52B2B) - dominant color\n✓ Warm orange (#FF6B35) - accent color  \n✓ Clean white background\n✓ High contrast, modern aesthetic\n\nVISUAL STYLE:\n✓ Bold, energetic, and eye-catching\n✓ Match trending content formats from your research\n✓ Professional yet approachable\n✓ Clean geometric shapes\n✓ Optimized for X feed (square or 16:9 ratio)\n\nKeep it CONCISE - describe the scene naturally while weaving in the colors.\n\nGOOD Example:\n\"Dynamic illustration of AI-powered interfaces with flowing data streams. Vibrant red (#E52B2B) geometric frames with orange (#FF6B35) glowing tech elements on white background. Modern, high-energy X-optimized composition.\"\n\nJSON OUTPUT FORMAT\n\n{\n  \"captions\": \"<short caption text without hashtags>\",\n  \"hashtags\": \"#hashtag1 #hashtag2 #hashtag3 #hashtag4 #hashtag5 #hashtag6\",\n  \"image_prompt\": \"<2-3 sentence NMS brand-aligned visual description with red/orange colors>\",\n  \"chat_id\": \"{{ $('Fetch scheduled topics').item.json.ChatID }}\"\n}\n\n⚠️ CRITICAL REMINDERS:\n- ALWAYS search Google at least 4 times with different keywords FIRST\n- READ all search results before creating content\n- ADAPT your content to match trends discovered in searches\n- Use trending hashtags from your research\n- Captions: under 230 chars, NO hashtags inside\n- Hashtags: separate field, 5-7 hashtags with # symbol\n- Image prompt: MUST use red (#E52B2B) + orange (#FF6B35) + white\n- Keep image_prompt concise (2-3 sentences)\n- Output ONLY valid JSON, no extra text"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -512,
+        2096
+      ],
+      "id": "98635b5f-7729-402f-83cf-94931bec3e43",
+      "name": "Generate daily tweet draft"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        2272
+      ],
+      "id": "34ef3fdc-d7ce-420f-8a20-4382c122a6c2",
+      "name": "Gemini daily model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kIf8f9beW222JuhO",
+          "name": "googel nms account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-exp-image-generation",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash-exp-image-generation"
+        },
+        "prompt": "={{ $json.output.image_prompt }}",
+        "options": {
+          "binaryPropertyOutput": "img"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        16,
+        2096
+      ],
+      "id": "5ba7b4af-24ef-4d2a-a07b-61e94a707df9",
+      "name": "Render daily image",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kIf8f9beW222JuhO",
+          "name": "googel nms account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Generate daily tweet draft').item.json.output.chat_id }}",
+        "binaryData": true,
+        "binaryPropertyName": "img",
+        "replyMarkup": "inlineKeyboard",
+        "additionalFields": {
+          "caption": "={{ $('Generate daily tweet draft').item.json.output.captions }}\n\n{{ $('Generate daily tweet draft').item.json.output.hashtags }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        192,
+        2096
+      ],
+      "id": "1f0542c9-ff6e-40e5-8348-7c6e1124ea3d",
+      "name": "Send daily preview",
+      "webhookId": "17b332f9-addd-430f-8d85-ea37b7d0ba41",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Generate daily tweet draft').item.json.output.chat_id }}",
+        "text": "=I’ve successfully posted your daily content. Check it out! 💡👇\n\nIf you’d like to change the daily content I’ve been posting, just type:\n\n“Create [your content desire]” and say “yes” to daily post to replace the current topic. ✅",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "View Post",
+                    "additionalFields": {
+                      "url": "={{ $json.text.match(/https?:\\/\\/[^\\s]+/)?.[0] }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        2000
+      ],
+      "id": "8b778140-ec7b-4344-a85b-d5e5ef0755dd",
+      "name": "Share daily tweet",
+      "webhookId": "6ef81e56-a25a-41a3-b92f-0e146e82cb0a",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $('Generate daily tweet draft').item.json.output.captions }}\n\n{{ $('Generate daily tweet draft').item.json.output.hashtags }}",
+        "additionalFields": {
+          "attachments": "={{ $('Upload daily media to X').item.json.media_id_string }}"
+        }
+      },
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        2096
+      ],
+      "id": "73cd71d4-1c25-4751-8d5a-85063b3087be",
+      "name": "Publish daily tweet",
+      "retryOnFail": true,
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "vw4gTcimA6qPQb6G",
+          "name": "X account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Send daily preview').item.json.result.photo[3].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        2096
+      ],
+      "id": "f8c030a3-03d3-40d8-b892-30148ddf28b6",
+      "name": "Fetch daily media",
+      "webhookId": "92f02af2-ffc5-4da6-a88f-99ce89b45527",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://upload.twitter.com/1.1/media/upload.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "twitterOAuth1Api",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "=media",
+              "inputDataFieldName": "=data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        2096
+      ],
+      "id": "e9a2252f-b76d-4eb4-8b9f-04706d4ae3d6",
+      "name": "Upload daily media to X",
+      "credentials": {
+        "twitterOAuth1Api": {
+          "id": "iIUsUGIbLg0HOeBj",
+          "name": "X OAuth1 account"
+        },
+        "twitterOAuth2Api": {
+          "id": "vw4gTcimA6qPQb6G",
+          "name": "X account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.result.chat.id }}",
+        "text": "Your post will be sent to Twitter...🐦🚀",
+        "additionalFields": {}
+      },
+      "id": "c8804fce-af0d-4f40-8167-160a7ec66485",
+      "name": "Notify daily approval",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        416,
+        2096
+      ],
+      "webhookId": "7f1ff546-72b2-4edc-8cd5-4b1bf30f4a1b",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Prepare publish payload').item.json.chatid }}",
+        "messageId": "={{ $('Telegram X bot').item.json.callback_query.message.message_id }}",
+        "text": "=⚠️ Oops, something went wrong. Please try again later.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        960
+      ],
+      "id": "c648834f-174d-44f1-ae3d-e002c1ff583c",
+      "name": "Notify publish error",
+      "webhookId": "6ef81e56-a25a-41a3-b92f-0e146e82cb0a",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        960
+      ],
+      "id": "ca64c1c4-6fd4-41cc-98f5-9be08da7cf9e",
+      "name": "End after error",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Prepare publish payload').item.json.chatid }}",
+        "text": "=⚠️ Oops, something went wrong. Please try again later.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        2208
+      ],
+      "id": "46cc5659-8833-4077-b1ab-c772a89b2363",
+      "name": "Notify daily error",
+      "webhookId": "6ef81e56-a25a-41a3-b92f-0e146e82cb0a",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        2208
+      ],
+      "id": "3bb6e019-a446-4600-8e7f-ceb0bb413f7f",
+      "name": "End daily error path",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"json\":{\n   \"userwantstocreatepost\":\"\",\n      \"message\":\"\"\n    }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -160,
+        1824
+      ],
+      "id": "f374bd32-247a-48d1-8205-e0e934b84331",
+      "name": "Structured Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an assistant specialized in creating content for Twitter.\n\nAnalyze the user's message below:\n\n\"{{ $('Telegram X bot').item.json.message.text }}\"\n\nDetermine the intent of the message.\n\nIf the user is requesting you to **generate a Twitter post, caption, content idea, or prompt**, respond with:\n\n{\n  \"UserwantsToCreatePost\": true\n  \"reply\": <your reply>\n}\n\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -336,
+        1632
+      ],
+      "id": "33b9f778-4d56-4031-a72a-dc6d526f4ba8",
+      "name": "AI Agent Inquiry messages"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram X bot').item.json.message.chat.id }}",
+        "text": "={{ $json.output.json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        1808
+      ],
+      "id": "45833d7b-ca59-4755-9983-54c50022c440",
+      "name": "Send a reply",
+      "webhookId": "a5c5dd13-d98d-4e1a-b3c2-cc950efce029",
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f67a42b6-bc32-4746-b68d-864ffedf40ea",
+              "leftValue": "={{ $json.output.json.userwantstocreatepost }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        1632
+      ],
+      "id": "0edff040-1e6a-48bf-818b-210b3bac3841",
+      "name": "Does the user want to post?"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        1824
+      ],
+      "id": "2b0d4216-8c4f-4fcd-9617-a58285699e6e",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kIf8f9beW222JuhO",
+          "name": "googel nms account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Things to consider\n- Don't post after a post prompt has been made add like a delay when you post another again.\nOptimization: \n1. Add limit to the telegram bot like a post count per day ideally 10 posts only and the interval between posts (30 mins).\n2. Prevent user to post consecutively this can make the account to be flagged or blocked for spamming post requests.",
+        "height": 176,
+        "width": 704
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1040,
+        832
+      ],
+      "typeVersion": 1,
+      "id": "c49888a7-3638-4ff1-91de-56a65b0a349a",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Daily Trigger for new Content Generation\n- Check excel for topics.\n- Notify users for the daily posting\n- Generate new post depending on the topic",
+        "height": 464,
+        "width": 1056
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1136,
+        1968
+      ],
+      "typeVersion": 1,
+      "id": "f1e4921e-0757-419a-b12c-82971658e9bc",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Daily AI Image Creation\n- Generates an image based on the image prompt.\n- Merges the Generated Image and the contents.\n- Sends a preview of the content.",
+        "height": 304,
+        "width": 416,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -64,
+        1968
+      ],
+      "typeVersion": 1,
+      "id": "c5c979d0-b8ad-4dd4-a474-6c9a0ce2e2f8",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Posting new post \n- Formats the new post.\n- Get the image and uploads it on to Twitter Container for Posting.\n- Creates a new post and return the link of the post to telegram to explore.\n",
+        "height": 400,
+        "width": 1312,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        368,
+        1968
+      ],
+      "typeVersion": 1,
+      "id": "0a13397c-e840-4799-8ae6-eda852cb8e0c",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $json.callback_query.id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -448,
+        1216
+      ],
+      "id": "e8a92400-a2c9-4782-89aa-2d58da372b4d",
+      "name": "Answer Query a callback",
+      "webhookId": "93d20816-6ea6-49c4-a317-c718abc62dc8",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Telegram X bot').item.json.callback_query.data }}",
+                    "rightValue": "postX",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "fa900c0c-8b72-4732-8187-fc9cec8a3e3b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Post to X"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b4fc2852-d16e-4b85-9356-f631f7c4b6e8",
+                    "leftValue": "={{ $('Telegram X bot').item.json.callback_query.data }}",
+                    "rightValue": "generate",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Generate"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3bef44fe-3b17-4e2d-be13-e3bf4c5633a1",
+                    "leftValue": "={{ $('Telegram X bot').item.json.callback_query.data }}",
+                    "rightValue": "yesDaily",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Yes to daily"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3a32d89e-9007-458a-abc0-2e8f77bf156a",
+                    "leftValue": "={{ $('Telegram X bot').item.json.callback_query.data }}",
+                    "rightValue": "no",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No to daily"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -16,
+        1184
+      ],
+      "id": "42cb72ba-75ee-41f3-9b4d-8df3eaeeee1c",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "content": "## Check for query data (buttons)\n- Post to X\n- Generate another\n- Yes for inserting data to excel\n- No for inserting data to excel",
+        "height": 176,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -192,
+        960
+      ],
+      "typeVersion": 1,
+      "id": "a82e5f29-02ba-4eed-af7d-3d176b91b7de",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "## Approved Posting\n- Notifies the user that the post was approved and will be posted on Instagram.\n- Formats the data to get the Caption and FileID(image).\n- Get the image and uploads it on to Instagram Container for Posting.\n- Creates a post and return the link of the post to telegram to explore.\n- Asks user again to post a new post daily then append the topic in the excel.",
+        "height": 176,
+        "width": 560,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        688,
+        1040
+      ],
+      "typeVersion": 1,
+      "id": "e9793c8c-01f1-4082-b87a-4e913589de4d",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "## Telegram Trigger for (Message & Button Callback)\n- Check first if the trigger is either a message or callback ",
+        "height": 112,
+        "width": 448
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1040,
+        1040
+      ],
+      "typeVersion": 1,
+      "id": "79869c0f-f710-4a08-9103-7f071bdaabe8",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -992,
+        1216
+      ],
+      "id": "70df3be4-a908-4208-aca0-330f450b1685",
+      "name": "Telegram X bot",
+      "webhookId": "81e4783f-d46e-462a-a654-a586dc2e8f2b",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## AI Content & Image Creation -> User approval\n- The AI generates caption, hashtags and image prompt for later use\n- Generates an image based on the image prompt\n- Formats the AI output to extract the Caption and Hashtags\n- Merges the Generated Image and the extracted Caption and Hashtags\n- Sends a preview of the content for approval\n- If approved, notify the user about posting and continue posting\n- If no, then notify the user for follow-up re-creation of the content",
+        "height": 256,
+        "width": 496,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        896,
+        1328
+      ],
+      "typeVersion": 1,
+      "id": "7808f5b5-abe2-4b58-acbf-6c518e015b2a",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "## AI Agent to check if the user wants to post\n- If user wants to post proceeds on the usual flow (send message for reassurance)\n- If the message isn't aligned on the the AI agent proceed on explaining this AI ",
+        "height": 176,
+        "width": 432,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -336,
+        1424
+      ],
+      "typeVersion": 1,
+      "id": "e27866fa-3c80-4bcb-b74f-e1d6d023acdb",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram X bot').item.json.callback_query.message.chat.id }}",
+        "messageId": "={{ $('Telegram X bot').item.json.callback_query.message.message_id }}",
+        "text": "={{ $('Telegram X bot').item.json.callback_query.message.text }}  \n\n⏳ Processing your request...",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        1216
+      ],
+      "id": "400907a5-3296-4dc8-9dc3-b6e5c76ff5ef",
+      "name": "Edit a text message",
+      "webhookId": "bec724f6-c272-4b00-9d77-9e576d2ee9f2",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Generate tweet draft').item.json.output.chat_id }}",
+        "text": "🔍 Take a moment to review! The workflow is paused",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "✅ Post to Twitter",
+                    "additionalFields": {
+                      "callback_data": "=postX"
+                    }
+                  },
+                  {
+                    "text": "❌ Generate a new one?",
+                    "additionalFields": {
+                      "callback_data": "generate"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "reply_to_message_id": "={{ $json.result.message_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1456,
+        1616
+      ],
+      "id": "41ae769a-428f-4d2f-88df-13563725c9a6",
+      "name": "Confirmation of contents",
+      "webhookId": "beb849a6-aa53-485e-bb87-b8702377fd20",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Generate tweet draft').item.json.output.chat_id }}",
+        "binaryData": true,
+        "binaryPropertyName": "img",
+        "replyMarkup": "inlineKeyboard",
+        "additionalFields": {
+          "caption": "={{ $('Generate tweet draft').item.json.output.captions }}\n\n{{ $('Generate tweet draft').item.json.output.hashtags }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1264,
+        1616
+      ],
+      "id": "46544742-2484-42e2-a29c-72bd12e5ebea",
+      "name": "Send preview post",
+      "webhookId": "17b332f9-addd-430f-8d85-ea37b7d0ba41",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8684d2b8-3ea4-4a1d-b1c0-7ad96d00fdd2",
+              "name": "=text",
+              "value": "=I need you to revise this content within the same topic and content:{{ $('Telegram X bot').item.json.callback_query.message.reply_to_message.caption }}",
+              "type": "string"
+            },
+            {
+              "id": "4dbd92f9-0621-4732-af61-0dec283df06e",
+              "name": "=chatid",
+              "value": "={{ $json.result.chat.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        1024
+      ],
+      "id": "19a21254-290b-4b5d-874a-10f654372f9b",
+      "name": "Re - Format Contents"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram X bot').item.json.callback_query.message.chat.id }}",
+        "messageId": "={{ $('Telegram X bot').item.json.callback_query.message.message_id }}",
+        "text": "Creating fresh content ✨📱",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        1024
+      ],
+      "id": "938d3980-6ecd-4400-bc28-eaf76b8e61db",
+      "name": "Update bot message (generate)",
+      "webhookId": "99081ee0-ca0f-4e78-acf6-5f259c8c6641",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram X bot').item.json.callback_query.message.chat.id }}",
+        "messageId": "={{ $('Telegram X bot').item.json.callback_query.message.message_id }}",
+        "text": "=Got it {{ $('Telegram X bot').item.json.callback_query.from.first_name }}! 😊👍",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        1232
+      ],
+      "id": "0929d252-101d-45a5-bd39-fbca59d28130",
+      "name": "Update bot message (Yes Daily)",
+      "webhookId": "52297a98-d8bb-4d98-8347-e93fcce30b39",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram X bot').item.json.callback_query.message.chat.id }}",
+        "messageId": "={{ $json.result.message_id }}",
+        "text": "=Got it {{ $('Telegram X bot').item.json.callback_query.message.chat.first_name }}! 😊👍",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        1424
+      ],
+      "id": "6b10dfe0-5736-4ba6-b0ce-740ecc884000",
+      "name": "Update bot message (No Daily)",
+      "webhookId": "f4449e2a-2409-4dd5-bb45-7f61bfb07b80",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM",
+          "mode": "list",
+          "cachedResultName": "Social Medias - Ai Agent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1551844441,
+          "mode": "list",
+          "cachedResultName": "Twitter",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM/edit#gid=1551844441"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ChatID": "={{ $('Telegram X bot').item.json.callback_query.message.chat.id }}",
+            "Topic / Prompt": "={{ $('Telegram X bot').item.json.callback_query.message.reply_to_message.caption }}"
+          },
+          "matchingColumns": [
+            "ChatID"
+          ],
+          "schema": [
+            {
+              "id": "ChatID",
+              "displayName": "ChatID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Topic / Prompt",
+              "displayName": "Topic / Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        480,
+        1232
+      ],
+      "id": "07c1ff2a-14d4-420e-a937-bc1e853cc5cc",
+      "name": "Append Topic & ChatID",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IzZFdKDy8iaOFYNG",
+          "name": "Google Sheets [ Gabriel ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"captions\": \"<short caption text without hashtags>\",\n  \"hashtags\": \"#hashtag1 #hashtag2 #hashtag3 #hashtag4 #hashtag5 #hashtag6\",\n  \"image_prompt\": \"<2-3 sentence NMS brand-aligned visual description with red/orange colors>\",\n  \"chat_id\": \"{{ $('Extract chat context').isExecuted ? $('Extract chat context').item.json.chatid : $json.chatid }}\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1152,
+        1808
+      ],
+      "id": "ffe7150e-798b-4369-ae46-0eedca01690e",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"captions\": \"<short caption text without hashtags>\",\n  \"hashtags\": \"#hashtag1 #hashtag2 #hashtag3 #hashtag4 #hashtag5 #hashtag6\",\n  \"image_prompt\": \"<2-3 sentence NMS brand-aligned visual description with red/orange colors>\",\n  \"chat_id\": \"{{ $('Fetch scheduled topics').item.json.ChatID }}\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -192,
+        2272
+      ],
+      "id": "33a2cc08-777f-4341-8cc2-2fac92881d6c",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "1b3f6975-1472-4795-abe8-3cb7c058c527"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "/start"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fc1b17c3-07f5-4c98-ba19-81e44cb43bc8",
+                    "leftValue": "={{$json.callback_query}}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Button callback"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.message_id }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "number",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "catch-all-rule"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Prompt"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -800,
+        1200
+      ],
+      "id": "84346aaa-0fdf-4bc2-960b-9aca803c8075",
+      "name": "Router"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.from.id }}",
+        "text": "=✉️ Send a message like:\n\"Create a post about AI trends in 2025\"\n\"Write a X post about productivity tips\"\n\n📸 Get preview → Choose:\n✅ Post to X\n❌ Generate new one\n🔗 Receive X link\n\n📅 Daily posts - After posting, choose if you want automatic daily content\n💡 Tip: Be specific about your topic!",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -448,
+        1040
+      ],
+      "id": "00d97fbd-5662-4cb0-8058-cf6db762effd",
+      "name": "/start",
+      "webhookId": "d2d49e93-866d-443e-ba1a-9f36667304fd",
+      "credentials": {
+        "telegramApi": {
+          "id": "jLm33lBy0Xs0mK2M",
+          "name": "Telegram [Gabriel - PopAITwitter_Bot ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ef562cbb-1745-493c-8517-cd023c087c69",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1120,
+        2096
+      ],
+      "id": "2eed10b3-69e0-44c0-b3b4-2f362a2683d9",
+      "name": "Webhook",
+      "webhookId": "ef562cbb-1745-493c-8517-cd023c087c69"
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        992,
+        2096
+      ],
+      "id": "0aaf20ce-4f63-4b98-87db-189f8417366a",
+      "name": "Wait before publish1",
+      "webhookId": "854cd0bd-239b-4512-9635-eb36c438be0d"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        784,
+        1808
+      ],
+      "id": "7f17fc87-5af3-4f04-94a2-60446e1b6ec8",
+      "name": "Further_more_information"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool to search Google for current trending information, hashtags, and social media insights. Call this multiple times with different keywords for comprehensive research.",
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyBAqb-kUBK_8pmKmpoK5R4EEPs8C00rCHM"
+            },
+            {
+              "name": "cx",
+              "value": "86e6fcd640afb451f"
+            },
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('q', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        976,
+        1808
+      ],
+      "id": "8bbaec23-5684-4c6a-a2a3-b4f464237295",
+      "name": "Google_search_engine"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        2272
+      ],
+      "id": "c24cf129-2ead-4195-bcce-7be1eaea1a8c",
+      "name": "Further_more_information1"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool to search Google for current trending information, hashtags, and social media insights. Call this multiple times with different keywords for comprehensive research.",
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyBAqb-kUBK_8pmKmpoK5R4EEPs8C00rCHM"
+            },
+            {
+              "name": "cx",
+              "value": "86e6fcd640afb451f"
+            },
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('q', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -352,
+        2272
+      ],
+      "id": "c17ff464-13a0-4e3e-9d82-168a1b5c5609",
+      "name": "Google_search_engine1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Publish to X": {
+      "main": [
+        [
+          {
+            "node": "Share live tweet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify publish error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch approved media": {
+      "main": [
+        [
+          {
+            "node": "Upload media to X",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait before publish": {
+      "main": [
+        [
+          {
+            "node": "Publish to X",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload media to X": {
+      "main": [
+        [
+          {
+            "node": "Wait before publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate tweet draft": {
+      "main": [
+        [
+          {
+            "node": "Render tweet image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Generate tweet draft",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini caption model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate tweet draft",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render tweet image": {
+      "main": [
+        [
+          {
+            "node": "Send preview post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare publish payload": {
+      "main": [
+        [
+          {
+            "node": "Fetch approved media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract chat context": {
+      "main": [
+        [
+          {
+            "node": "Acknowledge request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acknowledge request": {
+      "main": [
+        [
+          {
+            "node": "Generate tweet draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask about daily posting": {
+      "main": [
+        []
+      ]
+    },
+    "Share live tweet": {
+      "main": [
+        [
+          {
+            "node": "Ask about daily posting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch scheduled topics": {
+      "main": [
+        [
+          {
+            "node": "Notify scheduled post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate daily tweet draft": {
+      "main": [
+        [
+          {
+            "node": "Render daily image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini daily model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate daily tweet draft",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render daily image": {
+      "main": [
+        [
+          {
+            "node": "Send daily preview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify scheduled post": {
+      "main": [
+        [
+          {
+            "node": "Generate daily tweet draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish daily tweet": {
+      "main": [
+        [
+          {
+            "node": "Share daily tweet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify daily error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch daily media": {
+      "main": [
+        [
+          {
+            "node": "Upload daily media to X",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload daily media to X": {
+      "main": [
+        [
+          {
+            "node": "Wait before publish1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send daily preview": {
+      "main": [
+        [
+          {
+            "node": "Notify daily approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify daily approval": {
+      "main": [
+        [
+          {
+            "node": "Fetch daily media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify publish error": {
+      "main": [
+        [
+          {
+            "node": "End after error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify daily error": {
+      "main": [
+        [
+          {
+            "node": "End daily error path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent Inquiry messages",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Inquiry messages": {
+      "main": [
+        [
+          {
+            "node": "Does the user want to post?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Does the user want to post?": {
+      "main": [
+        [
+          {
+            "node": "Extract chat context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Inquiry messages",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Query a callback": {
+      "main": [
+        [
+          {
+            "node": "Edit a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Prepare publish payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update bot message (generate)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update bot message (Yes Daily)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update bot message (No Daily)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram X bot": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit a text message": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmation of contents": {
+      "main": [
+        []
+      ]
+    },
+    "Send preview post": {
+      "main": [
+        [
+          {
+            "node": "Confirmation of contents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Re - Format Contents": {
+      "main": [
+        [
+          {
+            "node": "Generate tweet draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update bot message (generate)": {
+      "main": [
+        [
+          {
+            "node": "Re - Format Contents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update bot message (Yes Daily)": {
+      "main": [
+        [
+          {
+            "node": "Append Topic & ChatID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate tweet draft",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate daily tweet draft",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router": {
+      "main": [
+        [
+          {
+            "node": "/start",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Answer Query a callback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent Inquiry messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch scheduled topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait before publish1": {
+      "main": [
+        [
+          {
+            "node": "Publish daily tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Further_more_information": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate tweet draft",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google_search_engine": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate tweet draft",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Further_more_information1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate daily tweet draft",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google_search_engine1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate daily tweet draft",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b4634b5f-a4f9-409e-81d5-d0a997d4eeee",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "RBh4l7VDWTzc6ABs",
+  "tags": []
+}

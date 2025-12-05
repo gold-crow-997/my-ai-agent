@@ -1,0 +1,860 @@
+{
+  "name": "Email Responder",
+  "nodes": [
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"subject\": \"string\",\n  \"body\": \"string\",\n  \"To\": \"<email eddress>\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2736,
+        -64
+      ],
+      "id": "744e5ded-da62-4982-9619-31f3fee05365",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        1808,
+        -464
+      ],
+      "id": "dd079dfc-177d-4f88-b31c-cbae3128c2d4",
+      "name": "New Incoming Email",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: One email object\nconst email = items[0].json;\n\n// Extract useful fields\nreturn [\n  {\n    json: {\n      id: email.id,\n      From: email.From,\n      to: email.To,\n      subject: email.Subject,\n      snippet: email.snippet,\n      labels: email.labels.map(l => l.name),\n      date: new Date(parseInt(email.internalDate)).toISOString()\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        -464
+      ],
+      "id": "c64b9a34-1c6c-4b0f-9ce3-b55cb7ff1c1b",
+      "name": "Extract Email Metadata"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $('Parse Callback Data').item.json.messageId }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2032,
+        -288
+      ],
+      "id": "530476a8-ad11-42a4-86d2-93a257c763da",
+      "name": "Fetch Original Gmail Message",
+      "webhookId": "21124d6b-d9e7-4949-890b-8615168ff6b7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e703541a-21d8-4620-910c-c1b93c01b860",
+              "name": "originID",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "ca426b4f-40a8-48cd-bd3a-052df9d0f838",
+              "name": "from",
+              "value": "={{ $json.From }}",
+              "type": "string"
+            },
+            {
+              "id": "99ed32f1-d715-4fc8-b457-3d7f842589ea",
+              "name": "snippet",
+              "value": "={{ $json.snippet }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2256,
+        -288
+      ],
+      "id": "e9bed239-2063-4432-935b-f64c5f7ee1ed",
+      "name": "Map Email Data to AI Input"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an email assistant for NMS company.\n\nYour goal is to generate polite, brand-consistent replies to customer emails. \nYou may use the following tools if needed:\n- Google Sheets Tool: Use this to look up services and descriptions from the company knowledge base. \n\n\nSteps you should take:\n1. Read the original email carefully.\n2. If you need official information, call the Google Sheets Tool to fetch rows from the KB.\n3. Use the selected row’s **service** and **description** as the factual basis for your reply.\n4. Draft a professional, friendly, and concise email reply in the company’s brand voice.\n5. Always return the result as valid JSON with exactly these fields:\n{\n  \"subject\": \"string\",\n  \"body\": \"string\",\n  \"To\": {{ $json.from }}\n}\nOriginal email:\n{{ $json.snippet }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2544,
+        -288
+      ],
+      "id": "cad1aef0-1775-4408-8e74-e4893e8c972e",
+      "name": "Generate Draft Reply",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2480,
+        -64
+      ],
+      "id": "8ec5eaa4-6b6d-4829-a1f6-16cd72612ccc",
+      "name": "Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1tkFLAIDY1Z3k_fASfVWqT7FJukuWdVI66Lae49ponj8",
+          "mode": "list",
+          "cachedResultName": "NMS Services",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tkFLAIDY1Z3k_fASfVWqT7FJukuWdVI66Lae49ponj8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tkFLAIDY1Z3k_fASfVWqT7FJukuWdVI66Lae49ponj8/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        2608,
+        -64
+      ],
+      "id": "de24f338-79dc-4942-9906-6199baf6f27a",
+      "name": "Knowledge Base Lookup",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.output.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.output.body }}",
+        "options": {
+          "sendTo": "={{ $json.output.To }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2944,
+        -288
+      ],
+      "id": "c65a5704-192c-4558-9386-2b2947ffd07a",
+      "name": "Save Draft in Gmail",
+      "webhookId": "531578b3-2d39-4f1a-9598-2efc6e5e2a69",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "db32b33c-380c-45bf-9826-b25c8fa2e8f3",
+              "leftValue": "={{ $('Parse Callback Data').item.json.action }}",
+              "rightValue": "reject",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        -288
+      ],
+      "id": "79dab451-85f5-46fb-9d49-cf4eadee3ffe",
+      "name": "Check Reviewer Decision"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "delete",
+        "messageId": "={{ $('Parse Callback Data').item.json.draftId }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1808,
+        -288
+      ],
+      "id": "a77ca84d-f6ad-415d-a01d-c349eb431799",
+      "name": "Delete Rejected Draft",
+      "webhookId": "f0d14705-b560-49fe-9718-883e854d1850",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "get",
+        "messageId": "={{ $json.draftId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1808,
+        -96
+      ],
+      "id": "e5db47cb-98d0-40bb-8960-992924d36bdd",
+      "name": "Fetch Gmail Draft",
+      "webhookId": "cf40c4c5-d806-43e5-a270-09309af64409",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to.value[0].address }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2032,
+        -96
+      ],
+      "id": "c358b3f6-20de-4c1d-bcf5-d0840fa2034d",
+      "name": "Send Approved Email",
+      "webhookId": "9ebe5bbc-78ad-4dd3-987d-7a3ad2243ed5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "delete",
+        "messageId": "={{ $('Fetch Gmail Draft').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2256,
+        -96
+      ],
+      "id": "fbe1d33e-0c80-43fc-8ef0-f2cc08355ece",
+      "name": "Remove Draft After Sending",
+      "webhookId": "834c2421-a254-420c-9f2f-273f2e139cf8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appTA5LZjneI9J3Uc",
+          "mode": "list",
+          "cachedResultName": "NMS_Services",
+          "cachedResultUrl": "https://airtable.com/appTA5LZjneI9J3Uc"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl3aJ00LI470Ggox",
+          "mode": "list",
+          "cachedResultName": "email_review_logs",
+          "cachedResultUrl": "https://airtable.com/appTA5LZjneI9J3Uc/tbl3aJ00LI470Ggox"
+        },
+        "filterByFormula": "={uid} = \"{{ $json.uid }}\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        912,
+        -288
+      ],
+      "id": "0b5137d6-6510-43c3-82dd-246f38a9f04f",
+      "name": "Search records",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "lmGXlQK9POhBcHFt",
+          "name": "Airtable [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "889ea5f0-613c-4757-8705-7a6a0f0f3365",
+              "leftValue": "={{ $json.uid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1136,
+        -288
+      ],
+      "id": "c718fbdb-c3dd-4c6c-bcbb-bd18414577bc",
+      "name": "Already Processed?"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appTA5LZjneI9J3Uc",
+          "mode": "list",
+          "cachedResultName": "NMS_Services",
+          "cachedResultUrl": "https://airtable.com/appTA5LZjneI9J3Uc"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl3aJ00LI470Ggox",
+          "mode": "list",
+          "cachedResultName": "email_review_logs",
+          "cachedResultUrl": "https://airtable.com/appTA5LZjneI9J3Uc/tbl3aJ00LI470Ggox"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "uid": "={{ $('Parse Callback Data').item.json.uid }}",
+            "Status": "={{ $('Parse Callback Data').item.json.action }}",
+            "draftId": "={{ $('Parse Callback Data').item.json.draftId }}",
+            "messageId": "={{ $('Parse Callback Data').item.json.messageId }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Id",
+              "displayName": "Id",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "uid",
+              "displayName": "uid",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "draftId",
+              "displayName": "draftId",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "approve",
+                  "value": "approve"
+                },
+                {
+                  "name": "reject",
+                  "value": "reject"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1360,
+        -288
+      ],
+      "id": "ed6ccd92-41ee-4a16-bfe5-8ada5272be8c",
+      "name": "Create Review Log Record",
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "lmGXlQK9POhBcHFt",
+          "name": "Airtable [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json.callback_query.data; \nconst [action, draftId, messageId] = data.split(\"|\");\n\nreturn {\n  uid: $input.first().json.callback_query.message.message_id,\n  action,\n  draftId,\n  messageId,\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        -288
+      ],
+      "id": "cc36dfa6-050d-48a7-8cce-fc02dd0a3bf2",
+      "name": "Parse Callback Data"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        464,
+        -288
+      ],
+      "id": "81fc07d4-8979-4d9d-b6a7-d785bf102e40",
+      "name": "Reviewer Response",
+      "webhookId": "0fa41ce7-dea5-453b-8333-8947c05c9f65",
+      "credentials": {
+        "telegramApi": {
+          "id": "yhPDaTMdzFELeWbH",
+          "name": "Telegram Email Notification [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email-responder",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1200,
+        -48
+      ],
+      "id": "e2740877-8774-4a24-bd7a-824bac772ab6",
+      "name": "Webhook",
+      "webhookId": "e1e46b8d-fbb7-42ef-87fd-e0a67d91896e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const apiKey = $input.first().json.query.apikey;\nconst requiredKey = \"email_responder_test_key\";\n\nif (!apiKey || apiKey !== requiredKey) {\n  throw new Error(\"Unauthorized — invalid API key\");\n}\n\nreturn [{ validated: true }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        -48
+      ],
+      "id": "8f7f3b0a-f03e-4d0e-acc2-17bfa68cf90a",
+      "name": "validation"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=📝 Email Responder — Developer Notes\n🔹 How to Use This Agent\n\nThis workflow automatically:\n\nDetects new incoming emails\n\nExtracts metadata (sender, subject, message body, thread ID)\n\nLooks up related knowledge base data\n\nGenerates a high-quality AI draft reply using Gemini\n\nSaves the AI draft inside Gmail as a “reply draft”\n\nWaits for the reviewer to approve or reject the draft\n\nSends the approved response OR deletes rejected drafts\n\nLogs all reviewer actions to Airtable\n\nA Webhook Trigger is included to meet NMS-AI mandatory workflow standardization.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/email-responder\n\nMethod: POST\nTest Payload Example:\n\n{\n  \"apiKey\": \"email_responder_test_key\"\n}\n\n\nThe webhook does NOT start the real email responder.\nActual execution begins from Gmail Trigger or Telegram Callback.\n\n🔹 Setup Instructions\n\nAdd environment variable:\n\nEMAIL_RESPONDER_API_KEY = email_responder_test_key\n\n\nConfigure Gmail OAuth Credential\n\nEmail: test@test.com\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\nClient Secret: sample-gmail-secret\n\n\nConfigure Google Sheets Credential (knowledge base lookup)\n\nEmail: test@test.com\nClient ID: sample-sheets-client-id.apps.googleusercontent.com\nClient Secret: sample-sheets-secret\n\n\nConfigure Airtable Credential (review logs)\n\nAPI Key: keySampleAirtable12345\nBase ID: appSampleBase123\nTable: EmailReviewLogs\n\n\nConfigure Gemini API Key\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nSetup Telegram Bot (for reviewer decisions)\n\nBot Token: 123456:ABC-test-bot-token\nBot Username: test_email_reviewer_bot\n\n🔹 Required Credentials (Example placeholders)\n\nUse real credentials ONLY inside n8n credential manager.\nUse test placeholders inside this note.\n\nGmail OAuth\n\nEmail: test@test.com\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\nClient Secret: sample-gmail-secret\n\n\nGoogle Sheets (Knowledge Base)\n\nAPI Key: sample-google-sheet-key\nSheet ID: sampleSheet12345\n\n\nAirtable\n\nAPI Key: keySampleAirtable12345\nBase: appSampleBase123\n\n\nGemini API\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nEnvironment Variable\n\nEMAIL_RESPONDER_API_KEY = email_responder_test_key\n\n🔹 Notes\n\nWebhook + Validation is REQUIRED by NMS workflow standards\n\nThe webhook MUST be present even if Gmail Trigger is primary\n\nAll credentials here are examples\n\nReal credentials belong in n8n Credential Manager ONLY\n\nDo NOT remove the Webhook section",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1536,
+        -48
+      ],
+      "id": "006fbbf9-fd32-4643-a4ba-1df951d64054",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "content": "📝 Email Responder — Developer Notes\n🔹 How to Use This Agent\n\nThis workflow automatically:\n\nDetects new incoming emails\n\nExtracts metadata (sender, subject, message body, thread ID)\n\nLooks up related knowledge base data\n\nGenerates a high-quality AI draft reply using Gemini\n\nSaves the AI draft inside Gmail as a “reply draft”\n\nWaits for the reviewer to approve or reject the draft\n\nSends the approved response OR deletes rejected drafts\n\nLogs all reviewer actions to Airtable\n\nA Webhook Trigger is included to meet NMS-AI mandatory workflow standardization.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/email-responder\n\nMethod: POST\nTest Payload Example:\n\n{\n  \"apiKey\": \"email_responder_test_key\"\n}\n\n\nThe webhook does NOT start the real email responder.\nActual execution begins from Gmail Trigger or Telegram Callback.\n\n🔹 Setup Instructions\n\nAdd environment variable:\n\nEMAIL_RESPONDER_API_KEY = email_responder_test_key\n\n\nConfigure Gmail OAuth Credential\n\nEmail: test@test.com\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\nClient Secret: sample-gmail-secret\n\n\nConfigure Google Sheets Credential (knowledge base lookup)\n\nEmail: test@test.com\nClient ID: sample-sheets-client-id.apps.googleusercontent.com\nClient Secret: sample-sheets-secret\n\n\nConfigure Airtable Credential (review logs)\n\nAPI Key: keySampleAirtable12345\nBase ID: appSampleBase123\nTable: EmailReviewLogs\n\n\nConfigure Gemini API Key\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nSetup Telegram Bot (for reviewer decisions)\n\nBot Token: 123456:ABC-test-bot-token\nBot Username: test_email_reviewer_bot\n\n🔹 Required Credentials (Example placeholders)\n\nUse real credentials ONLY inside n8n credential manager.\nUse test placeholders inside this note.\n\nGmail OAuth\n\nEmail: test@test.com\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\nClient Secret: sample-gmail-secret\n\n\nGoogle Sheets (Knowledge Base)\n\nAPI Key: sample-google-sheet-key\nSheet ID: sampleSheet12345\n\n\nAirtable\n\nAPI Key: keySampleAirtable12345\nBase: appSampleBase123\n\n\nGemini API\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nEnvironment Variable\n\nEMAIL_RESPONDER_API_KEY = email_responder_test_key\n\n🔹 Notes\n\nWebhook + Validation is REQUIRED by NMS workflow standards\n\nThe webhook MUST be present even if Gmail Trigger is primary\n\nAll credentials here are examples\n\nReal credentials belong in n8n Credential Manager ONLY\n\nDo NOT remove the Webhook section",
+        "height": 1296,
+        "width": 720
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        416,
+        -64
+      ],
+      "typeVersion": 1,
+      "id": "1c38d035-9a57-4dd4-ad30-f5fdb87564d2",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Draft Reply",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Incoming Email": {
+      "main": [
+        [
+          {
+            "node": "Extract Email Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email Metadata": {
+      "main": [
+        [
+          {
+            "node": "Map Email Data to AI Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Original Gmail Message": {
+      "main": [
+        [
+          {
+            "node": "Map Email Data to AI Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Email Data to AI Input": {
+      "main": [
+        [
+          {
+            "node": "Generate Draft Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Draft Reply": {
+      "main": [
+        [
+          {
+            "node": "Save Draft in Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Draft Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Base Lookup": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate Draft Reply",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Draft in Gmail": {
+      "main": [
+        []
+      ]
+    },
+    "Check Reviewer Decision": {
+      "main": [
+        [
+          {
+            "node": "Delete Rejected Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Rejected Draft": {
+      "main": [
+        [
+          {
+            "node": "Fetch Original Gmail Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Gmail Draft": {
+      "main": [
+        [
+          {
+            "node": "Send Approved Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Approved Email": {
+      "main": [
+        [
+          {
+            "node": "Remove Draft After Sending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Already Processed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Processed?": {
+      "main": [
+        [
+          {
+            "node": "Create Review Log Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Review Log Record": {
+      "main": [
+        [
+          {
+            "node": "Check Reviewer Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reviewer Response": {
+      "main": [
+        [
+          {
+            "node": "Parse Callback Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Callback Data": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "315c43a9-582c-4100-b1a8-79f840707e18",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "AFqpPGycApScpss4",
+  "tags": []
+}

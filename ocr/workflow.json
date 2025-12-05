@@ -1,0 +1,295 @@
+{
+  "name": "OCR",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        208
+      ],
+      "id": "9a7afd52-ff3c-4a44-a56e-c47fc00f8a0e",
+      "name": "AI Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "FOc9yl5RrfuI1Nil",
+          "name": "OpenAI Model Jenmar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Image: {{$binary.data0}}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an OCR AI specialized in extracting text from resumes. Return all visible text from the image exactly as it appears, without modifying, censoring, summarizing, or redacting any content.",
+          "passthroughBinaryImages": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        0
+      ],
+      "id": "67de7993-6156-4517-8193-94dd0bce357b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -192,
+        0
+      ],
+      "id": "eb324484-0e6e-4d55-b7d8-e3a8840a8717",
+      "name": "Sub-workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "let triggerType = null;\n\ntry {\n  const telegram = $('Telegram').first().json;\n  if (telegram) {\n    triggerType = 'telegram';\n  }\n} catch (e) {\n  console.log(\"Telegram node not executed in this run\");\n}\n\ntry {\n  const subWorkflow = $('Sub-workflow').first().json;\n  if (subWorkflow) {\n    triggerType = 'sub-workflow';\n  }\n} catch (e) {\n  console.log(\"Sub-workflow node not executed in this run\");\n}\n\ntry {\n  const chatData = $('Chat').first().json;\n  if (chatData) {\n    triggerType = 'chat';\n  }\n} catch (e) {\n  console.log(\"Chat node not executed in this run\");\n}\n\nif (!triggerType) {\n  triggerType = 'unknown';\n}\n\nreturn [\n  {\n    json: {\n      triggerType\n    },\n    binary: $input.first().binary\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        0
+      ],
+      "id": "3e50b084-8bda-47de-9016-530dd9573595",
+      "name": "Trigger Checker"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "dbc6323e-5f6f-41a9-a6b1-3edc80283bf6",
+                    "leftValue": "={{ $('Trigger Checker').item.json.triggerType }}",
+                    "rightValue": "chat",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fe132111-7322-4b5d-94aa-201430acd2ed",
+                    "leftValue": "={{ $('Trigger Checker').item.json.triggerType }}",
+                    "rightValue": "sub-workflow",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "2823d7c2-40dc-41b9-8d98-99b36983d240",
+      "name": "Response Segregation"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output.text }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -16
+      ],
+      "id": "9665a31a-6224-4b70-89b4-c56d9ef0151f",
+      "name": "Chat Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    output: $('AI Agent').first().json.output.text\n  }\n]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        144
+      ],
+      "id": "56318243-885b-4c09-8a9d-c733aca994a6",
+      "name": "Sub-workflow Response"
+    },
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": true,
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -192,
+        144
+      ],
+      "id": "d8912625-e4c4-43e8-ae4a-889955d9f33b",
+      "name": "Chat",
+      "webhookId": "1502cb76-e82d-45f3-bfc9-0a6e34cec01d"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"text\": {\n\t\t\t\"type\": \"string\"\n\t\t}\n\t}\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        208
+      ],
+      "id": "d58d1ac8-a8ad-4701-b2be-128df4480bcc",
+      "name": "Structured Output Parser"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sub-workflow": {
+      "main": [
+        [
+          {
+            "node": "Trigger Checker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Checker": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Segregation": {
+      "main": [
+        [
+          {
+            "node": "Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sub-workflow Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Response Segregation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat": {
+      "main": [
+        [
+          {
+            "node": "Trigger Checker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6741ccad-30bc-4e81-914c-20205f72943d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b89e421e3d3b00234a3a71d58f20af9ccd29ab9dbca3f763c07354ccbdcd4121"
+  },
+  "id": "Qqr9UIpGPXBv9Rk3",
+  "tags": []
+}

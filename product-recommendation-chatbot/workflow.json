@@ -1,0 +1,583 @@
+{
+  "name": "Product Recommendation Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        256,
+        240
+      ],
+      "id": "9ffa629c-46ba-4d95-8b3c-9cf9e5eba6f6",
+      "name": "Telegram Trigger",
+      "webhookId": "1226ec0b-e4eb-4db0-997c-938f99672b35",
+      "credentials": {
+        "telegramApi": {
+          "id": "Ey36IMOgFS1qlavV",
+          "name": "Telegram Product Recommendation [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        480,
+        464
+      ],
+      "id": "e0adc4bd-1a07-441f-a53e-f5c326f496c0",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"intent\":\"...\",\n  \"missing\":[\"...\"],\n  \"filters\": {\n    \"category\": \"...\",\n    \"price_max\": \"...\",\n    \"color\": \"...\",\n    \"features\": [\"...\"],\n    \"brand\": \"...\"\n  },\n  \"message\":\"...\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        864,
+        464
+      ],
+      "id": "24ec8d4e-8e86-421e-808c-ccbf10f63462",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "description": "=You are the reasoning engine.\nBefore the agent answers, think step-by-step:\n1. Review the user input and memory.\n2. Decide if there is enough info to recommend products.\n3. If missing, return which attributes are missing.\n4. If enough info, set intent = \"recommend\".\n5. Output your reasoning clearly, but short.\n\nAlways use logical reasoning before deciding.\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        464
+      ],
+      "id": "0e776c50-1c19-419e-a281-f67e3f127850",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        464
+      ],
+      "id": "71d6edda-710f-4314-afb6-75d85db1d4ee",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"products\": [\n    {\n      \"name\": \"\",\n      \"price\": \"\",\n      \"color\": \"\",\n      \"brand\": \"\",\n      \"features\": \"\",\n      \"link\": \"\",\n      \"reason\": \"\"\n    }\n  ],\n  \"message\": \"short summary message to show user\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1680,
+        208
+      ],
+      "id": "5d5379bb-8517-4ce8-9889-2785f9d43b9d",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        256,
+        -16
+      ],
+      "id": "a9b6c8d9-af6a-49be-b8aa-fa4f0a66ec7c",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an intelligent product recommendation assistant.\n#IMPORTANT :  You MUST use the Think Tool before responding. MUST!\nYour job:\n You MUST use the Think Tool before responding.\n1. Understand what the user is looking for (product type, price, color, features).\n2. Always start by calling the Thinking Tool to reason step-by-step.\n   The Thinking Tool will help you plan what to do.\n3. Use memory to recall past details from this user.\n4. Return clear JSON output showing what to do next.\n\nOutput only in this JSON format:\n{\n  \"intent\": \"ask_more\" | \"recommend\",\n  \"missing\": [\"color\", \"price\"], \n  \"filters\": {\n     \"category\": \"\",\n     \"price_max\": \"\",\n     \"color\": \"\",\n     \"features\": [],\n     \"brand\": \"...\"\n  },\n  \"message\": \"...\"\n}\n\nUser message: {{ $json.message.text }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        608,
+        240
+      ],
+      "id": "e6f0507f-d44e-4464-870e-2df58d72c2a3",
+      "name": "Conversation Understanding",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0e18c59a-a29b-43c9-8afe-c612e5a4248e",
+              "leftValue": "={{ $json.output.intent }}",
+              "rightValue": "recommend",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        240
+      ],
+      "id": "e67dbefa-97cf-4684-afe3-efacb593b397",
+      "name": "Intent Check"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $('Conversation Understanding').item.json.output.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1504,
+        448
+      ],
+      "id": "3bdabd82-1be6-4c68-b527-fed85200487d",
+      "name": "Ask More Info",
+      "webhookId": "40569646-8105-4869-b993-8c555d0a1f67",
+      "credentials": {
+        "telegramApi": {
+          "id": "Ey36IMOgFS1qlavV",
+          "name": "Telegram Product Recommendation [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an e-commerce product recommendation engine.\n\nGoal: \nAlways start by calling the Thinking Tool to reason step-by-step.\nhe Thinking Tool will help you plan what to do.\nYou MUST use the Thinking Tool before responding.\nUse the Google Sheets Tool to search the product catalog and find 3–5 best matching items for the given filters.\n\nSteps:\n1. Read the filters provided below.\n2. Use the Google Sheets Tool to find rows matching:\n   - Category (or similar text)\n   - Price <= price_max\n   - Color (if provided)\n   - Features (keywords that appear in Features or Description column)\n   - Brand (if provided)\n3. Rank the best 3–5 results.\n4. For each result, write a one-line persuasive justification\n   using its features and the user’s needs.\n5. Return ONLY a JSON object (no markdown, no ```json```).\n\nJSON output format:\n{\n  \"products\": [\n    {\n      \"name\": \"\",\n      \"price\": \"\",\n      \"color\": \"\",\n      \"brand\": \"\",\n      \"features\": \"\",\n      \"link\": \"\",\n      \"reason\": \"\"\n    }\n  ],\n  \"message\": \"short summary message to show user\"\n}\n\nRules:\n- Always output JSON directly (no code fences, no markdown).\n- If no matching products, return empty array with message \"No products found matching your filters.\"\n- Use your reasoning from the Thinking Tool (if available) to pick the most relevant items.\n\nFilters input:\n{{ $('Conversation Understanding').item.json.output.filters.features }}\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1424,
+        -16
+      ],
+      "id": "1aaef467-1593-4caa-8f52-58050bbba037",
+      "name": "Product Finder",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.telegram_message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2128,
+        160
+      ],
+      "id": "0067b065-7459-4689-ba03-a23730953f86",
+      "name": "Send Recommendation",
+      "webhookId": "e00f72c1-00c6-46e5-86de-f62bec589b7d",
+      "credentials": {
+        "telegramApi": {
+          "id": "Ey36IMOgFS1qlavV",
+          "name": "Telegram Product Recommendation [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.GMAIL_ADDRESS }}",
+        "subject": "n8n Error: AI Agent – Product Finder failed",
+        "message": "=⚠️ n8n Workflow Error Alert  Hello Team,  An error occurred in your n8n workflow.  \nWorkflow: {{ $json[\"workflow\"][\"name\"] }} \nWorkflow ID: {{ $json[\"workflow\"][\"id\"] }} \nNode: {{ $json[\"node\"][\"name\"] }} \nExecution ID: {{ $json[\"execution\"][\"id\"] }} \nTimestamp: {{ $json[\"execution\"][\"timestamp\"] }}  \n\nError Message: {{ $json[\"execution\"][\"error\"] }}  \n\nYou can review this execution in the n8n dashboard: \nhttps://n8n.yourdomain.com/workflow/{{ $json[\"workflow\"][\"id\"] }}  \nBest regards, n8n Monitoring System",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        464,
+        -16
+      ],
+      "id": "71e598c1-52d4-4217-9089-772d81fbca28",
+      "name": "Send Error Alert",
+      "webhookId": "ebaf2629-62f3-4272-9f38-a2816b94b3a2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        208
+      ],
+      "id": "4d2104e3-788e-4bb2-9bf6-ca934406dfd9",
+      "name": "Product Finder Language Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "You are the reasoning engine for product search.\nBefore using the Google Sheets Tool, think step-by-step:\n\n1. What is the main user goal based on filters?\n2. Which columns in the sheet are most relevant (Category, Features, Brand)?\n3. How will you handle fuzzy matches (e.g., \"durable\" vs \"rugged\")?\n4. Plan how to rank results (e.g., match score, price closeness).\n5. Summarize your plan briefly.\n\nYou never output to the user; your job is just internal reasoning before search.\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        1552,
+        208
+      ],
+      "id": "106f1885-654f-471d-910e-a27fe3e67106",
+      "name": "Product Search Reasoning"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\nconst products = data.output.products || [];\nlet message = '';\n\nif (products.length === 0) {\n  message = \"❌ Sorry, I couldn’t find any products that match your filters. Try adjusting your preferences!\";\n} else {\n  products.forEach((p, idx) => {\n    message += `${idx + 1}️⃣ *${p.name}* — $${p.price}\\n`;\n    if (p.reason) message += `${p.reason}\\n`;\n    if (p.link) message += `[View Product](${p.link})\\n`;\n    message += `\\n`;\n  });\n\n  if (products.length > 5) {\n    message += `Showing the top 5 of ${products.length} matches.\\n`;\n  }\n}\n\n// Output to Telegram node\nreturn [{ json: { telegram_message: message } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1904,
+        160
+      ],
+      "id": "b8511752-22b2-4977-be9f-0f9203af102a",
+      "name": "Format Recommendation Message"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1z24BdYgMsLa1lI60_XkFdK_17Zv4TYARFgHQ5ZyOMjw",
+          "mode": "list",
+          "cachedResultName": "={{ $env.G_SHEETS_DOC_ID }}",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1z24BdYgMsLa1lI60_XkFdK_17Zv4TYARFgHQ5ZyOMjw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1474778443,
+          "mode": "list",
+          "cachedResultName": "={{ $env.G_SHEETS_NAME }}",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1z24BdYgMsLa1lI60_XkFdK_17Zv4TYARFgHQ5ZyOMjw/edit#gid=1474778443"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        1424,
+        208
+      ],
+      "id": "b092bf99-2349-4019-bca8-69279ac98605",
+      "name": "Search Product",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "product-recommentation-chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        752,
+        -16
+      ],
+      "id": "a2d66819-c300-4b1a-a0ca-41f5abad1208",
+      "name": "Webhook",
+      "webhookId": "e1e46b8d-fbb7-42ef-87fd-e0a67d91896e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const apiKey = $input.first().json.query.apikey;\nconst requiredKey = \"product_recommendation_test_key\";\n\nif (!apiKey || apiKey !== requiredKey) {\n  throw new Error(\"Unauthorized — invalid API key\");\n}\n\nreturn [{ validated: true }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        -16
+      ],
+      "id": "4b4699f6-4bd8-4096-a020-cc0bedb6201d",
+      "name": "validation"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=📝 Product Recommendation Chatbot — Developer Notes\n🔹 How to Use This Agent\n\nThis agent receives Telegram messages from users, interprets their intent using Gemini LLM, and provides product recommendations based on user needs.\n\nWorkflow includes:\n\nConversation intent detection\n\nIntelligent follow-up questions\n\nProduct searching logic\n\nStructured reasoning\n\nFinal recommendation message sent back to Telegram\n\nA Webhook Trigger is included for NMS-AI standardization requirements.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/product-recommentation-chatbot\n\nMethod: POST\nTest Payload:\n\n{\n  \"apiKey\": \"product_recommendation_test_key\"\n}\n\n\nWebhook does NOT start the main flow.\nThe real workflow starts from Telegram Trigger.\n\n🔹 Setup Instructions\n\nAdd n8n environment variable:\n\nPRODUCT_RECOMMENDATION_API_KEY = product_recommendation_test_key\n\n\nConfigure Telegram Bot Credential\n\nBot Token: 123456:ABC-test-bot-token\nBot Username: test_recommendation_bot\n\n\nConfigure Gemini API Keys\n\nGEMINI_API_KEY = sample-gemini-api-key-12345\n\n\nConfigure Product Search API (example placeholders)\n\nPRODUCT_SEARCH_API_KEY = sample-product-api-key-123\nPRODUCT_SEARCH_BASE_URL = https://sample-product-api.com\n\n\nEnsure Product Finder model nodes have access to:\n\nConversation understanding\n\nReasoning module\n\nStructured output parser\n\n🔹 Required Credentials (Example placeholders)\n\nUse real credentials inside n8n, not in this note.\n\nTelegram Bot\n\nBot Token: 123456:ABC-test-bot-token\n\n\nGemini LLM\n\nGEMINI_API_KEY = sample-gemini-api-key-12345\n\n\nProduct Search API (if used)\n\nAPI Key: product-search-sample-key\nBase URL: https://api.sample-products.com\n\n\nEnvironment Variable\n\nPRODUCT_RECOMMENDATION_API_KEY = product_recommendation_test_key\n\n🔹 Notes\n\nWebhook + Validation is required for NMS compliance.\n\nOnly the Telegram trigger runs the full conversation workflow.\n\nWebhook is used for:\n\nAPI standardization\n\nObservability\n\nTesting\n\nExternal integrations\n\nDo NOT remove the webhook section.",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1088,
+        -16
+      ],
+      "id": "09fe946c-2e22-4430-bae5-67b9e71915b8",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "content": "📝 Product Recommendation Chatbot — Developer Notes\n🔹 How to Use This Agent\n\nThis agent receives Telegram messages from users, interprets their intent using Gemini LLM, and provides product recommendations based on user needs.\n\nWorkflow includes:\n\nConversation intent detection\n\nIntelligent follow-up questions\n\nProduct searching logic\n\nStructured reasoning\n\nFinal recommendation message sent back to Telegram\n\nA Webhook Trigger is included for NMS-AI standardization requirements.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test Mode):\nhttps://n8n.popapps.ai/webhook-test/product-recommentation-chatbot\n\nMethod: POST\nTest Payload:\n\n{\n  \"apiKey\": \"product_recommendation_test_key\"\n}\n\n\nWebhook does NOT start the main flow.\nThe real workflow starts from Telegram Trigger.\n\n🔹 Setup Instructions\n\nAdd n8n environment variable:\n\nPRODUCT_RECOMMENDATION_API_KEY = product_recommendation_test_key\n\n\nConfigure Telegram Bot Credential\n\nBot Token: 123456:ABC-test-bot-token\nBot Username: test_recommendation_bot\n\n\nConfigure Gemini API Keys\n\nGEMINI_API_KEY = sample-gemini-api-key-12345\n\n\nConfigure Product Search API (example placeholders)\n\nPRODUCT_SEARCH_API_KEY = sample-product-api-key-123\nPRODUCT_SEARCH_BASE_URL = https://sample-product-api.com\n\n\nEnsure Product Finder model nodes have access to:\n\nConversation understanding\n\nReasoning module\n\nStructured output parser\n\n🔹 Required Credentials (Example placeholders)\n\nUse real credentials inside n8n, not in this note.\n\nTelegram Bot\n\nBot Token: 123456:ABC-test-bot-token\n\n\nGemini LLM\n\nGEMINI_API_KEY = sample-gemini-api-key-12345\n\n\nProduct Search API (if used)\n\nAPI Key: product-search-sample-key\nBase URL: https://api.sample-products.com\n\n\nEnvironment Variable\n\nPRODUCT_RECOMMENDATION_API_KEY = product_recommendation_test_key\n\n🔹 Notes\n\nWebhook + Validation is required for NMS compliance.\n\nOnly the Telegram trigger runs the full conversation workflow.\n\nWebhook is used for:\n\nAPI standardization\n\nObservability\n\nTesting\n\nExternal integrations\n\nDo NOT remove the webhook section.",
+        "height": 2000,
+        "width": 704
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2480,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "5871dd63-522f-4ecb-bdaa-b97796e88788",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Conversation Understanding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Conversation Understanding",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Conversation Understanding",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "Conversation Understanding",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Conversation Understanding",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Product Finder",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Understanding": {
+      "main": [
+        [
+          {
+            "node": "Intent Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Check": {
+      "main": [
+        [
+          {
+            "node": "Product Finder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask More Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Finder": {
+      "main": [
+        [
+          {
+            "node": "Format Recommendation Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Finder Language Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Product Finder",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Search Reasoning": {
+      "ai_tool": [
+        [
+          {
+            "node": "Product Finder",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Recommendation Message": {
+      "main": [
+        [
+          {
+            "node": "Send Recommendation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Product": {
+      "ai_tool": [
+        [
+          {
+            "node": "Product Finder",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6ceb6a13-b23a-4bdd-bff6-9b3e00905c6d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "T88vdAvpMkxPKQaP",
+  "tags": []
+}

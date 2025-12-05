@@ -1,0 +1,1070 @@
+{
+  "name": "Company Qualifier",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU",
+          "mode": "list",
+          "cachedResultName": "Company Qualifier",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Maps Scraped Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        304,
+        16
+      ],
+      "id": "1d3632d4-3f43-458a-8643-a7c328dcc4c8",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "eptRWdUko6Fy2WCg",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        768,
+        16
+      ],
+      "id": "5397acfe-3496-49cf-9b03-3d82f4b781d2",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2822976f-b532-418e-beac-cbf17f36b8ca",
+              "leftValue": "={{ $json.companyName }}",
+              "rightValue": "Organization could not be found",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1840,
+        176
+      ],
+      "id": "bf136e19-ad4a-4b19-8ede-43fb59b2ea89",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo",
+          "mode": "list",
+          "cachedResultName": "Company_Locator_Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1953715225,
+          "mode": "list",
+          "cachedResultName": "Error Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo/edit#gid=1953715225"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company Name": "={{ $('Search Company via Apollo').item.json.breadcrumbs[0].value }}",
+            "Description": "={{ $json.companyName }}"
+          },
+          "matchingColumns": [
+            "Company Name"
+          ],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2272,
+        96
+      ],
+      "id": "4f98b057-a422-4e97-9156-d63cc35a211a",
+      "name": "Update Error Log Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU",
+          "mode": "list",
+          "cachedResultName": "Company Qualifier",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1315923176,
+          "mode": "list",
+          "cachedResultName": "Output",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU/edit#gid=1315923176"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company Name": "={{ $json.companyName }}",
+            "Industry": "={{ $json.industry }}",
+            "Company Size": "={{ $json.companySize }}",
+            "Revenue": "={{ $json.revenue }}",
+            "Qualification Status": "={{ $json.qualificationStatus }}",
+            "Key Contacts": "='{{ $json.keyContacts }}",
+            "Address ": "={{ $('Loop Over Items').item.json.ADDRESS }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Size",
+              "displayName": "Company Size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Revenue",
+              "displayName": "Revenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Key Contacts",
+              "displayName": "Key Contacts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Qualification Status",
+              "displayName": "Qualification Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Address ",
+              "displayName": "Address ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2208,
+        352
+      ],
+      "id": "55b1e540-58b8-4558-81b7-b09eccd0ccf2",
+      "name": "Add Data in Apollo Scraped Data Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU",
+          "mode": "list",
+          "cachedResultName": "Company Qualifier",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 80595561,
+          "mode": "list",
+          "cachedResultName": "Maps Scraped Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo/edit#gid=80595561"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "COMPANY NAME": "={{ $json[\"Company Name\"] }}",
+            "STATUS": "Qualified"
+          },
+          "matchingColumns": [
+            "COMPANY NAME"
+          ],
+          "schema": [
+            {
+              "id": "ADDRESS",
+              "displayName": "ADDRESS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "COMPANY NAME",
+              "displayName": "COMPANY NAME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "BUSSINESS TYPE",
+              "displayName": "BUSSINESS TYPE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "INPUT ROW",
+              "displayName": "INPUT ROW",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2368,
+        352
+      ],
+      "id": "2cd02f05-d7eb-414a-9bfd-5f2d4310584b",
+      "name": "Update Status to 'Qualified'",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo",
+          "mode": "list",
+          "cachedResultName": "Company_Locator_Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 80595561,
+          "mode": "list",
+          "cachedResultName": "Maps Scraped Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo/edit#gid=80595561"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "COMPANY NAME": "={{ $json[\"Company Name\"] }}",
+            "STATUS": "Disqualified",
+            "row_number": 0
+          },
+          "matchingColumns": [
+            "COMPANY NAME"
+          ],
+          "schema": [
+            {
+              "id": "ADDRESS",
+              "displayName": "ADDRESS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "COMPANY NAME",
+              "displayName": "COMPANY NAME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "BUSSINESS TYPE",
+              "displayName": "BUSSINESS TYPE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "INPUT ROW",
+              "displayName": "INPUT ROW",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2464,
+        96
+      ],
+      "id": "537c2ebb-6fc4-48c4-9744-9b54016f2dca",
+      "name": "Update Status to 'Disqualified'",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const orgs = item.json.organizations;\n  const hasOrg = Array.isArray(orgs) && orgs.length > 0;\n  const org = hasOrg ? orgs[0] : null;\n\n  const breadcrumbs = item.json.breadcrumbs || [];\n  const sizeBreadcrumb = breadcrumbs.find(b => b.label === '# Employees');\n\n  const industry = org?.industry || 'Unknown';\n  const size = org?.organization_num_employees || (sizeBreadcrumb ? sizeBreadcrumb.value : null);\n  const revenue = org?.organization_revenue_printed || org?.organization_revenue || 'Unknown';\n  const phone = org?.sanitized_phone || [];\n\n  const isQualified = (typeof size === 'number' ? size >= 50 : true);\n\n  return {\n    json: {\n      companyName: org?.name || 'Organization could not be found',\n      industry: 'Saas',\n      companySize: size,\n      revenue,\n      keyContacts: phone,\n      qualificationStatus: isQualified ? 'Qualified' : 'Not Qualified'\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1616,
+        176
+      ],
+      "id": "26663358-9650-4803-b722-622faab2e747",
+      "name": "Initialize Variables"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apollo.io/api/v1/mixed_companies/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "name": "x-api-key",
+              "value": "<YOUR_API_KEY>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"q_organization_name\": \"{{ $('Loop Over Items').item.json[\"COMPANY NAME\"] }}\",\n  \"organization_num_employees_ranges\": [\n    \"50-100\",\n    \"101-250\",\n    \"251-500\",\n    \"501-1000\",\n    \"1001-5000\",\n    \"5001-10000\",\n    \"10000+\"\n  ],\n  \"industry_tag_names\": {{ JSON.stringify($json.industry) }},\n  \"page\": 1,\n  \"per_page\": 1,\n  \"enrich_persons\": true\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1392,
+        176
+      ],
+      "id": "59c99f78-fd7e-4209-b211-7c844ce2148d",
+      "name": "Search Company via Apollo"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU",
+          "mode": "list",
+          "cachedResultName": "Company Qualifier",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 80595561,
+          "mode": "list",
+          "cachedResultName": "Maps Scraped Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo/edit#gid=80595561"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "STATUS": "Disqualified"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "ADDRESS",
+              "displayName": "ADDRESS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "COMPANY NAME",
+              "displayName": "COMPANY NAME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "BUSSINESS TYPE",
+              "displayName": "BUSSINESS TYPE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "INPUT ROW",
+              "displayName": "INPUT ROW",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1200,
+        -144
+      ],
+      "id": "8b7b94aa-3a47-4070-95e7-7be0416cf16a",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "aafbca81-f284-442e-b0aa-9ff62ecb86e2",
+              "leftValue": "={{ $json.STATUS }}",
+              "rightValue": "For Company Qualifying",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        -144
+      ],
+      "id": "63781b39-aa6c-487d-ac16-2f14b97ae3d8",
+      "name": "Filter"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2048,
+        96
+      ],
+      "id": "dbd74eba-15b0-4b33-bbc7-1e070d82c5da",
+      "name": "Wait",
+      "webhookId": "c8a90fc7-d772-4792-b578-2cccbc0cd615"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2064,
+        352
+      ],
+      "id": "6506d127-d8cd-47d1-9ccf-799ffc38fd8f",
+      "name": "Wait1",
+      "webhookId": "69e11a4d-cf5a-47ee-9110-f8bc385f9cb7"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU",
+          "mode": "list",
+          "cachedResultName": "Company Qualifier",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Maps Scraped Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "STATUS",
+              "lookupValue": "For Company Qualifying"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        16
+      ],
+      "id": "52467c89-b78b-4908-9279-38753af4713e",
+      "name": "Get data with For Company Qualifying status",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU",
+          "mode": "list",
+          "cachedResultName": "Company Qualifier",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2009054583,
+          "mode": "list",
+          "cachedResultName": "INPUT",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l_FDWwlKwpVA2QFJftoU59uOF5y_Q4PbX60cwkXwTAU/edit#gid=2009054583"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "ID",
+              "lookupValue": "={{ $json[\"INPUT ROW\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        944,
+        176
+      ],
+      "id": "be6b7bab-a078-4b06-9d1e-5dc2eaf875d2",
+      "name": "Get Input data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const industries = $input.first().json.INDUSTRY\n    ? $input.first().json.INDUSTRY.split(\",\").map(x => x.trim())\n    : [];\n  return {\n    json: {\n      ...item.json,\n      industry: industries\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        176
+      ],
+      "id": "805192d3-21d8-4b7d-8652-81d7fc85f963",
+      "name": "Initialize variables for condition"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get data with For Company Qualifying status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Input data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Error Log Sheet": {
+      "main": [
+        [
+          {
+            "node": "Update Status to 'Disqualified'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Data in Apollo Scraped Data Sheet": {
+      "main": [
+        [
+          {
+            "node": "Update Status to 'Qualified'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status to 'Qualified'": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status to 'Disqualified'": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize Variables": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Company via Apollo": {
+      "main": [
+        [
+          {
+            "node": "Initialize Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Update Error Log Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Add Data in Apollo Scraped Data Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get data with For Company Qualifying status": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Input data": {
+      "main": [
+        [
+          {
+            "node": "Initialize variables for condition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize variables for condition": {
+      "main": [
+        [
+          {
+            "node": "Search Company via Apollo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4b016be1-17f9-4815-aded-8bc2c648b1ec",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "1xEXcuIdW3DKT78S",
+  "tags": []
+}

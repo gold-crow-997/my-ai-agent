@@ -1,0 +1,482 @@
+{
+  "name": "Sales Proposal Drafter",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "proposal_draft",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        -96
+      ],
+      "id": "3faeb1d6-445d-4bc0-a029-93860000f295",
+      "name": "Webhook",
+      "webhookId": "05b4ace4-e31d-4311-8e9a-5e5b6120f4b3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Extract the REAL body (inside body) ---\nconst body = items[0].json.body;\n\n// Raw incoming values\nlet deal_id    = body.deal_id;\nlet client_id  = body.client_id;\nlet service_id = body.service_id;\n\n\n// --- Validate client_id ---\nif (!client_id || client_id === \"\") {\n\tthrow new Error(\"Missing client_id\");\n}\n\n\n// --- Normalize service_id into an array ---\n\n// Case 1: service_id = \"Srv003\"\nif (typeof service_id === \"string\") {\n\tservice_id = [service_id];\n}\n\n// Case 2: service_id = { \"0\": \"Srv003\" } (form-data style)\nif (typeof service_id === \"object\" && !Array.isArray(service_id)) {\n\tservice_id = Object.values(service_id);\n}\n\n// Case 3: missing service_id\nif (!service_id) {\n\tthrow new Error(\"Missing service_id\");\n}\n\n// Final validation\nif (!Array.isArray(service_id) || service_id.length === 0) {\n\tthrow new Error(\"Missing service_id\");\n}\n\n\n// --- Write normalized values back into the item ---\nitems[0].json.deal_id    = deal_id;\nitems[0].json.client_id  = client_id;\nitems[0].json.service_id = service_id;\n\n\n// Return normalized output\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        -96
+      ],
+      "id": "03787cd4-784d-4d8d-9a76-6b106adf811b",
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "url": "=/client/{{ $json.client_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        16,
+        -96
+      ],
+      "id": "ba946e3a-465d-4a78-a106-57092c4f200e",
+      "name": "CRM Client Data"
+    },
+    {
+      "parameters": {
+        "url": "=/deal/{{ $json.deal_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        -96
+      ],
+      "id": "6b42f57e-047e-44c6-b0c9-6a04a33fe959",
+      "name": "CRM Deal Fetch"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        432,
+        -96
+      ],
+      "id": "b442d996-cd38-432d-9f5d-9ca1c494473e",
+      "name": "Loop Over Items",
+      "executeOnce": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        672,
+        32
+      ],
+      "id": "b531ca54-0352-4b47-8a16-a7a313277e36"
+    },
+    {
+      "parameters": {
+        "url": "=/service/{{ $json.service_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1056,
+        32
+      ],
+      "id": "0ba4c420-338b-424d-9aef-88e3582db4e9",
+      "name": "Service Catalog API"
+    },
+    {
+      "parameters": {
+        "jsCode": "let combined = \"\";\nfor (const item of items) {\n  combined += `### ${item.json.service_name}\\n\\n`;\n  combined += item.json.standard_SOW + \"\\n\\n\";\n}\nreturn [{ json: { combined_SOW: combined } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        32
+      ],
+      "id": "c8bcb670-4347-47a1-a2cd-42ec73cd466d",
+      "name": "Combine all SOW blocks"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      template_intro: `\n# About Our Company\nWe are a leading provider of digital transformation services...\n`,\n\n      template_terms: `\n## Terms & Conditions\nAll services are subject to...\n`,\n\n      template_company_overview: `\n## Company Overview\nOur team has 10+ years of experience delivering automation solutions...\n`\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1472,
+        32
+      ],
+      "id": "f5b972f7-bff1-4e0b-804c-f38d150a7b28",
+      "name": "Load Template"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-pro",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-pro"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a Senior Proposal Manager specializing in creating clear, persuasive, and client-specific proposal sections.\n\nONLY generate the following sections:\n1. Executive Summary\n2. Client Challenge\n2. Proposed Solution Narrative\n\nRules:\n- Do NOT write pricing or legal terms.\n- Do NOT write the Scope of Work yourself. Use only the provided SOW blocks.\n- Tailor every sentence to the client's industry, pain points, and goals.\n- Maintain a professional, concise tone.\n- Write in business English suitable for enterprise clients.\n\nYou MUST output ONLY valid JSON in this format:\n{\n  \"executive_summary\": \"...\",\n  \"client_challenge\": \"...\",\n  \"solution_narrative\": \"...\"\n}\n",
+              "role": "model"
+            },
+            {
+              "content": "=Write proposal sections for the following client.\n\nCLIENT PROFILE:\n- Name: {{ $json.client_data.client_name }}\n- Industry: {{ $json.client_data.industry }}\n- Pain Points: {{ $json.client_data.pain_points }}\n\nDEAL CONTEXT:\n{{ $json.deal_data }}\n\nSELECTED SERVICES:\n{{ $json.selected_services }}\n\nSTANDARD SCOPE OF WORK (SOW):\n{{ $json.combined_SOW }}\n\nSCOPE NOTES:\n{{ $json.scope_notes }}\n\nTASK:\nUsing the information above, generate:\n1. Executive Summary\n2. Client Challenge\n3. Proposed Solution Narrative\n\nIMPORTANT:\nReturn ONLY JSON with the following keys:\nexecutive_summary\nclient_challenge\nsolution_narrative\n"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {
+          "systemMessage": "="
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        32
+      ],
+      "id": "87655a48-8fda-465a-a018-7cdbde303556",
+      "name": "Message a model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Load the LLM JSON output\nconst llm = $json; // Gemini returns JSON directly\n\n// 2. Load template sections from the \"Load Template\" node\nconst template = $items(\"Load Template\")[0].json;\n\n// 3. Load SOW from \"Combine all SOW blocks\"\nconst combinedSow = $items(\"Combine all SOW blocks\")[0].json.combined_SOW;\n\n// 4. Load client data from \"CRM Client Data\"\nconst client = $items(\"CRM Client Data\")[0].json;\n\n// 5. Optional: pricing from Service Catalog (if exists)\nconst pricing = $items(\"Service Catalog API\")[0]?.json?.pricing_block || \"Pricing will be finalized by the sales team.\";\n\n// ---- Build Final Markdown Document ---- //\n\nconst finalMarkdown = `\n# Proposal Draft for ${client.client_name}\n\n---\n\n## Executive Summary\n${llm.executive_summary}\n\n---\n\n## Client Challenge\n${llm.client_challenge}\n\n---\n\n## Proposed Solution\n${llm.solution_narrative}\n\n---\n\n## Scope of Work (SOW)\n${combinedSow}\n\n---\n\n## Pricing\n${pricing}\n\n---\n\n## Terms & Conditions\n${template.template_terms}\n\n---\n\n## Company Overview\n${template.template_intro}\n`;\n\nreturn [\n  {\n    json: {\n      final_document: finalMarkdown\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2128,
+        208
+      ],
+      "id": "38dda6d4-1e2b-4539-a0ef-4582381cb595",
+      "name": "Merge Final Proposal"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "final_document",
+        "options": {
+          "fileName": "proposal_draft.md"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2352,
+        208
+      ],
+      "id": "96a8aeb8-773b-45ce-aa03-4c60e193a3fb",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=/api/deals/{{deal_id}}/attachments",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2592,
+        208
+      ],
+      "id": "8749d9e6-a64b-4d2d-8047-cd2d756d98dc",
+      "name": "Upload to CRM using HTTP Request"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0A0KEPER9T",
+          "mode": "list",
+          "cachedResultName": "all-popai"
+        },
+        "text": "=",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        784,
+        -176
+      ],
+      "id": "f774b7c9-3802-4891-8ac1-a5bec0b41527",
+      "name": "Send a message",
+      "webhookId": "dac2a915-63d6-49f1-a8c8-6c571a4c27b8",
+      "executeOnce": true,
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "1rGfGqEBzssPkdR2",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        32
+      ],
+      "id": "5cfa3e37-924f-48a4-a58f-3895a769e575",
+      "name": "Wait",
+      "webhookId": "4ae27493-56c3-48ba-bd5a-e12c138b543e"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        -192
+      ],
+      "id": "43b1671f-4aca-4f79-96bd-9f8d560372d6",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0A0KEPER9T",
+          "mode": "list",
+          "cachedResultName": "all-popai"
+        },
+        "text": "=❌ Sales Proposal Drafting FAILED\n\nError: {{ $json.error.message }}\nNode: {{ $json.error.node.name }}\nWorkflow: {{ $json.workflow.name }}\nDeal ID: {{ $json.workflowData.deal_id }}\n\nCheck logs for details.\n",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1440,
+        -192
+      ],
+      "id": "87c1480c-bc0f-4f04-a774-d3e6ae2910cb",
+      "name": "Send a message1",
+      "webhookId": "68b99ae8-ff50-4d45-b6fd-45b7ad16f6d3",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "1rGfGqEBzssPkdR2",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Valitate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valitate Input": {
+      "main": [
+        [
+          {
+            "node": "CRM Client Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM Client Data": {
+      "main": [
+        [
+          {
+            "node": "CRM Deal Fetch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM Deal Fetch": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Service Catalog API": {
+      "main": [
+        [
+          {
+            "node": "Combine all SOW blocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine all SOW blocks": {
+      "main": [
+        [
+          {
+            "node": "Load Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Template": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Merge Final Proposal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Final Proposal": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Upload to CRM using HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to CRM using HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Service Catalog API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8ed06f46-db4e-46e0-8e4b-5b9c89938f57",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "4gHTzhTuD5YfFRPi",
+  "tags": []
+}

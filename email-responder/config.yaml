@@ -1,0 +1,63 @@
+# ===============================
+# Email Responder – AI Agent
+# Configuration Template
+# ===============================
+# ⚠️ Do not store secrets directly in this file.
+# Replace values with environment variable references.
+# Example: GMAIL_AUTH -> stored in n8n Credentials.
+# ===============================
+
+agent:
+  name: "email_responder"
+  description: "Generates professional email drafts from incoming Gmail, routes drafts to Telegram for reviewer approval, and sends final responses."
+
+gmail:
+  # Gmail account used to receive and send emails.
+  # Current prototype uses ranilo@popai.agency, but you can replace with your own Gmail.
+  # Create credentials in n8n as: Gmail [Your Name]
+  address: "${GMAIL_ADDRESS}"
+  credential: "Gmail [Your Name]"
+
+gemini:
+  # Google Gemini API for AI draft generation
+  credential: "Gemini [Your Name]"
+  model: "models/gemini-2.5-flash"
+
+google_sheets:
+  # Company knowledge base for FAQ retrieval
+  credential: "Google Sheets [Your Name]"
+  document_id: "${SHEETS_DOC_ID}"   # The ID from your Google Sheet URL
+  sheet_name: "Sheet1"
+
+airtable:
+  # Airtable used for email review logs (ensures idempotence)
+  credential: "Airtable [Your Name]"
+  base: "${AIRTABLE_BASE_ID}"
+  table: "email_review_logs"
+
+telegram:
+  # Telegram bot for notifying reviewers
+  # Example: Email Reviewer (@email_reviewer_notificator_bot)
+  credential: "Telegram [Your Name - email_reviewer_notificator_bot]"
+  bot_username: "@email_reviewer_notificator_bot"
+  bot_token: "${TELEGRAM_BOT_TOKEN}"
+
+  # Review group configuration
+  review_group: "Popai Email Reviewers"
+  review_group_url: "https://t.me/popai_email_reviewer"
+  # TELEGRAM_CHAT_ID_CALLBACK:
+  # 1. Add your bot to the review group.
+  # 2. Send at least one message in the group (required).
+  # 3. Call:
+  #    https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
+  # 4. Look for "chat": { "id": <CHAT_ID>, "title": "Popai Email Reviewers" }
+  # 5. Copy that <CHAT_ID> into TELEGRAM_CHAT_ID_CALLBACK below.
+  chat_id: "${TELEGRAM_CHAT_ID_CALLBACK}"
+
+workflow:
+  # Main workflow entry point
+  trigger: "Gmail Trigger"
+  review_flow: "Telegram callback approval"
+  approval_actions:
+    - approve -> Send Gmail draft
+    - reject -> Delete Gmail draft & regenerate

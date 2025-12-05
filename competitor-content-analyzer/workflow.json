@@ -1,0 +1,811 @@
+{
+  "name": "Cmpetitor Contents Analyzer",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        144
+      ],
+      "id": "d0754f6f-9ee9-4144-a19e-68c5367f3e24",
+      "name": "Telegram Trigger",
+      "webhookId": "5fbc4176-fc27-48e5-98ba-986f0d2abcf5",
+      "credentials": {
+        "telegramApi": {
+          "id": "EhvmjVOn01uGrgUe",
+          "name": "Telegram Competitor Contents Analyzer Bot [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "=⚠️ Invalid format.\n\nPlease use the command like:\n/analyze example.com\n\nExamples:\n/analyze hubspot.com\n/analyze salesforce.com\n\nMake sure to include a valid domain (no spaces or invalid characters).\n",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        224
+      ],
+      "id": "9bb32c22-2573-43d0-bcd3-e08a323c86f6",
+      "name": "Send a text message",
+      "webhookId": "0b573c76-e833-4d5f-90e4-c68849eac2ff",
+      "credentials": {
+        "telegramApi": {
+          "id": "EhvmjVOn01uGrgUe",
+          "name": "Telegram Competitor Contents Analyzer Bot [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        896,
+        32
+      ],
+      "id": "530c200a-7525-4374-8cc4-4478d0bc3103",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        672,
+        32
+      ],
+      "id": "7b669120-59fb-4f8b-b054-dad5dea5d62b",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "75023cc8-ed59-4774-b7c6-a6f60e83be72",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "b6a9b853-95cc-445c-a4b3-8a06ee24a7ea",
+              "name": "text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "74c137af-74e3-47a0-bd8f-24174f6a547f",
+              "name": "Facebook.total_count",
+              "value": "={{ $('Social Metrics').item.json.Facebook.total_count }}",
+              "type": "number"
+            },
+            {
+              "id": "1e593515-688d-4276-ae72-1ba3889340e9",
+              "name": "Pinterest",
+              "value": "={{ $('Social Metrics').item.json.Pinterest }}",
+              "type": "number"
+            },
+            {
+              "id": "560c28dd-dac9-4497-9f0d-107a38a69531",
+              "name": "link",
+              "value": "={{ $('Loop Over Items').item.json.link }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1920,
+        48
+      ],
+      "id": "ebb6c363-930b-45eb-800d-abc5cae4a76c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        -192
+      ],
+      "id": "fc61e909-e435-4020-b313-46891f27f800",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1XmqZssn6w0LOJoE2vmXnpkC5d50xbFwgo5Mjytjoqyw",
+          "mode": "list",
+          "cachedResultName": "Competitor Contents Analysis",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1XmqZssn6w0LOJoE2vmXnpkC5d50xbFwgo5Mjytjoqyw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1XmqZssn6w0LOJoE2vmXnpkC5d50xbFwgo5Mjytjoqyw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "URL": "={{ $('Prepare Text for LLM').item.json.link }}",
+            "Title": "={{ $('Prepare Text for LLM').item.json.title }}",
+            "Content Type": "={{ $json.content_type }}",
+            "Intent": "={{ $json.intent }}",
+            "Tone": "={{ $json.tone }}",
+            "Why It Performs": "={{ $json.why_it_performs }}",
+            "Suggested Counter Title": "={{ $json.suggested_counter_content.title }}",
+            "Keywords": "={{ $json.suggested_counter_content.target_keywords }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Content Type",
+              "displayName": "Content Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tone",
+              "displayName": "Tone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Why It Performs",
+              "displayName": "Why It Performs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Suggested Counter Title",
+              "displayName": "Suggested Counter Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1920,
+        -384
+      ],
+      "id": "fdef3c55-2af3-4ca8-91b8-e7a2d46d062a",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        32
+      ],
+      "id": "06c94260-d70b-4c0e-851c-3c4b8b62cf7d",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "folderId": "1r3BLjpGTZ9EMDkpxUzMg0AtU2pKbR8NO",
+        "title": "={{ $json.documentTitle }}"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        -192
+      ],
+      "id": "91024454-f87d-453d-bc73-3f710c7822ec",
+      "name": "Create a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "yDN1LPDdBCB7q1Zy",
+          "name": "Google Docs [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ $('Build Google Docs Report').item.json.documentBody }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        2944,
+        -192
+      ],
+      "id": "bd517729-663b-4ce7-85ba-f62b32735154",
+      "name": "Update a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "yDN1LPDdBCB7q1Zy",
+          "name": "Google Docs [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "=Competitor Content Analysis Report\n\nThe integrated analysis has been completed and saved in Google Docs.\n\nReport Title: {{ $('Create a document').item.json.name }}\n\nYou can view or download the full report at the link below:\nhttps://docs.google.com/document/d/{{ $json.documentId }}/view\n\nSummary:\nThis report provides an overview of competitor strengths, weaknesses, and actionable recommendations for improving content performance and strategic positioning.\n\nGenerated automatically by N8N AI Agent – Competitor Content Analyzer",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3168,
+        -192
+      ],
+      "id": "375cddc8-355d-4ad1-b243-cc0fb22ba08d",
+      "name": "Send a text message1",
+      "webhookId": "dbf2a842-a8b3-4612-978c-92fe2b5f1334",
+      "credentials": {
+        "telegramApi": {
+          "id": "EhvmjVOn01uGrgUe",
+          "name": "Telegram Competitor Contents Analyzer Bot [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- Input Examples ----\n// Telegram command: /analyze hubspot.com\n// Webhook JSON: { \"text\": \"/analyze hubspot.com\" }\n// Or { \"competitor\": \"https://www.hubspot.com\" }\n\nconst input = $json.message.text || $json.competitor || \"\";\nlet domain = input.trim();\n\n// 1️⃣ Extract domain from Telegram command\n// Remove command part (/analyze) and any prefixes\ndomain = domain.replace(/^\\/?\\s*analyze\\s*/i, \"\").trim();\n\n// 2️⃣ If the user included protocol, remove it\ndomain = domain.replace(/^https?:\\/\\//i, \"\");\n\n// 3️⃣ Remove www. and any trailing slashes or query strings\ndomain = domain.replace(/^www\\./i, \"\").split(/[/?#]/)[0];\n\n// 4️⃣ Validate basic domain format\nconst domainRegex = /^[a-z0-9.-]+\\.[a-z]{2,}$/i;\nif (!domainRegex.test(domain)) {\n  throw new Error(`Invalid competitor domain: \"${domain}\". Please use a format like \"example.com\".`);\n}\n\n// 5️⃣ Optional: block risky or short inputs\nif (domain.length < 4) {\n  throw new Error(\"Domain too short or malformed.\");\n}\n\n// 6️⃣ Construct normalized output object\nreturn [\n  {\n    json: {\n      competitor_domain: domain.toLowerCase(),\n      search_query: `site:${domain}`, // convenient for Google API\n      source: \"validated\",\n      timestamp: new Date().toISOString(),\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        144
+      ],
+      "id": "a0935909-b207-4a00-9135-43debaece344",
+      "name": "Parse & Validate Domain",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.GOOGLE_SEARCH_API_KEY }}"
+            },
+            {
+              "name": "cx",
+              "value": "={{ $env.GOOGLE_SEARCH_CX }}"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.search_query }}"
+            },
+            {
+              "name": "num",
+              "value": "2"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        32
+      ],
+      "id": "c12b3bdd-4968-4f0f-bc57-20793bd14d22",
+      "name": "Google Custom Search"
+    },
+    {
+      "parameters": {
+        "url": "https://api.sharedcount.com/v1.1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SHAREDCOUNT_API_KEY }}"
+            },
+            {
+              "name": "url",
+              "value": "={{ $json.link }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        48
+      ],
+      "id": "b808ea9c-580e-43dd-bb21-e2a953ef92f0",
+      "name": "Social Metrics"
+    },
+    {
+      "parameters": {
+        "url": "http://api.scraperapi.com",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "={{ $env.SCRAPER_API_KEY }}"
+            },
+            {
+              "name": "url",
+              "value": "={{ $('Loop Over Items').item.json.link }}"
+            },
+            {
+              "name": "autoparse",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1408,
+        48
+      ],
+      "id": "ced7a117-22ae-4895-a50e-c1cce50b2f77",
+      "name": "Extract Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $json.data || $json.body || \"\";\nconst clean = html\n  // remove script/style tags\n  .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, \"\")\n  .replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, \"\")\n  // remove all HTML tags\n  .replace(/<\\/?[^>]+(>|$)/g, \"\")\n  .replace(/\\s+/g, \" \")\n  .trim();\n\n// Extract title\nconst titleMatch = html.match(/<title>(.*?)<\\/title>/i);\nconst title = titleMatch ? titleMatch[1] : \"Untitled\";\n\nreturn [\n  {\n    json: {\n      url: $json.url,\n      title,\n      text: clean.slice(0, 2000), // limit to avoid token overflow\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        48
+      ],
+      "id": "f7615c80-5d25-4220-9b57-92df93bad214",
+      "name": "Parse to JSON"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ✅ Collect all incoming items\nconst items = $input.all(); // <-- returns an array of {json, pairedItem, etc.}\n\nconst scored = items.map(item => {\n  const data = item.json;\n\n  // Basic safety\n  const shares = Number(data.Facebook.total_count|| 0);\n  const textLen = data.text ? data.text.length : 0;\n\n  // Simple performance formula (adjust weights as needed)\n  const score = shares * 0.7 + (textLen / 1000) * 0.3;\n\n  return {\n    json: {\n      ...data,\n      performanceScore: Number(score.toFixed(2)),\n    }\n  };\n});\n\n// ✅ Sort items by performance descending\nscored.sort((a, b) => b.json.performanceScore - a.json.performanceScore);\n\n// ✅ Return top 3 (or adjust limit)\nreturn scored.slice(0, 2);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -320
+      ],
+      "id": "22f4fdcd-914b-4383-9588-87d359aa9462",
+      "name": "Prepare Text for LLM"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following competitor content and provide structured insights.\n\n=== INPUT DATA ===\nDomain: {{ $('Parse & Validate Domain').first().json.competitor_domain }}\nURL: {{ $json.link }}\nTitle: {{ $json[\"title\"] }}\nRaw Text (first 2000 chars):\n{{ $json[\"text\"] }}\n\n=== ANALYSIS OBJECTIVE ===\n1. Identify the content’s purpose, target intent, and format type.\n2. Determine the main audience persona and emotional tone.\n3. Explain WHY this content performs well (SEO + reader engagement).\n4. Recommend a counter-content piece our client should create:\n   - Include a strong title\n   - Outline key sections (H2/H3s)\n   - Specify the keyword cluster to target\n   - Suggest differentiation angles (e.g., deeper data, unique visuals, contrarian stance)\n5. Return the final result in pure JSON.\n\n{\n  \"content_type\": \"...\",\n  \"intent\": \"...\",\n  \"tone\": \"...\",\n  \"why_it_performs\": \"...\",\n  \"suggested_counter_content\": {\n    \"title\": \"...\",\n    \"outline\": \"...\",\n    \"target_keywords\": [\"...\", \"...\", ...]\n  }\n}\n\n",
+        "options": {
+          "systemMessage": "You are an expert SEO content strategist and competitive intelligence analyst. \nYour task is to analyze competitor web content for marketing teams. \nYou must extract precise insights about WHY the content performs well, and HOW the client can outperform it.\nYou respond ONLY in JSON following the required schema. \nNo commentary, no markdown — just valid JSON.\n\nThe output must include:\n- quantitative observations (structure, word count, keyword density),\n- qualitative insights (tone, readability, emotional triggers),\n- and a counter-strategy content brief.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        -416
+      ],
+      "id": "b62a1c21-b2a3-46c9-b045-51067dfcd9ff",
+      "name": "Analyze Competitor Page"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input array (from LLM or previous node)\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  let raw = item.json.output || '';\n\n  // 1️⃣ Remove markdown code fences (```json ... ```)\n  raw = raw.replace(/^```(json)?/i, '').replace(/```$/i, '').trim();\n\n  // 2️⃣ Handle escaped newlines like \\n in JSON strings\n  // (some LLMs double-escape line breaks)\n  if (raw.includes('\\\\n')) {\n    try {\n      raw = JSON.parse(`\"${raw}\"`);\n    } catch {\n      // ignore if already fine\n    }\n  }\n\n  // 3️⃣ Try parsing JSON safely\n  let parsed;\n  try {\n    parsed = JSON.parse(raw);\n  } catch (err) {\n    throw new Error(`Failed to parse JSON: ${err.message}\\nRaw text: ${raw.slice(0, 300)}...`);\n  }\n\n  // 4️⃣ Push clean structured object\n  results.push({ json: parsed });\n}\n\n// Return parsed objects (you can now map them into Google Sheets or next nodes)\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        -320
+      ],
+      "id": "3020f125-c45f-4744-a17f-f1c4ccbca55f",
+      "name": "Parse & Structure AI Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: array of competitor analysis JSON objects\nconst items = $input.all();\n\n// 1️⃣ Extract all JSON objects from the input\nconst analyses = items.map(i => i.json);\n\n// 2️⃣ Build a clean structured summary string\nlet combinedText = '';\nanalyses.forEach((a, idx) => {\n  combinedText += `=== COMPETITOR PAGE ${idx + 1} ===\\n`;\n  combinedText += `Content Type: ${a.content_type || 'N/A'}\\n`;\n  combinedText += `Intent: ${a.intent || 'N/A'}\\n`;\n  combinedText += `Tone: ${a.tone || 'N/A'}\\n\\n`;\n  combinedText += `Why It Performs:\\n${a.why_it_performs || 'N/A'}\\n\\n`;\n\n  if (a.suggested_counter_content) {\n    combinedText += `Suggested Counter Content:\\n`;\n    combinedText += `Title: ${a.suggested_counter_content.title || 'N/A'}\\n`;\n    combinedText += `Outline:\\n${Array.isArray(a.suggested_counter_content.outline) ? a.suggested_counter_content.outline.join('\\n') : a.suggested_counter_content.outline}\\n`;\n    combinedText += `Target Keywords: ${(a.suggested_counter_content.target_keywords || []).join(', ')}\\n\\n`;\n  }\n\n  combinedText += '----------------------------------------\\n\\n';\n});\n\n// 3️⃣ Build final merged JSON for LLM input\nconst merged = {\n  total_pages: analyses.length,\n  competitor_domain: \"hubspot.com\", // optional if known\n  combined_analysis_text: combinedText\n};\n\n// 4️⃣ Return single JSON object (not array)\nreturn [{ json: merged }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        -192
+      ],
+      "id": "e4c19979-462f-4fa5-9a79-5f87e3a5f14e",
+      "name": "Merge All Analyses"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Below is a combined competitor content analysis for the domain {{ $json[\"competitor_domain\"] }}.\n\n{{ $json[\"combined_analysis_text\"] }}\n\nPlease generate a concise report with these sections:\n\n1. Overview – general summary of what the competitor’s content strategy focuses on.\n2. Key Strengths – 3–5 bullet points summarizing recurring success factors.\n3. Weaknesses or Gaps – 2–4 points that highlight missed opportunities or limitations.\n4. Recommended Opportunities – 3–5 actionable suggestions for our client to outperform this competitor.\n5. Closing Summary – a short final statement (1–2 sentences) summarizing how our client should position themselves.\n\nUse plain text formatting with clear section titles.\nDo not include JSON, markdown, or code fences.\nKeep it compact and easy to read.\n",
+        "options": {
+          "systemMessage": "You are a senior marketing analyst. \nSummarize competitor website content performance across all provided pages. \nFocus on clarity and brevity — produce a single structured report, not more than 500 words. \nAvoid redundant sentences, marketing fluff, and repetition. \nRespond ONLY in plain text (no markdown or code blocks).\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2144,
+        -192
+      ],
+      "id": "b313f4a1-a7ce-4d8f-8f31-cd939a330144",
+      "name": "Integrated Summary"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: array of items with { \"output\": \"<text report>\" }\nconst items = $input.all();\n\n// Combine all outputs if multiple pages were processed\nlet reportText = items.map(i => i.json.output).join('\\n\\n');\n\n// Clean up formatting (optional, ensures consistent spacing)\nreportText = reportText\n  .replace(/\\r\\n/g, '\\n')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\n// Add a document header\nconst finalReport = `\nIntegrated Competitor Content Report\nDate: ${new Date().toLocaleDateString()}\n\n${reportText}\n\nGenerated automatically by N8N AI Agent – Competitor Content Analyzer\n`;\n\n// Return object for Google Docs node\nreturn [\n  {\n    json: {\n      documentTitle: `Competitor_Report_${new Date().toISOString().slice(0, 10)}`,\n      documentBody: finalReport\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2496,
+        -192
+      ],
+      "id": "82a0c26c-30ec-4749-b2e5-02b228224b5d",
+      "name": "Build Google Docs Report"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse & Validate Domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Prepare Text for LLM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Social Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Competitor Page",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Integrated Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a document": {
+      "main": [
+        [
+          {
+            "node": "Update a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a document": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Validate Domain": {
+      "main": [
+        [
+          {
+            "node": "Google Custom Search",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Custom Search": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Social Metrics": {
+      "main": [
+        [
+          {
+            "node": "Extract Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Content": {
+      "main": [
+        [
+          {
+            "node": "Parse to JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse to JSON": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Text for LLM": {
+      "main": [
+        [
+          {
+            "node": "Analyze Competitor Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Competitor Page": {
+      "main": [
+        [
+          {
+            "node": "Parse & Structure AI Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Structure AI Output": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge All Analyses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Analyses": {
+      "main": [
+        [
+          {
+            "node": "Integrated Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Integrated Summary": {
+      "main": [
+        [
+          {
+            "node": "Build Google Docs Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Google Docs Report": {
+      "main": [
+        [
+          {
+            "node": "Create a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b9472472-b25f-4ef6-8ce5-28e833dea68c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "EYtGj4ft6U2SLby3",
+  "tags": []
+}

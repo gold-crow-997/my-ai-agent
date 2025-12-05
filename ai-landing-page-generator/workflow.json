@@ -1,0 +1,772 @@
+{
+  "name": "Landing Page Generator v2",
+  "nodes": [
+    {
+      "parameters": {
+        "sendTo": "={{ $('Google Sheets Trigger').item.json.Email }}",
+        "subject": "AI Landing Page Generator",
+        "emailType": "text",
+        "message": "Hi,  Your landing page is ready! 🎉 I've attached the HTML file, Generated Content, and A/B Test Report — simply download it and open it in your browser to view.",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "=data,data2,data3"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        5136,
+        208
+      ],
+      "id": "ce692d49-b939-4549-bd18-b077567ad5f2",
+      "name": "Send a message",
+      "webhookId": "31342d62-ffcc-42ea-be7d-b0a7f0a9568f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "XlKHnasVb0c83bGT",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        2944,
+        480
+      ],
+      "id": "beffb41e-cb9c-43f4-a594-442b06dc7d27",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "jsCode": "const userInput = $input.first().json.output || \"No user input provided\";\nconst goals = $('Google Sheets Trigger').first().json['Goal/Purpose'];\nconst searchInput = $input.first().json.output || \"\";\n\nreturn [\n  {\n    json: {\n      prompt: `You are an expert web designer and front-end developer. Produce one single HTML5 file (no external assets of any kind) that is a complete, production-ready, mobile-responsive landing page. Return only the raw HTML file — do not include any explanation, comments, or markdown around the HTML.\n\nRequirements:\n1. All HTML, CSS (inside a <style> in <head>) and any minimal inline JS (if used) must be contained in the single file. No external fonts, images, stylesheets, or scripts.\n2. Use semantic HTML5 elements (header, nav, main, section, article, footer, form, etc.).\n3. SEO: include a descriptive <title>, <meta name=\"description\">, and basic Open Graph tags (omit og:image if not provided).\n4. Accessibility: skip links, labels, keyboard focus, logical heading order, alt text for all images/SVGs.\n5. Styling: responsive, mobile-first, WCAG AA contrast, system font stack, inline SVG icons.\n6. No dead links/anchors — all href targets must exist.\n7. Header & Navigation: design a proper header with consistent alignment of logo and navigation, ensure buttons/links have accessible sizes (minimum 44×44px target), and maintain responsiveness across screen sizes.\n\nUser Experience Enhancements:\n- Include a modal popup (newsletter signup or special offer) with smooth fade-in/out or slide animations using pure CSS or minimal inline JS.\n- Add subtle hover effects and micro-interactions (buttons scale slightly on hover, links have animated underline).\n- Use scroll-triggered animations for sections (fade-in or slide-in, min. 0.5s).\n- Enable smooth scroll for menu link clicks.\n- Provide a dismissible cookie consent or notification banner with slide-down animation.\n- All interactive elements (popups, buttons, forms) must be keyboard and mobile accessible.\n\nUser input:\n${userInput}\n\nIncorporate the following search contents and snippets directly into the design (adapt and improve them, but keep them aligned with UX best practices) but do not change the headline, subheadline, and body content:\n${searchInput}\n`\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        224
+      ],
+      "id": "e1c58e7d-d1fc-46e9-856d-5569ddfc322e",
+      "name": "Prepare ChatInput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=TASK\nGenerate a complete, production-ready, mobile-responsive HTML5 landing page as a SINGLE self-contained file with embedded CSS (in a <style> tag). No external CSS/JS except optional Google Fonts link if a valid font is provided. The page must be semantic, accessible, SEO-friendly, and fast.\n\nBase the headline, subheadline, main body content, key benefits/features, call to action to this {{ $('Content Generation').item.json.output }}\n\nINPUTS\n- Page Title:  {{ $('Google Sheets Trigger').item.json['Page Title'] }}\n- Goal/Purpose: {{ $('Google Sheets Trigger').item.json['Goal/Purpose'] }}\n- Target Audience: {{ $('Google Sheets Trigger').item.json['Target Audience'] }}\n- Product/Service Name: {{ $('Google Sheets Trigger').item.json['Product/Service Name'] }}\n- Testimonials: {{ $('Google Sheets Trigger').item.json['Testimonials or Social Proof'] }}\n- Video (URL): {{ $('Google Sheets Trigger').item.json['Video Embed Link'] }}\n- Font Style: {{ $('Google Sheets Trigger').item.json['Font Styles'] }}\n- Name: {{ $('Google Sheets Trigger').item.json['First Name'] }} {{ $('Google Sheets Trigger').item.json['Last Name'] }}\n- Phone: {{ $('Google Sheets Trigger').item.json['Phone Number'] }}\n- Email: {{ $('Google Sheets Trigger').item.json.Email }}\n\nDATA HANDLING\n- Treat benefits, testimonials, and images as either JSON arrays or comma/newline-separated strings. Normalize to arrays.\n- Brand Colors may be one or more HEX values. Use the first as --color-primary; second as --color-accent; fall back to accessible neutral palette if missing.\n- If Font Style matches a Google Font, include its <link>; otherwise use a safe system stack.\n- If any field is missing/empty, generate tasteful, relevant defaults—NO placeholders like “lorem ipsum”.\n\nREQUIREMENTS\n1) Structure & Accessibility\n- Use semantic sections: <header>, <main>, <section>, <footer>. Include skip link, proper headings (H1–H3), alt text, ARIA labels, and visible focus states. Meet WCAG AA contrast.\n- Mobile-first CSS with Flex/Grid; include at least one breakpoint (~768px+).\n\n2) Visual System\n- Define CSS variables for theme (primary, accent, text, bg). Respect brand colors. Keep a clean, modern look with generous spacing and clear hierarchy.\n- Include the images directly in the file (as inline SVGs or embedded base64 data URIs)\n\n3) Content Mapping\n- Hero: headline, subheadline, primary CTA button (links to Call to Action or an in-page anchor), optional hero image/video.\n- Benefits/Features: render as cards or a clean list with short labels and one-line descriptions (you may infer descriptions from goal/audience).\n- Social Proof: render testimonials (name, role/company if present, short quote). If ratings exist, show stars (inline SVG).\n- Main Body Content: readable paragraphs, optional subheadings/bullets.\n- Gallery/Media: render images (lazyload, width/height attributes, sizes) and a responsive video embed if provided (YouTube/Vimeo; otherwise show a media card).\n- Secondary CTA/FAQ (optional): include if helpful to accomplish the goal.\n- Form containing email field when CTA is clicked\n- Make placeholder for the website logo where i can edit later and place my logo image\n- Do not create a CTA button in navigation, only create CTA button in hero section.\n- Do not create a button for the headers but keep the navlinks.\n\n4) SEO & Metadata\n- <title> from Page Title; <meta name=\"description\"> from Subheadline or a concise summary.\n- Open Graph + Twitter Card tags (title, description, image if available, type=website).\n- Include structured data (JSON-LD WebPage + Product/Service if product_name exists).\n\n5) Performance\n- No external JS libraries. Inline a tiny script only if needed (e.g., mobile nav toggle, smooth scroll).\n- Use loading=\"lazy\" for images/iframes; prefer modern CSS; minimize bloat.\n\n6) Behavior\n- If cta_action is an anchor (e.g., #contact), include the target section.\n- If cta_action looks like a URL, link to it with rel=\"noopener\".\n- Button text must use Call to Action or a sensible default (“Get Started”, etc.).\n\n7. How it Works\n- Based on the information provided, create a dedicated section that explains the process.\n\n8. Benefits\n- Render benefits as cards or a responsive grid with at least two items.\n- Each benefit should have a concise heading, one-line description, and optional icon.\n\nQUALITY CONTROL (INTERNAL)\nUse your internal reasoning / Think tool to validate:\n- All inputs mapped, sections conditionally included, no dead links/anchors.\n- Color contrast AA, headings logical, mobile/desktop responsive, links and buttons keyboard accessible.\nDo NOT reveal your chain-of-thought. Output ONLY the final HTML.\n\nOUTPUT FORMAT\nReturn the HTML document (no Markdown code fences, no explanations, no extra text).\n\n",
+        "options": {
+          "systemMessage": "=You are an expert web designer. Generate a complete, production-ready, mobile-responsive HTML5 landing page in a single file with embedded CSS. \nRequirements:\nAll HTML and CSS must be contained in one file (no external assets). \nPlace a responsive <style> block inside the <head>. \nUse semantic HTML5 elements (header, main, section, footer, etc.). \nInclude SEO optimization with a proper <title> and a <meta name=\"description\">.\nEnsure the layout is fully mobile-responsive.\nUse your internal reasoning / Think tool to validate: \n- All inputs mapped, sections conditionally included, no dead links/anchors. \n- Color contrast AA, headings logical, mobile/desktop responsive, links and buttons keyboard accessible. \nUse an existing professional website as design inspiration for structure, layout, and styling, but do not copy content verbatim. \nDo not include explanations, comments, or markdown formatting in the output — return only the raw HTML file and the generated texts separately. Do not add extra quotation or back ticks."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2800,
+        224
+      ],
+      "id": "69f7006f-7528-4a59-925b-78928c6b4c36",
+      "name": "intial code for landing page",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an expert web designer and HTML optimizer.  {{ $('intial code for landing page').item.json.output }}\nPlease improve:\n- Performance optimization \n- Accessibility compliance \n- SEO meta tags \n- Mobile responsiveness \n- Code minification  \n- Create a placeholder for the website logo on which i can put my own logo which would be an image. Enclose the <img> tag with anchor tag. The placeholder of the src attribute of img tag for the logo should be \"%LOGO%\". Design it where any image that I'll put would perfectly fit.\n- Ensure all buttons work\n- Logo when click should redirect to home page of the website.\n- Logo image size should be 80px\n\nadd this in style tag:\nimg {\n  mix-blend-mode: multiply;\n}\n\nReturn the optimized HTML code only, do not add extra quotation or back ticks in the output."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        3680,
+        224
+      ],
+      "id": "95a1304b-8370-44c6-8401-0237d7e80962",
+      "name": "refinement for landing page"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        480
+      ],
+      "id": "879b07b7-d8d5-4c9c-b257-7c7b5e6190f5",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "JbW6cuiHly9KfvRl",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3680,
+        448
+      ],
+      "id": "e76b605c-17f3-48e1-a821-5216ef06365d",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "JbW6cuiHly9KfvRl",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "10av8gU8zheibfAbNuZJc7VfVd1av3aEva9XZcMWUaHg",
+          "mode": "list",
+          "cachedResultName": "Landing Page Form (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10av8gU8zheibfAbNuZJc7VfVd1av3aEva9XZcMWUaHg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1288755850,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10av8gU8zheibfAbNuZJc7VfVd1av3aEva9XZcMWUaHg/edit#gid=1288755850"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        208
+      ],
+      "id": "71a9c651-af04-4f3d-97f9-9fd66fc56aab",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "zuMWzY3MTDsPYl5m",
+          "name": "Google Sheets Trigger account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google"
+            },
+            {
+              "name": "q",
+              "value": "={{ $('Google Sheets Trigger').item.json['Page Title'] }}"
+            },
+            {
+              "name": "api_key",
+              "value": "159802d46a8822b5b4f4320f29c998c5312b2f6e2e84a49e9f3992844f4f001a"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2128,
+        464
+      ],
+      "id": "1182124e-865c-412c-b614-0b64771c2939",
+      "name": "SerpAPI Search"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Google Sheets Trigger').item.json.Timestamp }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1984,
+        464
+      ],
+      "id": "c4772f12-7410-47ca-b547-8f941293fd23",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1808,
+        464
+      ],
+      "id": "097173bb-2478-4907-85cb-6c5819e105f8",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "JbW6cuiHly9KfvRl",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Search the web using SerpAPI to understand the target audience for {{ $json['Page Title'] }}. \nAnalyze user intent, pain points, and competitor messaging. Based on your findings, produce two structured outputs in JSON format with the following keys:\n\n{\n  \"website_content\": {\n    \"body_content\": \"Main body content here\",\n    \"headline\": \"Headline here\",\n    \"subheadline\": \"Subheadline here\",\n    \"cta\": \"Call to action here\",\n    \"key_selling_points\": [\"Point 1\", \"Point 2\", \"Point 3\"]\n  },\n  \"ab_test_report\": {\n    \"alternative_headlines\": [\"Option 1\", \"Option 2\"],\n    \"alternative_ctas\": [\"CTA 1\", \"CTA 2\"],\n    \"subheadline_variations\": [\"Variation 1\", \"Variation 2\"],\n    \"cta_button_recommendations\": [\"Recommendation 1\", \"Recommendation 2\"],\n    \"other_test_ideas\": [\"Idea 1\", \"Idea 2\"]\n  }\n}\n\nRules:\n- Output only valid JSON (no markdown, no explanations, no extra text).\n- All values must be short, simple, and written in normal sentences.\n- Do not wrap the JSON in triple backticks or any other formatting.",
+        "options": {
+          "systemMessage": "You are a research and marketing assistant. \nYour task is to use SerpAPI to research the market and target audience for the given product, service, or niche. \nYou must identify:\n1. User intent (what people are searching for and why).  \n2. Pain points (common frustrations, needs, or challenges).  \n3. Trends and competitor positioning (how competitors phrase their messaging, CTAs, and headlines).  \n\nAfter analyzing the search results, generate:  \n- 3–5 headline ideas.  \n- 3–5 call-to-action (CTA) options.  \n- 3–5 key selling points that address user needs and pain points.  \n\nKeep the output concise, structured, and actionable for building a website."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1888,
+        208
+      ],
+      "id": "f71907e5-0713-4813-a60c-f93369093104",
+      "name": "Content Generation"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3152,
+        448
+      ],
+      "id": "3eb311bf-2f96-4ffd-8a88-6c38b405d82d",
+      "name": "Google Gemini Chat Model4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "JbW6cuiHly9KfvRl",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google"
+            },
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', ``, 'string') }}"
+            },
+            {
+              "name": "api_key",
+              "value": "159802d46a8822b5b4f4320f29c998c5312b2f6e2e84a49e9f3992844f4f001a"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        3376,
+        448
+      ],
+      "id": "16f1a298-d57e-4845-8229-ce88afb183c3",
+      "name": "SerpAPI Search1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Search using SerpAPI for high-performing landing pages in the niche: {{ $('Google Sheets Trigger').item.json['Page Title'] }}. \nAnalyze competitor layouts, UI patterns, and UX enhancements",
+        "options": {
+          "systemMessage": "You are a research assistant for web design.\n\nObjective\nReturn only code snippets, no outside text. Each snippet should be a minimal example for a specific improvement (e.g., animation, card, text, button). Use inline comments to explain where the code should be applied.\n\nOutput\nAlways output 5 fenced code blocks in this order:\n\njson — ASSETS\n\nJSON arrays of valid, license-friendly image links from Google Images.\n\nFields: alt, attribution, license.\n\nInline comments explain what each asset is for (e.g., hero bg, feature icon).\n\nhtml — LAYOUT SNIPPETS\n\nProvide small semantic snippets (not full pages).\n\nExample: hero section structure, testimonial section, CTA block.\n\nInline comments labeling the purpose of each snippet.\n\nhtml — UI COMPONENT SNIPPETS\n\nProvide reusable elements like:\n\nExample button\n\nExample form field\n\nExample card/pricing block\n\nExample modal\n\nInline comments above each snippet showing usage.\n\ncss — STYLE SYSTEM SNIPPETS\n\nExample: palette variables, typography utilities, button styling.\n\nProvide small, modular CSS blocks with inline comments.\n\nInclude dark mode + reduced motion fallbacks.\n\njavascript — ANIMATION SNIPPETS\n\nExample: smooth scroll function, fade-in effect with IntersectionObserver, parallax snippet, hover microinteraction.\n\nEach snippet isolated with inline comments showing where to use it.\n\nExported init function if needed.\n\nRules\n\nOnly the 5 blocks, no prose outside code.\n\nSnippets must be minimal and reusable, not full-page dumps.\n\nInline comments should guide devs on where to apply them.\n\nIf no snippet exists, output an empty but valid scaffold.\n\nPrioritize performance + accessibility."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        3152,
+        224
+      ],
+      "id": "28fddee7-9b12-4006-90e2-50f143448872",
+      "name": "Search Landing Page"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-preview-image-generation",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash-preview-image-generation"
+        },
+        "prompt": "=Create a professional logo for the company {{ $('Google Sheets Trigger').item.json['Product/Service Name'] }}.\nThe design concept is: {{ $('Google Sheets Trigger').item.json['Input Logo Description (If you don\\'t have current logo)'] }}.\n\nRequirements:\n\nOutput format: PNG.\n\nCanvas size must be exactly 512×512 pixels.\n\nThe logo should fill the space proportionally (not appear too small within the 512×512 area).\n\nBackground must be pure white (#FFFFFF).\n\nClean, sharp edges with no artifacts.\n\nScalable, simple design suitable for branding and readable at small sizes",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2496,
+        112
+      ],
+      "id": "655289cd-2ca0-46db-bcf0-10eecc9d3776",
+      "name": "Generate an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "JbW6cuiHly9KfvRl",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5ce4f013-5e66-4a1f-b06d-caa2e21ee59a",
+              "leftValue": "={{ $('Google Sheets Trigger').item.json['Input Logo Description (If you don\\'t have current logo)'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2240,
+        208
+      ],
+      "id": "f8c5e01c-d351-4c60-b21f-af3f1030e055",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "let logo = $(\"Generate an image\").all()\n\nreturn logo"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4240,
+        336
+      ],
+      "id": "92b494dc-5da6-4f61-8f51-9972410c9879",
+      "name": "Get the image"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Grab the first item\nconst item = items[0];\n\n// Access the binary data buffer\nconst binaryData = item.binary.data.data;\n\n// Convert to Base64\nconst base64Str = Buffer.from(binaryData, \"base64\").toString(\"base64\");\n\n// Optionally add a data URI\nconst dataUri = `data:${item.binary.data.mimeType};base64,${base64Str}`;\n\nreturn [\n  {\n    json: {\n      dataUri: dataUri,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4448,
+        336
+      ],
+      "id": "adfa3185-a217-4c94-ad1d-cf52c63ce500",
+      "name": "Convert the image to URI"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get HTML content from previous node\nconst htmlContent = $input.first().json.htmlData;\n\nconst businessName = $('Google Sheets Trigger').first().json['Product/Service Name'];\nlet fileName = businessName.toLowerCase();\n\n// Parse JSON output from \"Content Generation\" node\nconst webContent = JSON.parse($('Content Generation').first().json.output);\n\n// Extract website content and A/B test report\nconst contents = webContent.website_content;\nconst testReport = webContent.ab_test_report;\n\n// Build text versions for attachments\nconst webContentText = `\nBody Content:\n${contents.body_content}\n\nHeadline:\n${contents.headline}\n\nSubheadline:\n${contents.subheadline}\n\nCTA:\n${contents.cta}\n\nKey Selling Points:\n${contents.key_selling_points.join(\"\\n\")}\n`;\n\nconst testReportText = `\nAlternative Headlines:\n${testReport.alternative_headlines.join(\"\\n\")}\n\nAlternative CTAs:\n${testReport.alternative_ctas.join(\"\\n\")}\n\nSubheadline Variations:\n${testReport.subheadline_variations.join(\"\\n\")}\n\nCTA Button Recommendations:\n${testReport.cta_button_recommendations.join(\"\\n\")}\n\nOther Test Ideas:\n${testReport.other_test_ideas.join(\"\\n\")}\n`;\n\n// Return as binary attachments for Gmail\nreturn [\n  {\n    json: {}, // empty json since we only care about binary\n    binary: {\n      data: {\n        data: Buffer.from(htmlContent, \"utf8\").toString(\"base64\"),\n        mimeType: \"text/html\",\n        fileName: `${fileName}.html`,\n      },\n      data2: {\n        data: Buffer.from(webContentText, \"utf8\").toString(\"base64\"),\n        mimeType: \"text/plain\",\n        fileName: \"web-contents.docx\",\n      },\n      data3: {\n        data: Buffer.from(testReportText, \"utf8\").toString(\"base64\"),\n        mimeType: \"text/plain\",\n        fileName: \"ab-test-report.docx\",\n      },\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4944,
+        208
+      ],
+      "id": "57097e3f-8bc9-466f-94cb-32da8a0a0258",
+      "name": "Converts generated HTML & Contents to file"
+    },
+    {
+      "parameters": {
+        "jsCode": "let htmlData = $('refinement for landing page').first().json.text;\nlet logo = $input.first().json.dataUri || $('Google Sheets Trigger').first().json.Logo;\nhtmlData = htmlData.replace(\"%LOGO%\", logo);\n\nreturn {htmlData}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4720,
+        208
+      ],
+      "id": "58be6beb-fcff-4b11-8344-8ef36e366a2f",
+      "name": "Replace the Image src with Image URI"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "431a10c4-e0e9-421a-a39f-fc388329a30f",
+              "leftValue": "={{ $('Google Sheets Trigger').item.json.Logo }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4032,
+        224
+      ],
+      "id": "8b72b2a6-cf47-4aee-804a-f4c528e03183",
+      "name": "If1"
+    }
+  ],
+  "pinData": {
+    "Google Sheets Trigger": [
+      {
+        "json": {
+          "Timestamp": "9/23/2025 12:56:33",
+          "Page Title": "Boost Your Workflow with FlowTrack",
+          "Goal/Purpose": "Convert visitors into free trial users of the productivity SaaS.",
+          "Target Audience": "Remote teams, freelancers, and small businesses seeking task + time management tools.",
+          "Product/Service Name": "FlowTrack",
+          "Headline": "",
+          "Subheadline/Tagline": "",
+          "Main Body Content": "",
+          "Key Benefits / Features": "",
+          "Call To Action (CTA": "",
+          "CTA Button Text": "",
+          "Testimonials or Social Proof": "“FlowTrack cut our project delivery time by 30% in just two months.” — Sarah K., Agency Owner\n\n“The easiest tool my team has ever adopted. We love the simple dashboard.” — Mark L., Startup Founder",
+          "Video Embed Link": "",
+          "Choose a color": "",
+          "Font Styles": "Inter",
+          "Layout Preference": "",
+          "Overall Tone": "",
+          "First Name": "mats",
+          "Last Name": "gabe",
+          "Phone Number": "09685553809",
+          "Email": "gabriel@popai.agency",
+          "Input Logo Description (If you don't have current logo)": "Logo for tech company that specializes in ai automation",
+          "Logo": ""
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Send a message": {
+      "main": [
+        []
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "intial code for landing page",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare ChatInput": {
+      "main": [
+        [
+          {
+            "node": "refinement for landing page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "intial code for landing page": {
+      "main": [
+        [
+          {
+            "node": "Search Landing Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "refinement for landing page": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "intial code for landing page",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "refinement for landing page",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Content Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Content Generation",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Content Generation",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Generation",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Generation": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Search Landing Page",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI Search1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Search Landing Page",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Landing Page": {
+      "main": [
+        [
+          {
+            "node": "Prepare ChatInput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image": {
+      "main": [
+        [
+          {
+            "node": "intial code for landing page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Generate an image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "intial code for landing page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get the image": {
+      "main": [
+        [
+          {
+            "node": "Convert the image to URI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert the image to URI": {
+      "main": [
+        [
+          {
+            "node": "Replace the Image src with Image URI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Converts generated HTML & Contents to file": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace the Image src with Image URI": {
+      "main": [
+        [
+          {
+            "node": "Converts generated HTML & Contents to file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Replace the Image src with Image URI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get the image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "486101fa-deee-49e0-bd4f-ef41415460b0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "DJPgwj1FQdapTaE2",
+  "tags": []
+}

@@ -1,0 +1,952 @@
+{
+  "name": "[Agentix] Google Calendar Scheduler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        -1696,
+        -224
+      ],
+      "id": "eda6b309-ba49-4b2d-a401-2e63024724d0",
+      "name": "Think Tool"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool when you’re asked to retrieve events data.",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "jonrey@popai.agency",
+          "mode": "list",
+          "cachedResultName": "jonrey@popai.agency"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -1568,
+        -224
+      ],
+      "id": "801adbad-4836-41a0-a6c0-3067e436052d",
+      "name": "Get Events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "my0PyE2nG8r1PgbD",
+          "name": "Google Calendar [Jon Rey:popai]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this Google Calendar tool when you are asked to create or schedule an event",
+        "calendar": {
+          "__rl": true,
+          "value": "jonrey@popai.agency",
+          "mode": "list",
+          "cachedResultName": "jonrey@popai.agency"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $json.host }}, {{ $json.attendees }}"
+          ],
+          "conferenceDataUi": {
+            "conferenceDataValues": {
+              "conferenceSolution": "hangoutsMeet"
+            }
+          },
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -1440,
+        -224
+      ],
+      "id": "8e6fc336-6f1c-4dc6-9e80-757a84e757bb",
+      "name": "Create Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "my0PyE2nG8r1PgbD",
+          "name": "Google Calendar [Jon Rey:popai]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f3e842c6-5f08-42bc-be58-cb5f8597bce5",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "2737c930-8340-4353-9e17-516e2773ee82",
+              "name": "eventTitle",
+              "value": "={{ $json.eventTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "6885796a-7e64-4a55-b866-691a622f2579",
+              "name": "attendees",
+              "value": "={{ $json.attendees }}",
+              "type": "string"
+            },
+            {
+              "id": "7eca0600-5355-4c2c-916b-5a7696d5f203",
+              "name": "startDate",
+              "value": "={{ $json.startDate }}",
+              "type": "string"
+            },
+            {
+              "id": "0b0135ee-57af-4eb5-bc0a-1f5781f4cd12",
+              "name": "endDate",
+              "value": "={{ $json.endDate }}",
+              "type": "string"
+            },
+            {
+              "id": "ad71ca31-5d53-46e6-890b-6d6418965152",
+              "name": "action",
+              "value": "={{ $json.action }}",
+              "type": "string"
+            },
+            {
+              "id": "7560a45d-7470-47f8-b980-c3ab9e144288",
+              "name": "ref",
+              "value": "={{ $json.ref || 'workflow' }}",
+              "type": "string"
+            },
+            {
+              "id": "11826e8c-2a20-4fc3-a31a-0f8ddd8ab786",
+              "name": "=host",
+              "value": "={{ $json.host }}",
+              "type": "string"
+            },
+            {
+              "id": "1522247d-f657-4e27-b60c-a508857af1c9",
+              "name": "timezone",
+              "value": "={{ $json.timezone }}",
+              "type": "string"
+            },
+            {
+              "id": "8f702345-083d-4332-a84a-7721f457962c",
+              "name": "templateId",
+              "value": "={{ $json.templateId }}",
+              "type": "string"
+            },
+            {
+              "id": "1cbf4ffc-2cf9-4524-a311-b196902c8693",
+              "name": "withGoogleMeet",
+              "value": "={{ $json.withGoogleMeet }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2048,
+        -448
+      ],
+      "id": "f2e79bb5-2847-4d07-a54a-99255959f28c",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this Google Calendar tool when you are asked to delete or cancel an event",
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "jonrey@popai.agency",
+          "mode": "list",
+          "cachedResultName": "jonrey@popai.agency"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -1312,
+        -224
+      ],
+      "id": "2f9eb4fa-370a-4db2-971e-82ea1b7439e0",
+      "name": "Delete Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "my0PyE2nG8r1PgbD",
+          "name": "Google Calendar [Jon Rey:popai]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "76b4545f-dac4-4e20-a365-8585ab1e67e2",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2496,
+        -352
+      ],
+      "id": "79574fd4-f3da-4143-8d4a-c3165acb3b0f",
+      "name": "Webhook",
+      "webhookId": "76b4545f-dac4-4e20-a365-8585ab1e67e2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f3e842c6-5f08-42bc-be58-cb5f8597bce5",
+              "name": "sessionId",
+              "value": "={{ $json.body.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "2737c930-8340-4353-9e17-516e2773ee82",
+              "name": "eventTitle",
+              "value": "={{ $json.body.eventTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "6885796a-7e64-4a55-b866-691a622f2579",
+              "name": "attendees",
+              "value": "={{ (typeof $json.body.attendees === \"string\") ? $json.body.attendees : $json.body.attendees.join(\",\") }}",
+              "type": "string"
+            },
+            {
+              "id": "7eca0600-5355-4c2c-916b-5a7696d5f203",
+              "name": "startDate",
+              "value": "={{ $json.body.startDate }}",
+              "type": "string"
+            },
+            {
+              "id": "0b0135ee-57af-4eb5-bc0a-1f5781f4cd12",
+              "name": "endDate",
+              "value": "={{ $json.body.endDate }}",
+              "type": "string"
+            },
+            {
+              "id": "ad71ca31-5d53-46e6-890b-6d6418965152",
+              "name": "action",
+              "value": "={{ $json.body.action }}",
+              "type": "string"
+            },
+            {
+              "id": "0a419853-93ff-4f2d-9305-ef4d8e3366c4",
+              "name": "ref",
+              "value": "webhook",
+              "type": "string"
+            },
+            {
+              "id": "af9b1053-4e59-4767-b3fd-2bc78680e10d",
+              "name": "host",
+              "value": "={{ $json.body.host }}",
+              "type": "string"
+            },
+            {
+              "id": "92b2d689-832e-4924-a517-f945fc4244d4",
+              "name": "timezone",
+              "value": "={{ $json.body.timezone }}",
+              "type": "string"
+            },
+            {
+              "id": "ebf92438-b9a4-401e-84ce-29122a5787d7",
+              "name": "templateId",
+              "value": "={{ $json.body.templateId }}",
+              "type": "string"
+            },
+            {
+              "id": "29734408-4aed-4cdf-95d9-1b9f8828a1d9",
+              "name": "withGoogleMeet",
+              "value": "={{ $json.body.withGoogleMeet }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2272,
+        -352
+      ],
+      "id": "6c322d03-7b0c-4966-afc0-b9c987ff7b0d",
+      "name": "Webhook Config"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -816,
+        -640
+      ],
+      "id": "cbe6237d-d17d-46cb-a0b5-987cbb0b31cd",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hi there! 👋 I’m your Google Calendar Scheduler. Think of me as your scheduling assistant—I’ll keep your meetings smooth, conflict-free, and ready with links when you need them.",
+        "options": {
+          "responseMode": "streaming"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -3072,
+        -544
+      ],
+      "id": "af039391-3edb-473c-8f09-516ac94193cc",
+      "name": "When chat message received",
+      "webhookId": "65c755dc-b8e0-413d-a12a-96fa351e0f79"
+    },
+    {
+      "parameters": {
+        "content": "## Sample User Prompt\n`Hey, can we schedule a job interview for Jon Rey on Aug 27, 2025, from 4–5 PM (Asia/Manila)? The host will be jonreygalera@gmail.com and the attendee is jrg@newmediastaff.com. Please create the event 🙌`",
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3072,
+        -768
+      ],
+      "typeVersion": 1,
+      "id": "4d63bda3-caa2-40f7-806b-306e87f35394",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3fb638fe-b3c5-41f8-8a70-aa52b7f7ec24",
+              "leftValue": "={{ $json.output.status }}",
+              "rightValue": "success",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -816,
+        -448
+      ],
+      "id": "2f0359bb-5534-4ba1-8dcf-80fd0a9f19d3",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Google Calendar Agent Data').item.json.output.host }}",
+        "subject": "={{ $('Google Calendar Agent Data').item.json.output.subject }}",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false,
+          "bccList": "={{ $('Google Calendar Agent Data').item.json.output.attendees.join(\",\") }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        144,
+        -448
+      ],
+      "id": "ad74ccd4-c7e7-4dfe-87c7-67b02acff2ad",
+      "name": " Email Notification Sender",
+      "webhookId": "4dc1bf57-3f1e-45aa-8233-7fb61bf56a4d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "cInHa0A6Q8iDVYix",
+          "name": "Gmail account [Jon Rey:popai]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -2784,
+        -320
+      ],
+      "id": "2c8edc6c-87d5-4d4e-bdfb-d36a367cedeb",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0yyt4YmtAikN6fuK",
+          "name": "OpenRouter [Jon Rey:pops]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -1824,
+        -224
+      ],
+      "id": "6ba220c9-9688-46c5-95ee-bb9573c12c62",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0yyt4YmtAikN6fuK",
+          "name": "OpenRouter [Jon Rey:pops]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        -224
+      ],
+      "id": "9ab35fc4-d247-4c0a-8d59-34de8f14b400",
+      "name": "OpenRouter Chat Model2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0yyt4YmtAikN6fuK",
+          "name": "OpenRouter [Jon Rey:pops]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "=You are a JSON formatter\n\n**Expected Output Format Example():**  \n\n{\n  \"isEventScheduled\": true,\n  \"status\": \"success\",\n  \"eventId\": \"3ku0o9c8f8h1a3p9m\",\n  \"subject\": \"Job Position: Interview for Jon Rey\",\n  \"host\": \"example1@sample.com\",\n  \"attendees\": [\"example@sample.com\"],\n  \"hangoutLink\": \"https://meet.google.com/xyz-abc-def\",\n  \"start\": { \"dateTime\": \"2025-08-27T16:00:00\", \"timeZone\": \"Asia/Manila\" },\n  \"end\": { \"dateTime\": \"2025-08-27T17:00:00\", \"timeZone\": \"Asia/Manila\" },\n  \"message\": \"\n  📅 Event Reminder\n     Hi,\n     This is a reminder for your upcoming event:\n     Job Position: Interview for Jon Rey\n     Date & Time: Thursday, August 28, 2025 at 1:30 PM – Thursday 2:00 PM (Asia/Manila)\n     Location: https://meet.google.com/xyz-abc-def\n  \"\n}\n\n---\n\nDo not respond with an additional text or headings. Don't give additional information, Only respond with the JSON object. Your response must start with { and end with }. DO NOT use ```json {...} ``` string. Just respond with the JSON object itself.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -880,
+        -256
+      ],
+      "id": "b82fce6c-f35f-4c5a-a21f-751c819b133d",
+      "name": "Google Calendar Agent1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b1a3530-bab9-4a92-8ecb-66c6790e6c01",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {
+          "ignoreConversionErrors": true
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1104,
+        -448
+      ],
+      "id": "190509ab-069c-4f61-b207-2848a9d3260e",
+      "name": "Google Calendar Agent Data"
+    },
+    {
+      "parameters": {
+        "html": "{{ $json.output }}"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -128,
+        -352
+      ],
+      "id": "5dc9d89b-d285-4eb2-ac83-ad7cc0131c4f",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Doc_ID_or_URL', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        -224
+      ],
+      "id": "b7c87e67-d4a9-45b3-bf4f-cfd6b8451b2e",
+      "name": "Email Template",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "fCDwF2hsJyYJ4juX",
+          "name": "Google Docs [Jon Rey:popai]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=**Please transform this to beautil email format:**\n```json\n{{ JSON.stringify($('Google Calendar Agent Data').item.json.output) }}\n```\n\n---\n**Google Doc Id:**{{ $('Config').item.json.templateId }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are an **Email Transformation Agent** specializing in analyzing raw messages and converting them into **responsive, professional, and visually engaging HTML emails**.  \n\n**Current Date and Time:** {{ $now }}  \n\n---\n\n**Mission / Duty:**  \n- Extract meaning, intent, and key points from incoming text.  \n- Transform the message into a **well-structured, visually appealing, and mobile-friendly HTML email**.  \n- Make the email **more engaging and dynamic**, while maintaining clarity, professionalism, and brand-consistency.  \n- Include a **header/banner section with a background color** (subtle but noticeable) to make the email visually attractive.  \n\n---\n\n**Style & Voice:**  \n- Professional, friendly, and approachable tone.  \n- Polished and elegant presentation with **subtle visual flair** (color, spacing, headings, icons, or dividers).  \n- Encourage **reader engagement** with clear hierarchy, emphasis, and visual cues.  \n- Maintain readability and accessibility across devices.  \n\n---\n\n**Interaction Rules:**  \n- Use only the provided message content—do not invent or hallucinate.  \n- Always replace placeholders (`[PLACEHOLDER]`) with appropriate context.  \n- **Do not include Event IDs, attendee lists, attendees, RSVP buttons, or confirmation links.**  \n- If ambiguity exists, default to **clarity and simplicity**.  \n- Keep HTML **lightweight, semantic, and optimized** for performance.  \n- **If a Google Docs ID is provided (not null), call the `email template` Tool before generating the HTML.**  \n- **If the Google Docs ID is null or missing, do not call the `email template` Tool.**  \n\n---\n\n**Self-Check Before Output:**  \n1. Does the email fully reflect the message context?  \n2. Is the HTML **valid, semantic, and responsive** on all devices?  \n3. Does the email **look lively and engaging**, with visual cues like banner color, headings, or dividers?  \n4. Is the **tone aligned** with professional standards and the target audience?  \n5. Are all placeholders removed or replaced?  \n6. Is the design **visually appealing, accessible, and brand-consistent**?  \n\n---\n\n**Technical & Output Rules:**  \n- Output **only the HTML** (no markdown, no explanations).  \n- Response must **start with `<html>` and end with `</html>`**.  \n- Use **inline-optimized CSS** for maximum compatibility across Gmail, Outlook, Apple Mail, and mobile clients.  \n- Incorporate **responsive design best practices** (tables, inline styles, media queries if needed).  \n- Default structure: `<html>` → `<head>` (meta + style) → `<body>` (structured sections).  \n- Sections: header (with **background/banner color**), body (main content with emphasis and visual cues), footer.  \n- Add **visual enhancements** where appropriate: headings, icons, subtle colors, dividers, buttons (if context allows).  \n- Keep branding placeholders minimal (e.g., `{{brand_logo}}`, `{{brand_colors}}`) and integrate them creatively.  \n\n---\n\n**IMPORTANT:**  \nYour sole purpose is to transform raw input into a **ready-to-send, professional, and visually engaging HTML email** that grabs attention, communicates clearly, and works across all major email clients.  \n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -528,
+        -448
+      ],
+      "id": "1a00ad60-377d-446e-8dc3-902add609ade",
+      "name": "Email Transformation Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=sessionId: {{ $json.sessionId }}\nuser prompt: {{ $json.chatInput || $json.query }}",
+        "options": {
+          "systemMessage": "=You are a highly advanced AI assistant specialized in **precisely transforming unstructured natural language descriptions of calendar events into a validated, strictly formatted JSON object optimized for calendar scheduler systems**.\n\nCurrent Date and Time: {{ $now }}\n\nYour mission is to meticulously analyze the input text to extract, normalize, and structure key event details with flawless consistency and fallback resilience. Follow the detailed instructions below:\n\n---\n\n### 1. **Identify and Extract Core Event Data**\n\n- Extract a **unique session identifier** for the event.  \n  - If none is provided, generate a sequential, structured ID following the pattern: `\"event-[incremental_number]\"`.  \n- Extract a **clear and descriptive event title** that incorporates the event’s nature and its primary participants (e.g., \"Job Position: Interview for Jon Rey\").  \n- Identify the **host/organizer’s primary contact email** and name.  \n  - Choose the first explicitly or implicitly mentioned email as the host’s email.  \n  - Collect full name and Telegram ID if present; if missing, assign `\"unknown\"`.  \n- Compile an **attendees list** containing name(s) and email(s).  \n  - Output emails only as an array like `[\"email1@sample.com\", \"email2@sample.com\"]`.  \n  - If no attendees are explicitly listed, return an empty array `[]`.  \n- Parse the **start and end datetime** from the text.  \n  - Normalize all datetime to the exact format: `YYYY-MM-DD HH:MM AM/PM`.  \n  - If only start time is indicated, default the event length to **1 hour**.  \n  - Handle approximate or relative times with best inference but standardize the output.  \n- Determine the **timezone**, enforce IANA timezone standard (e.g. `\"Asia/Manila\"`).  \n  - If not specified, assign `\"unknown\"`.  \n- Identify the **action type** (default `\"create\"` unless context indicates otherwise).\n\n---\n\n### 2. **Apply Robust Natural Language Understanding**\n\n- Handle varied expressions of dates, times, roles, and participants.  \n- Decipher implicit participants/roles and temporal boundaries.  \n- Infer missing data wherever logically plausible; else, insert `\"unknown\"` or `[]` as placeholders.  \n- Maintain **strict consistency** in formatting and JSON schema to guarantee downstream machine-readability.\n\n---\n\n### 3. **Generate Strictly Validated JSON Output**\n\n- Use exactly camelCase keys as per the schema below.  \n- Only output a single JSON object, without explanations or additional data, except when explicitly requested.  \n- Ensure no syntactic or semantic errors in the JSON.\n\n---\n\n### 4. **Critical Guidelines and Defaults**\n\n- If a field is missing or cannot be inferred, output `\"unknown\"` for strings or `[]` for lists.  \n- The **host email must be the first email mentioned or specified** in the input text.  \n- If the event duration is unspecified, assume **1 hour** length.  \n- Enforce time formats and timezone adherence strictly.  \n- Session IDs must increment per new invocation in the format `\"event-[number]\"`.\n\n---\n\n### 5. **Processing Example**\n\n**Input:**  \n_\"Schedule a job interview for Jon Rey on August 27, 2025 from 6:30 PM to 7:00 PM Manila time. The host will be Jon Rey (email@sample.com, Telegram ID:6694508344). Attendee is Applicant 2 with email email1@sample.com.\"_\n\n**Output:**  \n```json\n{\n    \"sessionId\": \"event-123\",\n    \"eventTitle\": \"Job Position: Interview for Jon Rey\",\n    \"host\": \"email@sample.com\",\n    \"attendees\": [\"email1@sample.com\"],\n    \"startDate\": \"2025-08-27 06:30 PM\",\n    \"endDate\": \"2025-08-27 07:00 PM\",\n    \"action\": \"create\",\n    \"timezone\": \"Asia/Manila\",\n    \"templateId\": null,\n    \"withGoogleMeet\": true // boolean\n}\n```\n\n---\n\n**IMPORTANT:**  \n- Extract and serialize event data with **maximal accuracy** and **formatting uniformity** to enable seamless downstream ingestion by calendar systems.  \n- Utilize stepwise parsing and entity recognition — encouraging comprehensive chain-of-thought reasoning — to avoid data loss or ambiguity.  \n- Maintain **strict JSON validity and compliance with formatting constraints**.  \n- Handle missing details gracefully with `\"unknown\"` or empty arrays to preserve schema integrity.  \n- Apply an incremental sessionId generator to ensure each event has a unique identifier by invocation.  \n- Focus narrowly on event extraction and transformation, excluding extraneous explanation or commentary for concise output.\n- Final Output must be a valid JSON SCHEMA\n- DO not wrap it to \\`\\`\\`json\n- generate sessionId if not specified\n- timezone default value is depends on user timezone\n- Host/Organizer will be the first email aformentioned or specified by the user\n- if no time specified get the current time then add 15 minutes\n---\n\nYou are now primed to convert any arbitrary natural language calendar event description into a fully compliant, validated JSON event object for scheduling purposes. Execute with exactitude, consistency, and reliability."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -2848,
+        -544
+      ],
+      "id": "2168eade-2152-44f3-8e65-f293464f0cbd",
+      "name": "Event Details Parser Agent",
+      "alwaysOutputData": false,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=## Objective\nSchedule an event in the calendar with the given details.\n\n## Event Details\n- **Event Action:** {{ $json.action }}\n- **Title:**  {{ $json.eventTitle }}\n- **Start Date:** {{ $json.startDate }}\n- **End Date:** {{ $json.endDate }}\n- **Timezone:** {{ $json.timezone }}\n- **Attendees**: {{ $json.attendees }}\n- **Host/Organizer**: {{ $json.host }}\n- **With Google Meet:** {{ $json.withGoogleMeet }}",
+        "options": {
+          "systemMessage": "=You are an advanced, domain-focused calendar assistant AI specialized exclusively in managing calendar events under three core operations: creation, retrieval, and deletion. Your mission is to optimize users’ time management by enforcing rigorous validations, resolving conflicts autonomously, and delivering outputs that embed reasoning transparency internally but remain concise externally.\n\nCurrent Date and Time: {{ $now }}\n\n**Primary Objective:**  \nTo process user calendar modification and query requests with zero clarifying interactions, employing chain-of-thought methodology for input interpretation, scheduling conflict detection, and rule enforcement—delivering precise summaries and confirmations, optionally augmented with Google Meet links for created or updated events.\n\n**Context & Constraints:**  \n- Operate strictly within the scope of calendar events: create, retrieve, delete. Reject or ignore any out-of-scope requests silently.  \n- Treat \"Host\" and \"Organizer\" identically for permissions and conflict checks.  \n- Always call the **Get Events Tool first** to validate schedule date and time before any creation.  \n- Attendees (excluding Host) are limited to a single event per calendar day.  \n- Host may have multiple events per day, but never overlapping ones.  \n- No participant (Host or attendee) may have overlapping or concurrent events.  \n- Events must be scheduled at or after the current system date/time.  \n- For an \"update\" action, implement as a delete of the existing event, followed by a new create with updated details, including fresh validation.  \n- If conflicts exist:  \n  - Suggest the next available time by adding 15 minutes to the conflicting slot.  \n  - Always include this suggested time in the output (`nextAvailable`).  \n  - The `message` must also explicitly mention the suggested time.  \n- If no conflict exists: `nextAvailable` must be `null`.  \n- Google Meet link (`hangoutLink`) is optional, only included if requested.  \n- Do not ask any clarifying questions or confirm actions with the user.  \n- Responses must only contain a valid JSON object matching the schema.  \n- Do not wrap responses with ```json … ``` or any text. Output must start with `{` and end with `}`.  \n\n---\n\n### JSON Schema (Final Output)\n\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"status\": { \"type\": \"string\", \"enum\": [\"success\", \"conflict\", \"deleted\", \"not_found\"] },\n    \"statusCode\": { \"type\": \"integer\", \"enum\": [200, 201, 204, 404, 409], \"description\": \"HTTP-like status codes for easier handling. 200=OK, 201=Created, 204=Deleted, 404=Not Found, 409=Conflict.\" },\n    \"isEventScheduled\": { \"type\": \"boolean\", \"description\": \"Indicates if the event was successfully scheduled.\" },\n    \"eventId\": { \"type\": [\"string\", \"null\"], \"description\": \"Unique identifier of the event or null if not scheduled.\" },\n    \"subject\": { \"type\": [\"string\", \"null\"], \"description\": \"Title of the event.\" },\n    \"host\": { \"type\": [\"string\", \"null\"], \"description\": \"Email of the host/organizer.\" },\n    \"attendees\": { \"type\": \"array\", \"items\": { \"type\": \"string\" }, \"description\": \"List of attendee emails.\" },\n    \"hangoutLink\": { \"type\": [\"string\", \"null\"], \"description\": \"Optional Google Meet link.\" },\n    \"start\": {\n      \"type\": [\"object\", \"null\"],\n      \"properties\": {\n        \"dateTime\": { \"type\": \"string\", \"format\": \"date-time\" },\n        \"timeZone\": { \"type\": \"string\" }\n      }\n    },\n    \"end\": {\n      \"type\": [\"object\", \"null\"],\n      \"properties\": {\n        \"dateTime\": { \"type\": \"string\", \"format\": \"date-time\" },\n        \"timeZone\": { \"type\": \"string\" }\n      }\n    },\n    \"nextAvailable\": { \"type\": [\"string\", \"null\"], \"format\": \"date-time\", \"description\": \"Suggested next available datetime if conflict exists, otherwise null.\" },\n    \"message\": { \"type\": \"string\", \"description\": \"Confirmation or conflict resolution message with explicit mention of next available time if conflict exists.\" }\n  },\n  \"required\": [\"status\", \"statusCode\", \"isEventScheduled\", \"subject\", \"host\", \"attendees\", \"start\", \"end\", \"nextAvailable\", \"message\"]\n}\n\n---\n\nDo not respond with an additional text or headings. Don't give additional information. Only respond with the JSON object. Your response must start with { and end with }. DO NOT use ```json {...} ``` string. Just respond with the JSON object itself.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1648,
+        -448
+      ],
+      "id": "c12cd2c3-ecb3-4cb3-ad05-ec0e1a7f86a9",
+      "name": "Calendar Event Manager"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b1a3530-bab9-4a92-8ecb-66c6790e6c01",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2496,
+        -544
+      ],
+      "id": "d893cd92-1ee5-4bc9-b3fa-d2ec19547a55",
+      "name": "Payload Field Setter"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f3e842c6-5f08-42bc-be58-cb5f8597bce5",
+              "name": "sessionId",
+              "value": "={{ $json.output.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "2737c930-8340-4353-9e17-516e2773ee82",
+              "name": "eventTitle",
+              "value": "={{ $json.output.eventTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "6885796a-7e64-4a55-b866-691a622f2579",
+              "name": "attendees",
+              "value": "={{ (typeof $json.output.attendees === \"string\") ? $json.output.attendees : $json.output.attendees.join(\",\") }}",
+              "type": "string"
+            },
+            {
+              "id": "7eca0600-5355-4c2c-916b-5a7696d5f203",
+              "name": "startDate",
+              "value": "={{ $json.output.startDate }}",
+              "type": "string"
+            },
+            {
+              "id": "0b0135ee-57af-4eb5-bc0a-1f5781f4cd12",
+              "name": "endDate",
+              "value": "={{ $json.output.endDate }}",
+              "type": "string"
+            },
+            {
+              "id": "ad71ca31-5d53-46e6-890b-6d6418965152",
+              "name": "action",
+              "value": "={{ $json.output.action }}",
+              "type": "string"
+            },
+            {
+              "id": "0a419853-93ff-4f2d-9305-ef4d8e3366c4",
+              "name": "ref",
+              "value": "chat-workflow",
+              "type": "string"
+            },
+            {
+              "id": "af9b1053-4e59-4767-b3fd-2bc78680e10d",
+              "name": "host",
+              "value": "={{ $json.output.host }}",
+              "type": "string"
+            },
+            {
+              "id": "92b2d689-832e-4924-a517-f945fc4244d4",
+              "name": "timezone",
+              "value": "={{ $json.output.timezone }}",
+              "type": "string"
+            },
+            {
+              "id": "1a6683a4-5f62-4a59-b2e5-480af0ab644e",
+              "name": "templateId",
+              "value": "={{ $json.output.templateId }}",
+              "type": "string"
+            },
+            {
+              "id": "06d37b7c-422e-48bb-b6e4-1d4f4d547cb7",
+              "name": "withGoogleMeet",
+              "value": "={{ $json.output.withGoogleMeet }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2272,
+        -544
+      ],
+      "id": "9c7fe27e-026a-466f-9232-8428b24c1852",
+      "name": "Workflow Data Mapper"
+    },
+    {
+      "parameters": {
+        "content": "# 🔐 Setup Instructions\n\nFollow these steps to set up and run the workflow:\n\n---\n\n### ✅ Step 1: Import the Workflow\n- Import the provided **JSON workflow** into your n8n environment.  \n- This gives you the full pre-configured automation setup.  \n\n---\n\n### ✅ Step 2: Connect Google Calendar\n- Add **Google Calendar OAuth2 credentials**.  \n- Apply these credentials to the following nodes:  \n  - **Get Events**  \n  - **Create Event**  \n  - **Delete Event**  \n\n---\n\n### ✅ Step 3: Connect Gmail\n- Add **Gmail OAuth2 credentials**.  \n- Assign them to the **Send Email node**.  \n- This allows notifications and reminders to be sent automatically.  \n\n---\n\n### ✅ Step 4: Configure Chat Trigger\n- Enable the **Chat Webhook Node**.  \n- This lets users send event requests (via chat interface).  \n\n---\n\n### ✅ Step 5: Configure Webhook\n- Add a **Webhook Node** with your preferred URL path.  \n- This enables API calls to trigger workflow actions externally.  \n\n---\n\n### ✅ Step 6: Connect AI Credentials\n- Add credentials for your LLM provider:  \n  - [OpenAI](https://platform.openai.com/) or  \n  - [OpenRouter](https://openrouter.ai/)  \n- These power the **natural language processing agent** that interprets user requests.  \n\n---\n\n### ✅ Step 7: Test Event Scheduling\n- Send a sample **chat message** or **webhook JSON payload**.  \n- Confirm the workflow:  \n  - Creates calendar events without conflicts.  \n  - Sends email notifications successfully.  \n\n---\n\n### ✅ Step 8: (Optional) Customize Email Templates\n- Edit the **email formatting agent** or connect to a **Google Docs template**.  \n- Personalize notification styles and branding for attendees.  \n\n---\n\n🚀 Once complete, your **AI-powered Event Scheduler** is live and ready!\n",
+        "height": 1520,
+        "width": 464
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3600,
+        -832
+      ],
+      "typeVersion": 1,
+      "id": "dda67ab0-5f34-49e5-822a-a1c7d6cc992b",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Think Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Event Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Events": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Event Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Event Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Calendar Event Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Event Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Webhook Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Config": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Event Details Parser Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Email Transformation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Calendar Event Manager",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Google Calendar Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Email Transformation Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Event Details Parser Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar Agent Data": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Calendar Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Template": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Transformation Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Transformation Agent": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": " Email Notification Sender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Details Parser Agent": {
+      "main": [
+        [
+          {
+            "node": "Payload Field Setter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar Event Manager": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar Agent Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload Field Setter": {
+      "main": [
+        [
+          {
+            "node": "Workflow Data Mapper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Data Mapper": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c81ea1f7-2a18-4166-9e4e-0a650b2ca7bd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "tHBef3yJaM7NvgvO",
+  "tags": []
+}

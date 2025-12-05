@@ -1,0 +1,1002 @@
+{
+  "name": "Banner Ad Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "16H50bcFCAR_dtIjaBvcNNvoXKEmGJdZw-v6ldRftxcU",
+          "mode": "list",
+          "cachedResultName": "Banner Ad data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/16H50bcFCAR_dtIjaBvcNNvoXKEmGJdZw-v6ldRftxcU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 549686827,
+          "mode": "list",
+          "cachedResultName": "Form Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/16H50bcFCAR_dtIjaBvcNNvoXKEmGJdZw-v6ldRftxcU/edit#gid=549686827"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        368
+      ],
+      "id": "8b888d98-d2b2-48d7-ab84-a20521db3c60",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "XHd3GC5cwht4Jk2T",
+          "name": "Google Sheets Trigger [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        464,
+        592
+      ],
+      "id": "83bfe855-f1e2-4a64-b650-5f2c6a290087",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"headline\": [\"headline\"],\n  \"bodie\": [\"body\"],\n  \"cta\": [\"cta\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        592
+      ],
+      "id": "8089f0fe-faa4-4035-a6e4-d8997aa5ea88",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-exp-image-generation",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash-exp-image-generation"
+        },
+        "prompt": "=Generate a simple clean banner background image.\n- Canvas size: {{ $json.target_size }} pixels.\n- Use gradient or pattern based on brand colors: {{ $json.assets.colors }}.\n- Keep enough contrast for overlaid text and product images.\n- No text or logos.\n- Output format: PNG.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        80
+      ],
+      "id": "5b93a23f-43ee-4d34-9a56-31ba1119a660",
+      "name": "Background Generator",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-preview-image-generation",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash-preview-image-generation"
+        },
+        "prompt": "=Create a PNG that contains the following text elements as a single composition:\nHeadline: \"{{ $json.copy_variations.headline[0] }}\"\nCTA: \"{{ $json.copy_variations.cta[0] }}\"\n\nDesign goal:\n- The combined text image must be same as size {{ $json.target_size }} pixels.\n- Center the text block vertically.\n- Return a visually balanced composition with good line spacing and font hierarchy.\n- Font: {{ $json.assets.font }}\n- Text colors: use {{ $json.assets.colors }} for main headline, and {{ $json.assets.colors }} for CTA.\n- Background: select the relevant one from {{ $json.assets.colors }}.\n- Include soft shadow or subtle gradient for readability.\n- Do not add any other design elements.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        272
+      ],
+      "id": "c6f61eb0-b433-41f7-8902-e73259fbd857",
+      "name": "Headline Generator",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1920,
+        176
+      ],
+      "id": "3d7f4746-1884-4c12-9a0c-15228850cd7c",
+      "name": "Merge"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2816,
+        272
+      ],
+      "id": "a6cf3874-10d8-4eee-94ad-af7f41b90684",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        80
+      ],
+      "id": "197936f5-3e24-4727-96a3-63c8fee22ee5",
+      "name": "Wait",
+      "webhookId": "be832a43-eec5-41df-9f0a-6534484483f1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        272
+      ],
+      "id": "ef54bd31-2c2e-4dbb-91d6-2e9286e4817f",
+      "name": "Wait1",
+      "webhookId": "3e76647d-68c4-46a9-b117-618f2bc37150"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3712,
+        368
+      ],
+      "id": "c641ff84-fa57-4e97-aa38-6956a399d23d",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        128
+      ],
+      "id": "c2d10ec6-9060-4e46-be84-a41ece0138d9",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "ranilo@popai.agency",
+        "subject": "=Workflow Error: {{$json.workflow.name}}",
+        "message": "=An error occurred in your n8n workflow.  \n**Workflow:** {{$json.workflow.name}}   \n**Workflow ID:** {{$json.workflow.id}}   \n**Execution ID:** {{$json.execution.id}}   \n**Error Message:** {{$json.error.message}}   \n**Timestamp:** {{$json.execution.startedAt}}  \n\nYou can review the full execution details here: {{$json.execution.url}}  \n\n**Stack Trace:** {{$json.error.stack}}  \n––– n8n Error Monitor",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        128
+      ],
+      "id": "9bfd4547-a54d-4c0a-80ed-798dc69ac790",
+      "name": "Send a message",
+      "webhookId": "f4664a26-09b4-4c83-8654-1ad78dc458e3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  promotion: {\n    title: $json[\"Promotion Title\"],\n    description: $json[\"Promotion Description\"],\n    cta: $json[\"CTA\"],\n    landing_url: $json[\"Landing Page URL\"] || \"\"\n  },\n  assets: {\n    product_image: $json[\"Product Image URL (s)\"],\n    logo: $json[\"Logo URL\"],\n    colors: $json[\"Color Palette (comma separated)\"] ? $json[\"Color Palette (comma separated)\"].split(\",\") : [],\n    font: $json[\"Font Name or File URL\"] || \"Open Sans\"\n  },\n  template: $json[\"Template Name\"],\n  format: $json[\"Ad Format\"],\n  target_size: $json[\"Banner Size\"]\n}]\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        368
+      ],
+      "id": "2c7d6449-b305-4598-9caa-f01ec65f3120",
+      "name": "Pre-processing"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a professional advertising copywriter. \nYour task is to generate concise, high-impact text for a banner ad based on the input JSON.\n\nFollow these rules strictly:\n- Use the banner parameters to control text length and tone.\n- For small ads (≤300x250), keep headlines ≤ 5 words, body ≤ 10 words.\n- For large ads (≥728x90 or 970x250), allow slightly longer lines.\n- Use clear, energetic, brand-safe language.\n- Never add HTML or markdown.\n- Respond in *pure JSON format* only.\n\nJSON Input:\n{{ JSON.stringify($json, null, 2) }}\n\nYour Output JSON format must be:\n\n{\n  \"headline\": [\"headline\"],\n  \"bodie\": [\"body\"],\n  \"cta\": [\"cta\"]\n}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        368
+      ],
+      "id": "0ecb7934-ab5f-4166-a2f0-4c9431b3977b",
+      "name": "Banner Contents Generator",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse target size\nconst [w, h] = $('Pre-processing').first().json.target_size.split('x').map(Number);\n\n// define placement rules (in pixels)\nreturn [{\n  json: {\n    ...$('Pre-processing').first().json,\n    width: w,\n    height: h,\n    layout: {\n      background: { x: 0, y: 0 },               // right side\n      logo: { x: w * 0.01, y: h * 0.01 },                   // top-left corner\n      headline: { x: w * 0.25, y: h * 0 },\n      product: {x: w * 0.75, y : 0}// mid-left       // bottom-left\n    }\n  }\n}]\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        368
+      ],
+      "id": "e23ae44c-2f3e-4fe1-83a6-8c0c59a8c12b",
+      "name": "Position Setting"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  ...$('Position Setting').first().json,\n  copy_variations: $('Banner Contents Generator').first().json.output\n}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        368
+      ],
+      "id": "2a1f0698-b997-4384-9d32-cc49cb4ae3bf",
+      "name": "Prepare Banner Data"
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "width": "={{ $('Prepare Banner Data').first().json.width * 0.3 }}",
+        "height": "={{ $('Prepare Banner Data').first().json.height }}",
+        "resizeOption": "ignoreAspectRatio",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        272
+      ],
+      "id": "23d83915-1e2c-4da6-8289-0c6495b78b87",
+      "name": "Resize Headline"
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "width": "={{ $('Prepare Banner Data').first().json.width }}",
+        "height": "={{ $('Prepare Banner Data').first().json.height }}",
+        "resizeOption": "ignoreAspectRatio",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        80
+      ],
+      "id": "71a78b6f-1824-4a7d-a644-d04486315fac",
+      "name": "Resize Background"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst images = $input.all().reduce((acc, item, index) => { \n  acc[`data${index}`] = item.binary.data;  \n  return acc;\n}, {});\nreturn [{ json: {}, binary: images }]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2144,
+        176
+      ],
+      "id": "75014029-17dd-4d27-8532-5736eec0e276",
+      "name": "Merge Binary data"
+    },
+    {
+      "parameters": {
+        "operation": "composite",
+        "dataPropertyName": "data0",
+        "dataPropertyNameComposite": "data1",
+        "positionX": "={{ $('Prepare Banner Data').first().json.layout.headline.x }}",
+        "positionY": "={{ $('Prepare Banner Data').first().json.layout.headline.y }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        2368,
+        176
+      ],
+      "id": "1b428532-52bc-4784-b145-198cef9ece43",
+      "name": "Composite Background and Headline"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the first input item\nconst item = $input.first();\n\n// Access the specific binary\nconst data0 = item.binary.data0;\n\n// Return only that one binary\nreturn [{ json: {}, binary: { data: data0 } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2592,
+        176
+      ],
+      "id": "90bd3443-24d1-48d7-8082-65e5a65b6287",
+      "name": "Extract Image Data"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Prepare Banner Data').item.json.assets.logo }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2368,
+        448
+      ],
+      "id": "3eed7ac3-4dd7-4089-b91b-2ba9d335db65",
+      "name": "Download Logo Image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "sEku0dhCGku3IK04",
+          "name": "Google Drive [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "width": "={{ Math.floor($('Prepare Banner Data').item.json.height * 0.6) }}",
+        "height": "={{ Math.floor($('Prepare Banner Data').item.json.height * 0.6) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        2592,
+        448
+      ],
+      "id": "8224ac3e-f784-4bcc-a8ad-958c2b083e05",
+      "name": "Resize Logo"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst images = $input.all().reduce((acc, item, index) => { \n  acc[`data${index}`] = item.binary.data;  \n  return acc;\n}, {});\nreturn [{ json: {}, binary: images }]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        272
+      ],
+      "id": "9abc7d01-81c1-4c93-b59e-e055b4c38d98",
+      "name": "Merge Binary1"
+    },
+    {
+      "parameters": {
+        "operation": "composite",
+        "dataPropertyName": "data0",
+        "dataPropertyNameComposite": "data1",
+        "positionX": "={{ $('Prepare Banner Data').first().json.layout.logo.x }}",
+        "positionY": "={{ $('Prepare Banner Data').first().json.layout.logo.y }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        3264,
+        272
+      ],
+      "id": "c40e8858-e0a7-4497-a427-0c245ab933e1",
+      "name": "Composite with Logo"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the first input item\nconst item = $input.first();\n\n// Access the specific binary\nconst data0 = item.binary.data0;\n\n// Return only that one binary\nreturn [{ json: {}, binary: { data: data0 } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3488,
+        272
+      ],
+      "id": "97c1fb3d-c017-4bf3-ae2b-041f2f9363c9",
+      "name": "Extract Image Data1"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Prepare Banner Data').item.json.assets.product_image }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3264,
+        608
+      ],
+      "id": "f216969a-3bae-4209-be71-3586c98dc31f",
+      "name": "Download Product Image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "sEku0dhCGku3IK04",
+          "name": "Google Drive [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "width": "={{ Math.floor($('Prepare Banner Data').item.json.height) }}",
+        "height": "={{ Math.floor($('Prepare Banner Data').item.json.height) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        3488,
+        608
+      ],
+      "id": "c2a368eb-edfb-4015-922e-05674ab79c58",
+      "name": "Resize Product"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst images = $input.all().reduce((acc, item, index) => { \n  acc[`data${index}`] = item.binary.data;  \n  return acc;\n}, {});\nreturn [{ json: {}, binary: images }]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3936,
+        368
+      ],
+      "id": "8a3c4e85-73dd-448e-92ef-111a63ec4586",
+      "name": "Merge Binary2"
+    },
+    {
+      "parameters": {
+        "operation": "composite",
+        "dataPropertyName": "data0",
+        "dataPropertyNameComposite": "data1",
+        "positionX": "={{ $('Prepare Banner Data').first().json.layout.product.x }}",
+        "positionY": "={{ $('Prepare Banner Data').first().json.layout.product.y }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        4160,
+        368
+      ],
+      "id": "7d773e0e-9bb0-47a0-aa18-adbe9b871485",
+      "name": "Composite with Product"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Google Sheets Trigger').first().json['Email for ZIP download'] }}",
+        "subject": "[Banner Ad Generator] Your new ad creatives are ready!",
+        "message": "=Hi,<br><br>\n\nYour new banner ad set has been successfully generated by the <b>AI Banner Generator</b>.<br>\nPlease find the attached creative below.<br><br>\n\n<b>Promotion:</b> {{ $('Pre-processing').first().json.promotion.title }}<br>\n<b>Description:</b> {{ $('Pre-processing').first().json.promotion.description }}<br>\n<b>CTA:</b> {{ $('Prepare Banner Data').first().json.copy_variations.cta[0] }}<br>\n<b>Target Size:</b> {{ $('Prepare Banner Data').first().json.target_size }}<br>\n<b>Format:</b> {{ $('Prepare Banner Data').first().json.format }}<br><br>\n\n<b>Preview:</b> The attached banner image.<br><br>\n\nThanks,<br>\n— n8n Banner Ad Agent",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4608,
+        368
+      ],
+      "id": "3e1e484b-387f-497a-a7bf-19431056d52c",
+      "name": "Send a message1",
+      "webhookId": "d316d473-b846-4d10-9bda-757a35d69a9a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the first input item\nconst item = $input.first();\n\n// Access the specific binary\nconst data0 = item.binary.data0;\n\n// Return only that one binary\nreturn [{ json: {}, binary: { data: data0 } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4384,
+        368
+      ],
+      "id": "6a6b4c5d-492e-48f2-bbc3-dac40f68bd4d",
+      "name": "Extract Image Data2"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "banner-ad-generator",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        576,
+        112
+      ],
+      "id": "8e41b50e-cd5d-4370-a512-60119f3d271b",
+      "name": "Webhook",
+      "webhookId": "e1e46b8d-fbb7-42ef-87fd-e0a67d91896e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const apiKey = $input.first().json.query.apikey;\nconst requiredKey = \"banner_generator_test_key\";\n\nif (!apiKey || apiKey !== requiredKey) {\n  throw new Error(\"Unauthorized — invalid API key\");\n}\n\nreturn [{ validated: true }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        112
+      ],
+      "id": "1a5d5907-1f25-4182-9d70-855d5a9c2782",
+      "name": "validation"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=📝 Banner Ad Generator — Developer Notes\n🔹 How to Use the Agent\n\nThis workflow automatically generates banner ad creatives based on product entries in a Google Sheet. The workflow:\n\nReads product data from Google Sheets\n\nGenerates ad copy via Gemini\n\nCreates backgrounds & headlines\n\nDownloads product/logo images\n\nComposes final banner image layers\n\nEmails the final ad creative to the reviewer\n\nA Webhook Trigger is included to meet NMS-AI standardization requirements.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test):\nhttps://n8n.popapps.ai/webhook-test/banner-ad-generator\n\nMethod: POST\n\nTest Request Body:\n\n{\n  \"apiKey\": \"banner_generator_test_key\"\n}\n\n\nThis webhook does not start the main workflow.\nThe real workflow starts from Google Sheets.\nThe webhook exists to standardize agent API entry.\n\n🔹 Setup Instructions\n\nAdd environment variable:\n\nBANNER_GENERATOR_API_KEY = banner_generator_test_key\n\n\nConfigure Google Sheets Credential\n\nEmail: test@test.com\nClient ID: sample-google-client-id.apps.googleusercontent.com\nClient Secret: sample-google-secret\n\n\nConfigure Google Gemini Credential\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nConfigure image generation / compositing nodes\n(uses built-in n8n image tools, no API needed)\n\nConfigure Gmail Credential\n\nEmail: test@test.com\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\nClient Secret: sample-gmail-secret\n\n\nUpdate your Google Sheet structure:\n\nColumns: Product Name, Description, Logo URL, Product Image URL, etc.\n\nThe sheet acts as the data source for ad generation.\n\n🔹 Required Credentials\n\nUse real credentials in n8n only —\nUse test examples inside this sticky note.\n\nGoogle Sheets OAuth\n\nEmail: test@test.com\n\nClient ID: sample-google-client-id.apps.googleusercontent.com\n\nSecret: sample-google-secret\n\nGmail OAuth\n\nEmail: test@test.com\n\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\n\nSecret: sample-gmail-secret\n\nGoogle Gemini API\n\nExample: sample-gemini-key-12345\n\nEnvironment Variable\n\nBANNER_GENERATOR_API_KEY = banner_generator_test_key\n\n🔹 Notes\n\nThe Webhook + Validation block is required for NMS-AI Workflow Compliance.\n\nThe Google Sheets Trigger is the real start of the workflow.\n\nThe webhook is used for interoperability, observability, and company-wide standardization.\n\nReplace placeholder credentials with actual ones inside n8n Credentials manager only.",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        912,
+        112
+      ],
+      "id": "3a1fa4f2-1c74-4ffc-94e9-c7aae2f46018",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "content": "📝 Banner Ad Generator — Developer Notes\n🔹 How to Use the Agent\n\nThis workflow automatically generates banner ad creatives based on product entries in a Google Sheet. The workflow:\n\nReads product data from Google Sheets\n\nGenerates ad copy via Gemini\n\nCreates backgrounds & headlines\n\nDownloads product/logo images\n\nComposes final banner image layers\n\nEmails the final ad creative to the reviewer\n\nA Webhook Trigger is included to meet NMS-AI standardization requirements.\n\n🔹 Webhook Entry (Official API Entry Point)\n\nWebhook URL (Test):\nhttps://n8n.popapps.ai/webhook-test/banner-ad-generator\n\nMethod: POST\n\nTest Request Body:\n\n{\n  \"apiKey\": \"banner_generator_test_key\"\n}\n\n\nThis webhook does not start the main workflow.\nThe real workflow starts from Google Sheets.\nThe webhook exists to standardize agent API entry.\n\n🔹 Setup Instructions\n\nAdd environment variable:\n\nBANNER_GENERATOR_API_KEY = banner_generator_test_key\n\n\nConfigure Google Sheets Credential\n\nEmail: test@test.com\nClient ID: sample-google-client-id.apps.googleusercontent.com\nClient Secret: sample-google-secret\n\n\nConfigure Google Gemini Credential\n\nGEMINI_API_KEY = sample-gemini-key-12345\n\n\nConfigure image generation / compositing nodes\n(uses built-in n8n image tools, no API needed)\n\nConfigure Gmail Credential\n\nEmail: test@test.com\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\nClient Secret: sample-gmail-secret\n\n\nUpdate your Google Sheet structure:\n\nColumns: Product Name, Description, Logo URL, Product Image URL, etc.\n\nThe sheet acts as the data source for ad generation.\n\n🔹 Required Credentials\n\nUse real credentials in n8n only —\nUse test examples inside this sticky note.\n\nGoogle Sheets OAuth\n\nEmail: test@test.com\n\nClient ID: sample-google-client-id.apps.googleusercontent.com\n\nSecret: sample-google-secret\n\nGmail OAuth\n\nEmail: test@test.com\n\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\n\nSecret: sample-gmail-secret\n\nGoogle Gemini API\n\nExample: sample-gemini-key-12345\n\nEnvironment Variable\n\nBANNER_GENERATOR_API_KEY = banner_generator_test_key\n\n🔹 Notes\n\nThe Webhook + Validation block is required for NMS-AI Workflow Compliance.\n\nThe Google Sheets Trigger is the real start of the workflow.\n\nThe webhook is used for interoperability, observability, and company-wide standardization.\n\nReplace placeholder credentials with actual ones inside n8n Credentials manager only.",
+        "height": 2048,
+        "width": 864
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -576,
+        -48
+      ],
+      "typeVersion": 1,
+      "id": "eb83fa49-12dc-40c7-9b70-abaa28c7f66f",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Pre-processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Banner Contents Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Banner Contents Generator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Background Generator": {
+      "main": [
+        [
+          {
+            "node": "Resize Background",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Headline Generator": {
+      "main": [
+        [
+          {
+            "node": "Resize Headline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge Binary data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Merge Binary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Background Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Headline Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Merge Binary2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-processing": {
+      "main": [
+        [
+          {
+            "node": "Banner Contents Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Banner Contents Generator": {
+      "main": [
+        [
+          {
+            "node": "Position Setting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Position Setting": {
+      "main": [
+        [
+          {
+            "node": "Prepare Banner Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Banner Data": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download Logo Image",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download Product Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resize Headline": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Resize Background": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Binary data": {
+      "main": [
+        [
+          {
+            "node": "Composite Background and Headline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Composite Background and Headline": {
+      "main": [
+        [
+          {
+            "node": "Extract Image Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Image Data": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Logo Image": {
+      "main": [
+        [
+          {
+            "node": "Resize Logo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resize Logo": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Binary1": {
+      "main": [
+        [
+          {
+            "node": "Composite with Logo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Composite with Logo": {
+      "main": [
+        [
+          {
+            "node": "Extract Image Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Image Data1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Product Image": {
+      "main": [
+        [
+          {
+            "node": "Resize Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resize Product": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Binary2": {
+      "main": [
+        [
+          {
+            "node": "Composite with Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Composite with Product": {
+      "main": [
+        [
+          {
+            "node": "Extract Image Data2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Image Data2": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e11b8787-26d2-4840-9aaf-d19416cbfe35",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "ZltT43q2j4694TNG",
+  "tags": []
+}

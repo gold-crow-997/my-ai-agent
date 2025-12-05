@@ -1,0 +1,1050 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [2784, 800],
+      "id": "4918367d-c5eb-431d-b8f1-43919766e402",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "bSjzM77PaRHPGRwA",
+          "name": "OpenAi [Jon Rey:AIAGENT]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [2608, 768],
+      "id": "895df80e-117e-4155-bb7e-0050d7b040e0",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0yyt4YmtAikN6fuK",
+          "name": "OpenRouter [Jon Rey:pops]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [736, 400],
+      "id": "6edc5330-2eb6-40a8-afc9-a299a7fb405c",
+      "name": "Get a file",
+      "webhookId": "d10c0497-1ab1-43e4-9a18-f8ba7eba3a75",
+      "credentials": {
+        "telegramApi": {
+          "id": "WbUxwxMwvILJe32V",
+          "name": "Telegram [Jonrey:aiagentdocumentor_bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [1680, 576],
+      "id": "a56ae912-c453-4398-a701-8cbabb160ae4",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "output",
+        "options": {
+          "fileName": "={{ $('Docs Config').item.json.filename }}_README.md"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [3024, 576],
+      "id": "775adc93-ee3f-4ced-9193-cab2cd9fb255",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=Hi @{{ $json.message.chat.username }}! Let’s kick things off—please drop your workflow.json file here.🚀",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "message_thread_id": "={{ $json.message.message_thread_id || null }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [512, 304],
+      "id": "9f2c6406-2ef7-47e3-9f2a-c45b2d160ff3",
+      "name": "welcome message",
+      "webhookId": "b2041e1c-6a0a-4028-b69a-fba587959e76",
+      "credentials": {
+        "telegramApi": {
+          "id": "WbUxwxMwvILJe32V",
+          "name": "Telegram [Jonrey:aiagentdocumentor_bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [64, 304],
+      "id": "bb95bf06-7883-4b37-b113-8c2c05568326",
+      "name": "Telegram Trigger",
+      "webhookId": "020dcc97-9215-4cf4-a2d7-c3ffdecbf492",
+      "credentials": {
+        "telegramApi": {
+          "id": "WbUxwxMwvILJe32V",
+          "name": "Telegram [Jonrey:aiagentdocumentor_bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=Uh oh, {{ $json.message.chat.username }} disconnected. Sad to see you drop off 😞",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "message_thread_id": "={{ $json.message.message_thread_id || null }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [512, 112],
+      "id": "7ed20a8d-4d31-4981-817e-0a42978968cd",
+      "name": "goodbye message",
+      "webhookId": "b2041e1c-6a0a-4028-b69a-fba587959e76",
+      "credentials": {
+        "telegramApi": {
+          "id": "WbUxwxMwvILJe32V",
+          "name": "Telegram [Jonrey:aiagentdocumentor_bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/markdown"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [3472, 672],
+      "id": "e418eec5-d379-49f4-b389-776727e91fe7",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "n8n-workflow-documenter",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryPropertyName": "file"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [704, 784],
+      "id": "18a69d1d-1a04-42e2-937f-2445954098af",
+      "name": "Webhook",
+      "webhookId": "18b8fd88-434b-4394-b36c-fa2ccc5c7c53"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9baea53c-7595-49de-8e4a-e0904dd9012d",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "fbdfef27-3074-498d-a881-1155c19cad84",
+              "name": "ref",
+              "value": "={{ $json.ref }}",
+              "type": "string"
+            },
+            {
+              "id": "846a1394-a81a-4700-a21b-b8f334d0de11",
+              "name": "file",
+              "value": "file",
+              "type": "binary"
+            },
+            {
+              "id": "6ef66dd3-8a33-47a2-82f4-16c33e1bb7de",
+              "name": "username",
+              "value": "={{ $json.username || 'Human' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1216, 592],
+      "id": "41148080-58b5-4742-9070-a01e23fd3a90",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3976b405-5b42-4900-a5ca-fc14ae3c4ac3",
+              "name": "sessionId",
+              "value": "={{ $('Webhook').item.json.body.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "eec57b11-15d8-41f1-949a-0eb6fb96bf48",
+              "name": "ref",
+              "value": "webhook",
+              "type": "string"
+            },
+            {
+              "id": "7f2dd504-0187-407e-92db-3a47f3855d93",
+              "name": "file",
+              "value": "file0",
+              "type": "binary"
+            },
+            {
+              "id": "94f8d8a5-3021-4abf-b336-7c66bfdcbb8b",
+              "name": "username",
+              "value": "Human",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [944, 784],
+      "id": "34e8f54e-2742-4647-b922-9964ff0efd2d",
+      "name": "Webhook Config"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "998472fc-8b2f-4b15-bcbd-1b4c8baa5e43",
+              "name": "sessionId",
+              "value": "={{ $('Config').item.json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "25e0d55b-530f-4350-ac2e-0073ec01e8fe",
+              "name": "username",
+              "value": "={{ $('Config').item.json.username }}",
+              "type": "string"
+            },
+            {
+              "id": "741a3b9c-132a-492a-836d-872436f168ff",
+              "name": "data",
+              "value": "={{ $json.data }}",
+              "type": "object"
+            },
+            {
+              "id": "b6728cb5-472e-4458-94a7-0dbeb3bb6ec5",
+              "name": "ref",
+              "value": "={{ $('Config').item.json.ref }}",
+              "type": "string"
+            },
+            {
+              "id": "e02c5608-8fd7-4bf5-af67-5c4fd7a4de4d",
+              "name": "filename",
+              "value": "={{ $('Extract from File').item.json.data.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1888, 576],
+      "id": "c9ee94e4-3c23-4679-8ebc-55e2e4bd04a4",
+      "name": "Docs Config"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b348b18a-f96d-4baa-89ee-b1f62aeba18f",
+              "leftValue": "={{ $binary.file.fileExtension }}",
+              "rightValue": "=json",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1440, 592],
+      "id": "31744c39-f1b2-4f1e-9616-ec21c318bd98",
+      "name": "is JSON file?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3976b405-5b42-4900-a5ca-fc14ae3c4ac3",
+              "name": "sessionId",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "eec57b11-15d8-41f1-949a-0eb6fb96bf48",
+              "name": "ref",
+              "value": "telegram",
+              "type": "string"
+            },
+            {
+              "id": "7f2dd504-0187-407e-92db-3a47f3855d93",
+              "name": "file",
+              "value": "data",
+              "type": "binary"
+            },
+            {
+              "id": "9905b39f-f659-4572-b03f-9998a5febb2f",
+              "name": "username",
+              "value": "={{ $('Telegram Trigger').item.json.message.from.username}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [976, 400],
+      "id": "7dff9b91-6dd6-44be-95b6-028982e474a7",
+      "name": "Telegram Config"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=Hey  @{{ $json.message.from.username }}, I couldn’t find any file in your request, so there’s nothing to process right now. Please upload it again when you can.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "reply_to_message_id": "={{ $json.message.message_id }}",
+          "message_thread_id": "={{ $json.message.message_thread_id || null }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [736, 592],
+      "id": "239c43dd-600a-462c-839c-ffc046100f74",
+      "name": "Send a Missing file",
+      "webhookId": "470ba714-7669-4303-92af-a1262bd8770a",
+      "credentials": {
+        "telegramApi": {
+          "id": "WbUxwxMwvILJe32V",
+          "name": "Telegram [Jonrey:aiagentdocumentor_bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=#This will the content of the document\nworkflow.json\n```json\n{{ $json.data.toJsonString() }}\n```",
+        "options": {
+          "systemMessage": "=You are an advanced and smart AI documentation generator specialized in producing clear, concise, and practical `n8n AI agent workflow` documents. Given a user input that contains a serialized JSON string representing workflow configuration data, your mission is to transform this input into two distinct but connected document formats following predefined template tools:  \n\n1. **Workflow Documentation Format:**  \n   - Describe the overall purpose and the key steps of the `n8n AI agent workflow`.  \n   - Include detailed explanations of major nodes, triggers, and actions described in the JSON input.  \n   - Clearly state how the components interrelate and the logical flow between nodes to help users visualize the automation and AI integration.  \n   - Use straightforward language to ensure accessibility for users new to `n8n` or automation workflows without sacrificing technical accuracy.  \n\n2. **README Format:**  \n   - Provide an introduction to the workflow’s purpose and intended use cases.  \n   - Summarize prerequisites such as environment setup, required credentials, or external services.  \n   - Outline step-by-step instructions to deploy and run the workflow within the `n8n` environment.  \n   - Highlight troubleshooting tips or configurable parameters based on the JSON input’s attributes.  \n\n**Your instructions:**  \n- Analyze the provided JSON string input thoroughly, extracting all relevant entities such as node information, triggers, credentials references, and key parameters.  \n- Map these elements onto the templates for workflows and README documents, focusing on clarity, logical structure, and user empowerment.  \n- Use bullet points, numbered lists, or tables where appropriate to enhance readability.  \n- Keep explanations succinct but sufficiently detailed to avoid guessing or ambiguous interpretations.  \n- Provide example snippets or pseudocode if relevant to elucidate complex parts of the workflow.  \n- Ensure the final documentation is easy to grasp even for users with limited prior exposure to `n8n` or AI agent workflows while also valuable to experienced users seeking quick comprehension.  \n\n---\n\n**Guiding Questions / Sub-prompts:**  \n- What are the primary objectives and outcomes of the AI agent workflow represented by the JSON?  \n- Which nodes and triggers are pivotal, and how do they function collaboratively?  \n- What setup or environmental considerations must end users be aware of before using the workflow?  \n- How could one validate or test the workflow after deployment?  \n- Are there common pitfalls or configuration nuances that should be surfaced in the README?  \n\n---\n\n**IMPORTANT:**  \n- The primary purpose is to convert raw JSON workflow descriptions into user-friendly, template-guided documentation tailored for both technical comprehension and operational clarity.  \n- Maintain a narrow scope focused strictly on `n8n AI agent workflows` and associated documentation to boost precision and relevance.  \n- Favor clarity and brevity to optimize cost-effectiveness and reading efficiency.  \n- Incorporate chain-of-thought methodology to ensure coherent stepwise synthesis and thorough reasoning.  \n- Always architect the output with the end user’s understanding and practical use of the workflow as the mission-critical goal.\n- Highlight all possible important keywords\n- Payload Section (if applicable)\n- Tools Section (if applicable)\n- After following the format , You must convert the final output to markdown source code with id headers\n- Recommended Improvements, please add the possible suggestions, atleast 10 or more (eg. give the proper name (You are the one to make the suggested name) for the node and others)\n- Final output: Do not wrap it to \\`\\`\\`markdown\n- no line-height spaces\n- be descriptive\n\n**SAMPLE GUIDE CONTENT:**\ncall `Document Sample Guide Template` Tool\n\n---\n\n**FOLLOW THIS FORMAT FOR FINAL MARKDOWN OUTPUT:**\n\n> ⚠️ Kindly review the docs once more before saving.\n\n## [AGENT_NAME (AS Title format)]\n![AGENT_VERSION](https://img.shields.io/badge/Latest-0.0.1-blue)\n\n[Simple definitions of Agent Here]\n\n![\\[AGENT_NAME\\] screenshot](./workflow.png)\n\n> ⚠️ Note: This image is a sample and does not represent the actual workflow\n\n---\n\n### 💡 Why Use [AGENT_NAME]?\n- [LIST HERE]\n\n---\n\n### ⚡ Who Is This For?\n- [LIST HERE]\n\n---\n\n### ❓ What Problem Does It Solve?\n[CONTENT HERE]\n\n---\n\n### 🔧 How This Workflow Works\n1. [STEPS HERE (be precise)]\n\n---\n\n### 🔐 Setup Instructions\n- [LIST HERE (eg. ✅ Step 1: Connect Your Google Calendar \\n \"why/how/additional?\"]\n\n---\n\n### 📅 Payload\n| Key | Definition |\n| --- | ---------- |\n| [LIST HERE (key and definition)] |\n\n**Example JSON Payload:**\n```json\n[PAYLOAD JSON]\n```\n\n**Example cURL Test:**\n```bash\n[CURL SAMPLE HERE]\n```\n\n---\n\n### 🔨 Tools/Node Used\n- [LIST HERE (name and why)]\n\n---\n\n### ⚙️ Reactive & Proactive Behavior\n- [LIST HERE (type and why)]\n\n### 🐞 Error Handling\n- [LIST HERE (status code and output)]\n\n---\n\n### 🧩 Requirements\n- [LIST HERE (be precise)]\n\n---\n\n### 📚 Resources\n- [LIST HERE (name and official link)]\n\n---\n\n### 🐞 Troubleshooting\n- [LIST HERE]\n\n---\n\n> ℹ️ This section can be removed once you're fully satisfied with the content\n\n### 📌 Recommended Improvements\n- [LIST HERE]\n\n# END"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [2688, 576],
+      "id": "6b54fedc-10c4-42ee-9d71-091b6a1689b7",
+      "name": "AI Agent Documenter"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Docs Config').item.json.ref }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "27dcfde7-d229-43dc-b10b-f23e56150c55"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f7cc72b4-28dc-4df9-b4aa-4a4bb5e2e81d",
+                    "leftValue": "={{ $('Docs Config').item.json.ref }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [3248, 576],
+      "id": "bb9e866b-4ba7-41b2-abed-7af7c4100005",
+      "name": "Output Respond Route"
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $('Docs Config').item.json.sessionId}}",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "=Hi @{{ $('Docs Config').item.json.username }}, thanks for your patience. The file is attached — please download and copy it into README.md. ",
+          "parse_mode": "HTML",
+          "reply_to_message_id": "={{ $('Telegram Trigger').item.json.message.message_id }}",
+          "message_thread_id": "={{ $('Telegram Trigger').item.json.message.message_thread_id || null }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [3472, 480],
+      "id": "09eb70b8-ecfc-4408-a9ef-c874ac473ff3",
+      "name": "Respond to Telegram",
+      "webhookId": "ac2a24aa-064e-48e4-81f6-892ef474bb69",
+      "credentials": {
+        "telegramApi": {
+          "id": "WbUxwxMwvILJe32V",
+          "name": "Telegram [Jonrey:aiagentdocumentor_bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=Hello @{{ $('Telegram Trigger').item.json.message.from.username }}, I’ve got your request for \"{{ $json.filename }}\" docs. I’ll process it shortly — thank you for waiting!\nExpected file:\n- {{ $json.filename }}_README.md\n\n",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "reply_to_message_id": "={{ $('Telegram Trigger').item.json.message.reply_to_message.message_id }}",
+          "message_thread_id": "={{ $('Telegram Trigger').item.json.message.message_thread_id || null }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2400, 416],
+      "id": "fd186eff-ea59-4780-af62-1aa8ee59268c",
+      "name": "Pending: Respond To Telegram",
+      "webhookId": "470ba714-7669-4303-92af-a1262bd8770a",
+      "credentials": {
+        "telegramApi": {
+          "id": "WbUxwxMwvILJe32V",
+          "name": "Telegram [Jonrey:aiagentdocumentor_bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Config').item.json.ref }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "27dcfde7-d229-43dc-b10b-f23e56150c55"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f7cc72b4-28dc-4df9-b4aa-4a4bb5e2e81d",
+                    "leftValue": "={{ $('Config').item.json.ref }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [1632, 880],
+      "id": "db95a339-f5f8-4154-a1ca-2dc972f3477f",
+      "name": "Invalid File: Respond Route"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').item.json.sessionId }}",
+        "text": "Hello @",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "=\n@{{ $json.username }}, Please make sure to send a valid n8n \"workflow.json\" file so we can proceed. 🚀",
+          "reply_to_message_id": "={{ $('Telegram Trigger').item.json.message.message_id }}",
+          "message_thread_id": "={{ $('Telegram Trigger').item.json.message.message_thread_id || null }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1968, 864],
+      "id": "8fd9bfa1-ed5b-4f24-af91-d41296083a82",
+      "name": "Invalid File: Respond to Telegram",
+      "webhookId": "ac2a24aa-064e-48e4-81f6-892ef474bb69",
+      "credentials": {
+        "telegramApi": {
+          "id": "WbUxwxMwvILJe32V",
+          "name": "Telegram [Jonrey:aiagentdocumentor_bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"error\": true,\n  \"message\": \"Please make sure to send a valid n8n \\\"workflow.json\\\" file so we can proceed. 🚀\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1984, 1072],
+      "id": "8e7a99c1-84ad-438c-9449-2996b8178ec1",
+      "name": "Invalid File: Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3c41f90a-d524-4d5b-b1ea-bc0a021e162c",
+              "leftValue": "={{ $json.message.document.file_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [512, 496],
+      "id": "dbad64dd-9804-43ea-b896-59e1b4e5165a",
+      "name": "is File presence?"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.left_chat_participant }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "dced2f1f-4bf5-40fd-917a-57b72e909141"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "left_chat_participant"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7920088e-2f8d-420a-9be0-ae50793d063f",
+                    "leftValue": "={{ $json.message.new_chat_participant }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "new_chat_participant"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0c48e9d1-4aa3-4af0-9ec4-e26a8667cf8e",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "start"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [288, 272],
+      "id": "978d5178-b96d-4bdd-9d0b-520f764fd230",
+      "name": "Message Type Routing"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ref }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cba894d7-9e45-4f11-b9f9-1998cadbffc8"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [2176, 416],
+      "id": "35a7acb9-9ece-452a-b7ba-7b484f5dc7f8",
+      "name": "Message Source Router"
+    },
+    {
+      "parameters": {
+        "content": "### 🔐 Setup Instructions\n- ✅ **Step 1: Credentials Setup**  \n  - Configure Telegram API credentials in n8n for bot interaction.\n  - Add OpenAI and OpenRouter API credentials for AI model integration.\n- ✅ **Step 2: Deploy Workflow in n8n**  \n  - Import the provided JSON workflow into your n8n instance.\n  - Ensure webhooks are active, and endpoints are correctly configured.\n- ✅ **Step 3: Telegram Bot Setup**  \n  - Add your bot token in the Telegram API credential.\n  - Start a conversation with your bot or in group threads where the bot is present.\n- ✅ **Step 4: Testing**  \n  - Send a valid `workflow.json` file via Telegram to the bot.\n  - Alternatively, POST a valid JSON file payload to the configured webhook URL.\n- ✅ **Step 5: Review Outputs**  \n  - Check bot messages for status updates.\n  - Download and verify the generated README markdown.\n- ✅ **Step 6: Customize AI Prompts (Optional)**  \n  - Modify the AI Agent node prompt for specific documentation styles or details.\n",
+        "height": 496,
+        "width": 656
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-656, 144],
+      "typeVersion": 1,
+      "id": "255e30c2-f824-42d5-86d4-68df6af15b7a",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [[]]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Documenter",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Telegram Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Docs Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Output Respond Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Message Type Routing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Webhook Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "is JSON file?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Config": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Docs Config": {
+      "main": [
+        [
+          {
+            "node": "Message Source Router",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Agent Documenter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is JSON file?": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid File: Respond Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Config": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Documenter": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output Respond Route": {
+      "main": [
+        [
+          {
+            "node": "Respond to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invalid File: Respond Route": {
+      "main": [
+        [
+          {
+            "node": "Invalid File: Respond to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid File: Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is File presence?": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a Missing file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Type Routing": {
+      "main": [
+        [
+          {
+            "node": "goodbye message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "welcome message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "welcome message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "is File presence?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Source Router": {
+      "main": [
+        [
+          {
+            "node": "Pending: Respond To Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  }
+}

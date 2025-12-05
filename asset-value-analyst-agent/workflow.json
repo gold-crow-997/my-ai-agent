@@ -1,0 +1,1507 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('TriggerConfig').item.json.prompt }}",
+        "options": {
+          "systemMessage": "=You are an AI Asset Valuation Assistant.\n\nYour role is to analyze, estimate, and categorize assets in the Philippine market context. Your first step is to verify if the product in the 'Item' field or the asset/product mentioned exists in the current market.\n\n\n\nRules for Evaluation:\n\n1. If both Acquisition Cost and Purchase Date are provided → show full details.\n\n2. If Acquisition Cost is missing but Purchase Date is given → Acquisition Cost = Not indicated, other missing fields = 0. Only output: Purchase Date, Estimated Useful Life, Depreciation Rate, Current Market Value, Salable.\n\n3. If Acquisition Cost is provided but Purchase Date is missing → show all details, but Purchase Date = Not indicated.\n\n4. If only Item/Asset name is provided (with or without repair history/issues):\n\n- Respond: \"I don't see any details of purchase but based from the current market, the {item} is currently being sold Current Market Value (₱) = {brand new price in PH market}.\"\n\n- Always use the latest brand-new retail price in the Philippine market as reference. Do not return 'Not indicated'.\n\n5. If Acquisition Cost and Purchase Year are both provided in the user message (even informally, e.g. “I bought this in 2022 for 90K”), treat them as valid inputs and include all details.\n\n - If exact purchase date is provided, display it in (M d, Y).\n\n - If only year or month/year is provided, display what is available in the same field (e.g., Jan 2022, 2022).\n\n - - Only return 'Not indicated' if there is no purchase date information at all.\n\n6. If item does not exist in the current market:\n\n- Respond: \"I couldn't find any existing product details in the current market for {item}. Can I analyze something else for you?\"\n\n\n\nOutput Format:\n\nStrict bullet-list structure per asset variable if platform allows it:\n\nItem\n\nAcquisition Cost (PHP)\n\nPurchase Date (M d, Y)\n\nEstimated Useful Life (years)\n\nDepreciation Rate (%) = (1 / Useful Life) x 100\n\nAnnual Depreciation Expense (PHP) = (Acquisition Cost - Salvage Value) / Useful Life\n\nAccumulated Depreciation (PHP) = Annual Depreciation x Years Used\n\nCurrent Market Value (PHP)\n\nBook Value (PHP)\n\nSalable = Yes / No\n\n\n\nDepreciation Consistency:\n\n- Laptop = 5 yrs useful life → 20%/yr\n\n- Phone = 3 yrs useful life → 33.3%/yr\n\n- Furniture = 10 yrs useful life → 10%/yr\n\n\n\nStyle & Voice:\n\n- Concise, factual, professional.\n\n- No extra text.\n\n- After the list: max 10 words explanation + basis/source of estimate.\n\n- Same item → always return the same structured output.\n\n\n\nConstraints:\n\n- Apply Philippine market context.\n\n- If data missing, use realistic assumptions with explanation.\n\n- Do not hallucinate.\n\n- Repeatable and consistent.\n\n\n\nSelf-Check Before Answer:\n\n- All rules applied?\n\n- Correct bullet-list?\n\n- Missing values marked properly?\n\n- Consistency in depreciation vs useful life?\n\n\n\nGreeting Handling:\n\n- If the user message is only a greeting (e.g., \"hi\", \"hello\", \"hey\", \"good morning\"), do not treat it as an asset.\n\n- Instead, reply: \"Hey there! Ready to analyze some assets? Just tell me what you'd like to dive into.\"\n\n\n\nIf the user asks “What do you do?” or “What is your role?”, always reply by describing your function and responsibilities in clear, simple language and friendly way.\n\n\n\nUnrelated / Random chat (not greeting, not asset-related):\n\n- Reply:\n\n\"That’s not something I’m trained to do, but I can help you with asset value analysis. What would you like to analyze?\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [624, 784],
+      "id": "bf9be9d5-9db7-4432-a141-be5801e7a0cc",
+      "name": "Cost Analysis Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('TriggerConfig').item.json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [720, 976],
+      "id": "75649867-b91a-49b8-a1ef-bc0e13bbad34",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [-720, 400],
+      "id": "3317af31-fc95-4d07-9b43-f5871451af6c",
+      "name": "Telegram Trigger",
+      "webhookId": "054db54c-c6a0-4501-a302-e50b35ec72ca",
+      "credentials": {
+        "telegramApi": {
+          "id": "YoEzhBstzbvfl9mz",
+          "name": "Telegram jonrey@pawcoder_job_ad_poster_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=🤖 Hello! I’m your Cost Analysis Bot – here to help you estimate the value of your company assets.\n\nTo get started, please provide the following details for each item:\nItem: (The asset you want to sell)\nAcquisition Cost: (How much you bought it for)\nPurchased Date: (Year of purchase is enough)\nRepair History: (Any past repairs done)\nIssue: (The current problem or condition of the item)\n\nOnce you share these details, I’ll prepare an estimated value for you.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-48, 304],
+      "id": "06d07055-5686-4afa-beff-5d626b2c7043",
+      "name": "Initial Message",
+      "webhookId": "c5a976a2-7cca-4fe4-94dd-b1569fed6f2a",
+      "credentials": {
+        "telegramApi": {
+          "id": "T94vKODD3m0o9rtf",
+          "name": "Topic_Idea_generator_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.message.chat.id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-496, 400],
+      "id": "f1fe0ccf-0a8f-4178-835a-b8c805c1ec45",
+      "name": "Send a chat action",
+      "webhookId": "a5f64543-9c11-43fc-98e2-a63ea95f1199",
+      "credentials": {
+        "telegramApi": {
+          "id": "YoEzhBstzbvfl9mz",
+          "name": "Telegram jonrey@pawcoder_job_ad_poster_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "55386dbe-7441-4efd-a126-374e4aee60ce",
+              "leftValue": "={{ $('Telegram Trigger').item.json.message.text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-272, 400],
+      "id": "65a41d83-846c-4cdf-88fb-f3d1d20bd9c9",
+      "name": "start conversation"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [560, 976],
+      "id": "3b6c5228-5e77-4c12-bcd7-4260e8a90107",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Z4lvwCe4xAcnLqRr",
+          "name": "OpenRouter PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"output\": {{ $json.message.filter(item => item).join(\"\\n\").toJsonString() }}\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1200, 544],
+      "id": "99cf88d0-82b1-4f6d-b4b3-665ec92d5a5a",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TriggerConfig').item.json.sessionId.replace(\"telegram:\", \"\") }}",
+        "text": "={{ $json.message.filter(item => item).join(\"\\n\").toJsonString() }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1200, 352],
+      "id": "fe9de3a8-f8c5-4219-a166-2e4a2f94c4f8",
+      "name": "Send a text message1",
+      "webhookId": "d92f5905-05ca-4438-8598-33feadb49574",
+      "credentials": {
+        "telegramApi": {
+          "id": "LH0exizr8XbLpwST",
+          "name": "Telegram @finance_inquiry_chatbot - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "232bef6b-0f59-4e50-a1a9-72f3824d3b8b",
+              "name": "message",
+              "value": "={{ [!$json.sessionId ? '`sessionId` is required' : null , !$json.prompt ? '`prompt` message is required' : null ] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [688, 448],
+      "id": "bf2fe7dc-674e-431c-ab2f-89e5dc500798",
+      "name": "Validation Message"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "874fa787-f784-4a2f-8b61-a75d8cab6034"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5b8c8ca7-25da-4e37-946c-f5c85c67290e",
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [976, 448],
+      "id": "9e2e52da-4d9d-4a35-8b1e-eada77875b98",
+      "name": "Error: Response Router"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3e4efc7c-8ea9-4b12-a4ff-e27ca941d04a",
+              "leftValue": "={{ $json.sessionId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "566ac3fb-633d-4d2d-b8fa-85ec120561cd",
+              "leftValue": "={{ $json.prompt }}",
+              "rightValue": "={{ $json.message }}",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [400, 592],
+      "id": "e62ffa2e-03d1-4899-896d-8917f98f159a",
+      "name": "input validation"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f3e842c6-5f08-42bc-be58-cb5f8597bce5",
+              "name": "sessionId",
+              "value": "={{ $json.body.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "0a419853-93ff-4f2d-9305-ef4d8e3366c4",
+              "name": "ref",
+              "value": "webhook",
+              "type": "string"
+            },
+            {
+              "id": "29734408-4aed-4cdf-95d9-1b9f8828a1d9",
+              "name": "message",
+              "value": "={{ $json.body.prompt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-48, 688],
+      "id": "221fb272-8bd5-4dc2-a81f-ba4f686dfa4f",
+      "name": "Webhook Input Mapper"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "c95ee520-5d39-47f1-8e76-d44fd496fa84",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-272, 688],
+      "id": "e975bd3c-c1bb-4d9f-b037-aa7e2009cb1b",
+      "name": "Webhook",
+      "webhookId": "c95ee520-5d39-47f1-8e76-d44fd496fa84"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "498dabc3-0a5c-4f60-8bec-524338d4b679",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "f7c25d91-a561-4915-b5ec-ea33f982b29c",
+              "name": "prompt",
+              "value": "={{ $json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "60dc88bd-4c2c-49f6-a24e-443f5e20b1ab",
+              "name": "ref",
+              "value": "={{ $json.ref }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [176, 592],
+      "id": "90437b55-d6c0-42d6-be41-d9ad3ab84b77",
+      "name": "TriggerConfig"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Outbound Data').item.json }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1424, 880],
+      "id": "2104c1f1-a7fe-4fef-ac05-3b0f5b43e105",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c5b173ee-93c9-4cef-a72a-25de6f76699e",
+              "name": "sessionId",
+              "value": "={{ $('TriggerConfig').item.json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "80f3de69-0585-42c0-9b39-d638548592c8",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [976, 784],
+      "id": "c3308bf9-c504-43e1-91f9-e80009fd5553",
+      "name": "Outbound Data"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "874fa787-f784-4a2f-8b61-a75d8cab6034"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5b8c8ca7-25da-4e37-946c-f5c85c67290e",
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [1200, 784],
+      "id": "a2b5adba-6efa-417d-a2e0-887c6a944c0c",
+      "name": "Response Router"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TriggerConfig').item.json.sessionId.replace(\"telegram:\", \"\") }}",
+        "text": "={{ $('Outbound Data').item.json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1424, 688],
+      "id": "c135aa94-dde4-4a0e-9d87-12146c5673cd",
+      "name": "Send a text message2",
+      "webhookId": "d92f5905-05ca-4438-8598-33feadb49574",
+      "credentials": {
+        "telegramApi": {
+          "id": "LH0exizr8XbLpwST",
+          "name": "Telegram @finance_inquiry_chatbot - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f3e842c6-5f08-42bc-be58-cb5f8597bce5",
+              "name": "sessionId",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "0a419853-93ff-4f2d-9305-ef4d8e3366c4",
+              "name": "ref",
+              "value": "telegram",
+              "type": "string"
+            },
+            {
+              "id": "29734408-4aed-4cdf-95d9-1b9f8828a1d9",
+              "name": "prompt",
+              "value": "={{ $('Telegram Trigger').item.json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-48, 496],
+      "id": "77dcfb5f-0e89-4be3-8bb5-b1d00122a87c",
+      "name": "Telegram Config"
+    },
+    {
+      "parameters": {
+        "content": "### 🔐 Setup Instructions\n- ✅ **Telegram Bot Setup:**\n  - Create Telegram bots and obtain API keys.\n  - Configure two Telegram credentials in n8n for inbound & outbound messages.\n- ✅ **OpenRouter API:**\n  - Set up an OpenRouter account.\n  - Obtain API credentials and add to n8n credential manager.\n- ✅ **Workflow Import:**\n  - Import the provided JSON `workflow.json` into n8n.\n  - Verify node credentials match your configured Telegram and OpenRouter APIs.\n- ✅ **Webhook Configuration:**\n  - Deploy the webhook with proper paths and authentication if needed.\n  - Set reachable webhook URL on clients or integrations.\n- ✅ **Run & Test:**\n  - Activate the workflow.\n  - Interact via Telegram or send POST requests to webhook with sessionId and prompt.",
+        "height": 544,
+        "width": 368
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-1136, 352],
+      "typeVersion": 1,
+      "id": "890c84a3-7611-433f-a2cd-e52a359b14a3",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "Cost Analysis Agent": {
+      "main": [
+        [
+          {
+            "node": "Outbound Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Cost Analysis Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a chat action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a chat action": {
+      "main": [
+        [
+          {
+            "node": "start conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "start conversation": {
+      "main": [
+        [
+          {
+            "node": "Initial Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Cost Analysis Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Message": {
+      "main": [
+        [
+          {
+            "node": "Error: Response Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error: Response Router": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "input validation": {
+      "main": [
+        [
+          {
+            "node": "Validation Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cost Analysis Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Input Mapper": {
+      "main": [
+        [
+          {
+            "node": "TriggerConfig",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Webhook Input Mapper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TriggerConfig": {
+      "main": [
+        [
+          {
+            "node": "input validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outbound Data": {
+      "main": [
+        [
+          {
+            "node": "Response Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Router": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Config": {
+      "main": [
+        [
+          {
+            "node": "TriggerConfig",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('TriggerConfig').item.json.prompt }}",
+        "options": {
+          "systemMessage": "=You are an AI Asset Valuation Assistant.\n\nYour role is to analyze, estimate, and categorize assets in the Philippine market context. Your first step is to verify if the product in the 'Item' field or the asset/product mentioned exists in the current market.\n\n\n\nRules for Evaluation:\n\n1. If both Acquisition Cost and Purchase Date are provided → show full details.\n\n2. If Acquisition Cost is missing but Purchase Date is given → Acquisition Cost = Not indicated, other missing fields = 0. Only output: Purchase Date, Estimated Useful Life, Depreciation Rate, Current Market Value, Salable.\n\n3. If Acquisition Cost is provided but Purchase Date is missing → show all details, but Purchase Date = Not indicated.\n\n4. If only Item/Asset name is provided (with or without repair history/issues):\n\n- Respond: \"I don't see any details of purchase but based from the current market, the {item} is currently being sold Current Market Value (₱) = {brand new price in PH market}.\"\n\n- Always use the latest brand-new retail price in the Philippine market as reference. Do not return 'Not indicated'.\n\n5. If Acquisition Cost and Purchase Year are both provided in the user message (even informally, e.g. “I bought this in 2022 for 90K”), treat them as valid inputs and include all details.\n\n - If exact purchase date is provided, display it in (M d, Y).\n\n - If only year or month/year is provided, display what is available in the same field (e.g., Jan 2022, 2022).\n\n - - Only return 'Not indicated' if there is no purchase date information at all.\n\n6. If item does not exist in the current market:\n\n- Respond: \"I couldn't find any existing product details in the current market for {item}. Can I analyze something else for you?\"\n\n\n\nOutput Format:\n\nStrict bullet-list structure per asset variable if platform allows it:\n\nItem\n\nAcquisition Cost (PHP)\n\nPurchase Date (M d, Y)\n\nEstimated Useful Life (years)\n\nDepreciation Rate (%) = (1 / Useful Life) x 100\n\nAnnual Depreciation Expense (PHP) = (Acquisition Cost - Salvage Value) / Useful Life\n\nAccumulated Depreciation (PHP) = Annual Depreciation x Years Used\n\nCurrent Market Value (PHP)\n\nBook Value (PHP)\n\nSalable = Yes / No\n\n\n\nDepreciation Consistency:\n\n- Laptop = 5 yrs useful life → 20%/yr\n\n- Phone = 3 yrs useful life → 33.3%/yr\n\n- Furniture = 10 yrs useful life → 10%/yr\n\n\n\nStyle & Voice:\n\n- Concise, factual, professional.\n\n- No extra text.\n\n- After the list: max 10 words explanation + basis/source of estimate.\n\n- Same item → always return the same structured output.\n\n\n\nConstraints:\n\n- Apply Philippine market context.\n\n- If data missing, use realistic assumptions with explanation.\n\n- Do not hallucinate.\n\n- Repeatable and consistent.\n\n\n\nSelf-Check Before Answer:\n\n- All rules applied?\n\n- Correct bullet-list?\n\n- Missing values marked properly?\n\n- Consistency in depreciation vs useful life?\n\n\n\nGreeting Handling:\n\n- If the user message is only a greeting (e.g., \"hi\", \"hello\", \"hey\", \"good morning\"), do not treat it as an asset.\n\n- Instead, reply: \"Hey there! Ready to analyze some assets? Just tell me what you'd like to dive into.\"\n\n\n\nIf the user asks “What do you do?” or “What is your role?”, always reply by describing your function and responsibilities in clear, simple language and friendly way.\n\n\n\nUnrelated / Random chat (not greeting, not asset-related):\n\n- Reply:\n\n\"That’s not something I’m trained to do, but I can help you with asset value analysis. What would you like to analyze?\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        848,
+        272
+      ],
+      "id": "a9ac0b2e-f7ce-4a95-9db6-df805f909095",
+      "name": "Cost Analysis Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('TriggerConfig').item.json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        944,
+        464
+      ],
+      "id": "b710d8fe-1f79-417c-a506-f5dae1121ceb",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -496,
+        -112
+      ],
+      "id": "1b03d995-5fe6-4ee6-8a1d-6e2ecfd0bf13",
+      "name": "Telegram Trigger",
+      "webhookId": "054db54c-c6a0-4501-a302-e50b35ec72ca"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=🤖 Hello! I’m your Cost Analysis Bot – here to help you estimate the value of your company assets.\n\nTo get started, please provide the following details for each item:\nItem: (The asset you want to sell)\nAcquisition Cost: (How much you bought it for)\nPurchased Date: (Year of purchase is enough)\nRepair History: (Any past repairs done)\nIssue: (The current problem or condition of the item)\n\nOnce you share these details, I’ll prepare an estimated value for you.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        -208
+      ],
+      "id": "0bd92c15-5a5f-4d6e-b8fc-9105effac956",
+      "name": "Initial Message",
+      "webhookId": "c5a976a2-7cca-4fe4-94dd-b1569fed6f2a"
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.message.chat.id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -272,
+        -112
+      ],
+      "id": "0a5465b6-b45e-4751-adf4-eb4370d3059d",
+      "name": "Send a chat action",
+      "webhookId": "a5f64543-9c11-43fc-98e2-a63ea95f1199"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "55386dbe-7441-4efd-a126-374e4aee60ce",
+              "leftValue": "={{ $('Telegram Trigger').item.json.message.text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -48,
+        -112
+      ],
+      "id": "6a0f2f9b-5d46-493f-86ba-277f28293e49",
+      "name": "start conversation"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        784,
+        464
+      ],
+      "id": "44497006-ea8f-4e34-b04e-94ece3c2a04e",
+      "name": "OpenRouter Chat Model"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"output\": {{ $json.message.filter(item => item).join(\"\\n\").toJsonString() }}\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1424,
+        32
+      ],
+      "id": "ed63760a-87f6-4e2b-90ee-8e42885cd8bb",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TriggerConfig').item.json.sessionId.replace(\"telegram:\", \"\") }}",
+        "text": "={{ $json.message.filter(item => item).join(\"\\n\").toJsonString() }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1424,
+        -160
+      ],
+      "id": "edbb8ab6-e865-45ba-bb4c-8b1cd1fee5a3",
+      "name": "Send a text message1",
+      "webhookId": "d92f5905-05ca-4438-8598-33feadb49574"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "232bef6b-0f59-4e50-a1a9-72f3824d3b8b",
+              "name": "message",
+              "value": "={{ [!$json.sessionId ? '`sessionId` is required' : null , !$json.prompt ? '`prompt` message is required' : null ] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        912,
+        -64
+      ],
+      "id": "c87680f4-554c-467a-9d39-48a50690d875",
+      "name": "Validation Message"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "874fa787-f784-4a2f-8b61-a75d8cab6034"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5b8c8ca7-25da-4e37-946c-f5c85c67290e",
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1200,
+        -64
+      ],
+      "id": "1068a344-22c5-4915-9300-b753f5517db6",
+      "name": "Error: Response Router"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3e4efc7c-8ea9-4b12-a4ff-e27ca941d04a",
+              "leftValue": "={{ $json.sessionId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "566ac3fb-633d-4d2d-b8fa-85ec120561cd",
+              "leftValue": "={{ $json.prompt }}",
+              "rightValue": "={{ $json.message }}",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        80
+      ],
+      "id": "cbde6d44-9dcd-46e1-a3b2-841d2faf3a9f",
+      "name": "input validation"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f3e842c6-5f08-42bc-be58-cb5f8597bce5",
+              "name": "sessionId",
+              "value": "={{ $json.body.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "0a419853-93ff-4f2d-9305-ef4d8e3366c4",
+              "name": "ref",
+              "value": "webhook",
+              "type": "string"
+            },
+            {
+              "id": "29734408-4aed-4cdf-95d9-1b9f8828a1d9",
+              "name": "prompt",
+              "value": "={{ $json.body.prompt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        176
+      ],
+      "id": "1302f155-7d72-4c98-ac50-0173081124ad",
+      "name": "Webhook Input Mapper"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "c95ee520-5d39-47f1-8e76-d44fd496fa84",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -48,
+        176
+      ],
+      "id": "78cf6dcd-ed86-45d2-b977-701a95a5bfc5",
+      "name": "Webhook",
+      "webhookId": "c95ee520-5d39-47f1-8e76-d44fd496fa84"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "498dabc3-0a5c-4f60-8bec-524338d4b679",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "f7c25d91-a561-4915-b5ec-ea33f982b29c",
+              "name": "prompt",
+              "value": "={{ $json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "60dc88bd-4c2c-49f6-a24e-443f5e20b1ab",
+              "name": "ref",
+              "value": "={{ $json.ref }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        80
+      ],
+      "id": "058e8793-5477-4064-be4b-2713088f5732",
+      "name": "TriggerConfig"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Outbound Data').item.json }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1648,
+        368
+      ],
+      "id": "87b5bc8e-c180-4249-aa60-8725adacb01a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c5b173ee-93c9-4cef-a72a-25de6f76699e",
+              "name": "sessionId",
+              "value": "={{ $('TriggerConfig').item.json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "80f3de69-0585-42c0-9b39-d638548592c8",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        272
+      ],
+      "id": "dc60aaf4-2fca-41c8-9eaa-89f3b16df93e",
+      "name": "Outbound Data"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "874fa787-f784-4a2f-8b61-a75d8cab6034"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5b8c8ca7-25da-4e37-946c-f5c85c67290e",
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1424,
+        272
+      ],
+      "id": "15fb8f1a-2ec3-4d5a-8fef-bdb076d4c56b",
+      "name": "Response Router"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TriggerConfig').item.json.sessionId.replace(\"telegram:\", \"\") }}",
+        "text": "={{ $('Outbound Data').item.json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1648,
+        176
+      ],
+      "id": "03931cc0-98ed-408f-8da5-da83a95b8fc8",
+      "name": "Send a text message2",
+      "webhookId": "d92f5905-05ca-4438-8598-33feadb49574"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f3e842c6-5f08-42bc-be58-cb5f8597bce5",
+              "name": "sessionId",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "0a419853-93ff-4f2d-9305-ef4d8e3366c4",
+              "name": "ref",
+              "value": "telegram",
+              "type": "string"
+            },
+            {
+              "id": "29734408-4aed-4cdf-95d9-1b9f8828a1d9",
+              "name": "prompt",
+              "value": "={{ $('Telegram Trigger').item.json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        -16
+      ],
+      "id": "d45726f5-5984-48bc-b70c-8043aaf1c1d0",
+      "name": "Telegram Config"
+    },
+    {
+      "parameters": {
+        "content": "### 🔐 Setup Instructions\n- ✅ **Telegram Bot Setup:**\n  - Create Telegram bots and obtain API keys.\n  - Configure two Telegram credentials in n8n for inbound & outbound messages.\n- ✅ **OpenRouter API:**\n  - Set up an OpenRouter account.\n  - Obtain API credentials and add to n8n credential manager.\n- ✅ **Workflow Import:**\n  - Import the provided JSON `workflow.json` into n8n.\n  - Verify node credentials match your configured Telegram and OpenRouter APIs.\n- ✅ **Webhook Configuration:**\n  - Deploy the webhook with proper paths and authentication if needed.\n  - Set reachable webhook URL on clients or integrations.\n- ✅ **Run & Test:**\n  - Activate the workflow.\n  - Interact via Telegram or send POST requests to webhook with sessionId and prompt.",
+        "height": 544,
+        "width": 368
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -912,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "48b5e9de-fdb5-4831-b4d2-894648222f3b",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "Cost Analysis Agent": {
+      "main": [
+        [
+          {
+            "node": "Outbound Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Cost Analysis Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a chat action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a chat action": {
+      "main": [
+        [
+          {
+            "node": "start conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "start conversation": {
+      "main": [
+        [
+          {
+            "node": "Initial Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Cost Analysis Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Message": {
+      "main": [
+        [
+          {
+            "node": "Error: Response Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error: Response Router": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "input validation": {
+      "main": [
+        [
+          {
+            "node": "Validation Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cost Analysis Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Input Mapper": {
+      "main": [
+        [
+          {
+            "node": "TriggerConfig",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Webhook Input Mapper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TriggerConfig": {
+      "main": [
+        [
+          {
+            "node": "input validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outbound Data": {
+      "main": [
+        [
+          {
+            "node": "Response Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Router": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Config": {
+      "main": [
+        [
+          {
+            "node": "TriggerConfig",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5f848ccf7cbf20a3ac64218b27b9b76587619e89fbfade427c2af56708907421"
+  }
+}

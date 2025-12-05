@@ -1,0 +1,680 @@
+{
+  "name": "Product Description Writer V2",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Product Description Writer(v2)\n\nGenerates SEO-optimized product descriptions from structured data files (CSV/JSON/XML) with scoring and reporting.",
+        "height": 352,
+        "width": 416
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -672,
+        -112
+      ],
+      "typeVersion": 1,
+      "id": "f74370ab-188a-4dd2-9018-a79052e400ec",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -176,
+        64
+      ],
+      "id": "9c8cfde2-a549-4ee9-b356-78e1bc73a0d3",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "sEku0dhCGku3IK04",
+          "name": "Google Drive [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        720,
+        288
+      ],
+      "id": "9f9907fa-0f0d-4e15-b2c4-eb6c8fbbfd46",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[\n  {\n    \"sku\": \"...\",\n    \"description\": \"...\",\n    \"meta\": \"...\",\n    \"keywords_used\": [\"keyword1\", \"keyword2\"]\n  }\n]"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        864,
+        288
+      ],
+      "id": "f63c591b-56c6-4968-bd05-c1e0898c52d1",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.flatMap(item => {\n  const root = item.json.output ? item.json.output : [item.json];   // unwrap \"output\" array if present\n\n  return root.map(data => {\n    const description = (data.description || \"\").toString();\n    const meta = (data.meta || \"\").toString();\n\n    let keywords = data.keywords || data.keywords_used || [];\n    if (!Array.isArray(keywords)) {\n      keywords = keywords.toString().split(\",\").map(k => k.trim()).filter(Boolean);\n    }\n\n    if (!keywords.length) {\n      return {\n        json: {\n          ...data,\n          seo_score: 0,\n          audit: { word_count: 0, keywords_used: [], keywords_missing: [], keyword_coverage: \"0%\" },\n          note: \"⚠️ No keywords provided — check data path.\"\n        }\n      };\n    }\n\n    const descLower = description.toLowerCase();\n    const metaLower = meta.toLowerCase();\n\n    const used = [];\n    const missing = [];\n\n    keywords.forEach(keyword => {\n      const key = keyword.toLowerCase().trim();\n      if (descLower.includes(key) || metaLower.includes(key)) used.push(keyword);\n      else missing.push(keyword);\n    });\n\n    const coverage = used.length / keywords.length;\n    const wordCount = description.split(/\\s+/).filter(Boolean).length;\n\n    let lengthScore = 0;\n    if (wordCount >= 100 && wordCount <= 200) lengthScore = 30;\n    else if (wordCount >= 80 && wordCount <= 250) lengthScore = 20;\n    else lengthScore = 10;\n\n    const keywordScore = coverage * 70;\n    const seoScore = Math.round(keywordScore + lengthScore);\n\n    return {\n      json: {\n        ...data,\n        seo_score: seoScore,\n        audit: {\n          word_count: wordCount,\n          keywords_used: used,\n          keywords_missing: missing,\n          keyword_coverage: `${Math.round(coverage * 100)}%`\n        }\n      }\n    };\n  });\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        64
+      ],
+      "id": "18c1d70f-21ae-4026-b0ce-93e7d038bf63",
+      "name": "SEO Score Check"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1ROsLN-r3rNvhzwHTzWY2-mzMMDUMx6zU",
+          "mode": "list",
+          "cachedResultName": "product-description",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1ROsLN-r3rNvhzwHTzWY2-mzMMDUMx6zU"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        64
+      ],
+      "id": "3c394f4e-203c-412d-9ebb-2ec42b864856",
+      "name": "New Product File Upload Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "sEku0dhCGku3IK04",
+          "name": "Google Drive [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "869611b9-53ec-44ae-855e-4ba8ac0e594b",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "products_data.xlsx",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "8a7991e0-6778-4db8-ba1a-524eab335d28",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "products_data.xls",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "559e5d0b-6fa5-472f-9667-000891570ff5",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "products_data.csv",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -400,
+        64
+      ],
+      "id": "b8df0974-ce4c-4fde-bb35-f99c52453421",
+      "name": "Check File Type Validity"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.fileExtension }}",
+                    "rightValue": "xlsx",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "eb02d08a-93df-4dfa-936b-18363054a9a2"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "xlsx"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "55e58942-0eee-432b-80f6-47605d58c5b6",
+                    "leftValue": "={{ $json.fileExtension }}",
+                    "rightValue": "xls",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "xls"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ad2a2fb4-0bfc-4b73-b70a-cd39799e5b4b",
+                    "leftValue": "={{ $json.fileExtension }}",
+                    "rightValue": "csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "csv"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        48,
+        48
+      ],
+      "id": "59bc3153-7ae8-4513-9da7-aacb411c9877",
+      "name": "Route by File Format"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        272,
+        -128
+      ],
+      "id": "010dd562-89b1-4c9d-af75-b5bb7fa2900f",
+      "name": "Extract Product Data (XLSX)"
+    },
+    {
+      "parameters": {
+        "operation": "xls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        272,
+        64
+      ],
+      "id": "c40ef2a5-f9e1-4faf-9067-bd5f1210f53a",
+      "name": "Extract Product Data (XLS)"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        272,
+        256
+      ],
+      "id": "abb08bce-21f4-41b1-98eb-0c7f51d1841a",
+      "name": "Extract Product Data (CSV)"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  // Extract and clean up fields\n  const sku = item.json[\"SKU\"] || \"\";\n  const name = item.json[\"Product Name\"] || \"\";\n  const specs = item.json[\"Specs\"] || \"\";\n  const features = item.json[\"Features\"] || \"\";\n  const material = item.json[\"Material\"] || \"\";\n  const price = item.json[\"Price\"] || \"\";\n  const targetUrl = item.json[\"Target URL\"] || \"\";\n  const tone = item.json[\"Style Guide\"] || \"Friendly\";\n\n  // Split keywords string into a clean array\n  const rawKeywords = item.json[\"Target Keywords\"] || \"\";\n  const keywords = rawKeywords\n    .split(\",\")\n    .map(k => k.trim())\n    .filter(k => k.length > 0);\n\n  // Combine product data into one formatted string for AI context\n  const productData = `\n  Product Name: ${name}\n  Specifications: ${specs}\n  Features: ${features}\n  Material: ${material}\n  Price: $${price}\n  URL: ${targetUrl}\n  `;\n\n  return {\n    json: {\n      sku,\n      name,\n      tone,\n      keywords,\n      product_data: productData.trim(),\n      target_url: targetUrl\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        64
+      ],
+      "id": "7eff702f-093a-4e4d-a9a5-e3a7962b424f",
+      "name": "Preprocess Product Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert e-commerce SEO copywriter.\n\nYour task is to write both:\n1. A customer-focused, benefit-driven PRODUCT DESCRIPTION (100–200 words)\n2. A concise META DESCRIPTION (under 160 characters)\n\n### PRODUCT DATA:\n{{ $json.product_data }}\n\n### PRODUCT NAME:\n{{ $json.name }}\n\n### STYLE/TONE:\n{{ $json.tone }}\n\n### TARGET KEYWORDS (MUST BE INCLUDED EXACTLY AS WRITTEN):\n{{ $json.keywords.join(\", \") }}\n\n### STRICT RULES:\n- Every keyword MUST appear exactly as listed (case-sensitive, same spelling, same spacing).\n- Use all keywords naturally across the description and meta description.\n- Do NOT modify, capitalize, pluralize, or rephrase any keyword.\n- If a keyword looks awkward, still include it exactly as provided.\n- Distribute keywords naturally and maintain good readability.\n- Convert features into benefits while keeping tone consistent with the Style Guide.\n- Keep meta description concise, clear, and under 160 characters.\n- Return your output strictly in valid JSON format, like this:\n\n{\n  \"sku\": \"{{ $json.sku }}\",\n  \"description\": \"Full description with all keywords exactly as provided.\",\n  \"meta\": \"Short meta description with some of the keywords included.\",\n  \"keywords_used\": [\"keyword1\", \"keyword2\", \"keyword3\", \"keyword4\" ...]\n}\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        64
+      ],
+      "id": "6aa9e1db-45b8-4aea-9dde-0460841a60c6",
+      "name": "Generate Description + Meta (Gemini)",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "fileName": "=product_descriptions_output_{{ $now.format(\"MM_dd_yyyy_HH_mm\") }}",
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1296,
+        64
+      ],
+      "id": "83308756-e532-4d4d-b8e8-f5cd1480c655",
+      "name": "Generate Output File (XLSX)"
+    },
+    {
+      "parameters": {
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1ROsLN-r3rNvhzwHTzWY2-mzMMDUMx6zU",
+          "mode": "list",
+          "cachedResultName": "product-description",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1ROsLN-r3rNvhzwHTzWY2-mzMMDUMx6zU"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1520,
+        64
+      ],
+      "id": "786dbf13-6f0c-4c9b-b742-82a22b9993a7",
+      "name": "Upload Final File to Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "sEku0dhCGku3IK04",
+          "name": "Google Drive [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "ranilo@popai.agency",
+        "subject": "=✅ Product Descriptions Ready — SEO Batch Complete",
+        "message": "=<b>Product Description Writer – AI Agent</b> completed successfully.<br><br> \n<b>Output File:</b> \n<a href=\"{{ $json.webViewLink }}\">Download from Google Drive</a><br><br> \nGenerated at: {{ $now.toLocaleString() }}<br>\n\nThank you,<br>\n<b>AI Engineering Team</b>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1744,
+        64
+      ],
+      "id": "98e52dcb-58ed-4807-bdf2-f8a443d8b703",
+      "name": "Notify Reviewer via Email",
+      "webhookId": "ce816560-6694-4d0a-a485-b42f22340c81",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6tQKUD5WxGvsi4cW",
+          "name": "Gmail [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "product-description-writer-v2",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        288,
+        512
+      ],
+      "id": "6633915e-9111-4aa1-8a7d-ba5f5bda60cb",
+      "name": "Webhook",
+      "webhookId": "e1e46b8d-fbb7-42ef-87fd-e0a67d91896e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const apiKey = $input.first().json.query.apikey;\nconst requiredKey = \"nms-product-writer-test-key\";\n\nif (!apiKey || apiKey !== requiredKey) {\n  throw new Error(\"Unauthorized — invalid API key\");\n}\n\nreturn [{ validated: true }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        512
+      ],
+      "id": "6514fe7e-e3db-4d2a-8b8a-0a0ba801ef5c",
+      "name": "validation"
+    },
+    {
+      "parameters": {
+        "content": "📝 Product Description Writer v2 — Developer Notes\n🔹 How to Use This Agent\n\nUpload a CSV, XLS, or XLSX file into the Google Drive folder:\n/product-description\nThe workflow will automatically extract data, generate SEO descriptions using Gemini, and return an XLSX output file.\n\nYou may also trigger the workflow through the official API entry point (for NMS standardization):\n\nWebhook URL (Test):\nhttps://n8n.popapps.ai/webhook-test/product-description-writer-v2\n\nMethod: POST\nTest Payload Example:\n\n{\n  \"apiKey\": \"nms-product-writer-test-key\"\n}\n\n🔹 Setup Instructions\n\nTo configure this agent:\n\nAdd the required n8n environment variable\n\nPRODUCT_WRITER_API_KEY = nms-product-writer-test-key\n\n\nSet up your Google Drive credential\n\nEmail: test@test.com\nOAuth Client ID: sample-client-id.apps.googleusercontent.com\nOAuth Client Secret: sample-google-secret\n\n\nSet up Gmail credential (for reviewer notifications)\n\nEmail: test@test.com\nOAuth Client ID: sample-gmail-client-id.apps.googleusercontent.com\nOAuth Client Secret: sample-gmail-secret\n\n\nAdd your Gemini API Key (test example)\n\nGEMINI_API_KEY = sample-gemini-token-12345\n\n\nPlace input files into the Google Drive folder /product-description.\n\n🔹 Required Credentials\n\n(Use real keys in production; examples here are placeholders.)\n\nGoogle Drive OAuth2\n\nEmail: test@test.com\n\nClient ID: sample-client-id.apps.googleusercontent.com\n\nClient Secret: sample-google-secret\n\nGmail OAuth2\n\nEmail: test@test.com\n\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\n\nClient Secret: sample-gmail-secret\n\nGemini API Key\n\nExample: sample-gemini-token-12345\n\nn8n Environment Variable\n\nPRODUCT_WRITER_API_KEY = nms-product-writer-test-key",
+        "height": 1424,
+        "width": 832
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        256
+      ],
+      "id": "85790e01-e954-48f9-9eef-a472d492ca3c",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=📝 Product Description Writer v2 — Developer Notes\n🔹 How to Use This Agent\n\nUpload a CSV, XLS, or XLSX file into the Google Drive folder:\n/product-description\nThe workflow will automatically extract data, generate SEO descriptions using Gemini, and return an XLSX output file.\n\nYou may also trigger the workflow through the official API entry point (for NMS standardization):\n\nWebhook URL (Test):\nhttps://n8n.popapps.ai/webhook-test/product-description-writer-v2\n\nMethod: POST\nTest Payload Example:\n\n{\n  \"apiKey\": \"nms-product-writer-test-key\"\n}\n\n🔹 Setup Instructions\n\nTo configure this agent:\n\nAdd the required n8n environment variable\n\nPRODUCT_WRITER_API_KEY = nms-product-writer-test-key\n\n\nSet up your Google Drive credential\n\nEmail: test@test.com\nOAuth Client ID: sample-client-id.apps.googleusercontent.com\nOAuth Client Secret: sample-google-secret\n\n\nSet up Gmail credential (for reviewer notifications)\n\nEmail: test@test.com\nOAuth Client ID: sample-gmail-client-id.apps.googleusercontent.com\nOAuth Client Secret: sample-gmail-secret\n\n\nAdd your Gemini API Key (test example)\n\nGEMINI_API_KEY = sample-gemini-token-12345\n\n\nPlace input files into the Google Drive folder /product-description.\n\n🔹 Required Credentials\n\n(Use real keys in production; examples here are placeholders.)\n\nGoogle Drive OAuth2\n\nEmail: test@test.com\n\nClient ID: sample-client-id.apps.googleusercontent.com\n\nClient Secret: sample-google-secret\n\nGmail OAuth2\n\nEmail: test@test.com\n\nClient ID: sample-gmail-client-id.apps.googleusercontent.com\n\nClient Secret: sample-gmail-secret\n\nGemini API Key\n\nExample: sample-gemini-token-12345\n\nn8n Environment Variable\n\nPRODUCT_WRITER_API_KEY = nms-product-writer-test-key",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        624,
+        512
+      ],
+      "id": "0c832145-67b5-452f-bdc8-e8b32197d18e",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Route by File Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Description + Meta (Gemini)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Description + Meta (Gemini)",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SEO Score Check": {
+      "main": [
+        [
+          {
+            "node": "Generate Output File (XLSX)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Product File Upload Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check File Type Validity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check File Type Validity": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by File Format": {
+      "main": [
+        [
+          {
+            "node": "Extract Product Data (XLSX)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Product Data (XLS)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Product Data (CSV)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Product Data (XLSX)": {
+      "main": [
+        [
+          {
+            "node": "Preprocess Product Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Product Data (XLS)": {
+      "main": [
+        [
+          {
+            "node": "Preprocess Product Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Product Data (CSV)": {
+      "main": [
+        [
+          {
+            "node": "Preprocess Product Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preprocess Product Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Description + Meta (Gemini)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Description + Meta (Gemini)": {
+      "main": [
+        [
+          {
+            "node": "SEO Score Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Output File (XLSX)": {
+      "main": [
+        [
+          {
+            "node": "Upload Final File to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Final File to Drive": {
+      "main": [
+        [
+          {
+            "node": "Notify Reviewer via Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a1b16032-67ba-476f-af61-be077c6ab9d2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "R1CYjqAicHErYqsH",
+  "tags": []
+}

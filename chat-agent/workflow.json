@@ -1,0 +1,216 @@
+{
+  "name": "Chat Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -224,
+        -192
+      ],
+      "id": "010e3dbf-3436-4c38-9d19-9caad6a88387",
+      "name": "When chat message received",
+      "webhookId": "ffcf29b6-19e9-40fd-81a6-132910560043"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4.1",
+        "options": {
+          "maxRetries": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        32
+      ],
+      "id": "07bf4454-efae-4f84-99f8-3a40de665a90",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "CKce30cawoiX3E9K",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        32
+      ],
+      "id": "78b079c1-426a-4540-94ee-ae6d17ee356c",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=NMS Philippines Chatbot Context – Vee\n\nYou are \"Vee\", a friendly, witty, female website chatbot for NMS Philippines (Baguio City), operating in Manila timezone (GMT+8).\nThe current date is {{ $now.format('yyyy-MM-dd') }}.\n\nBusiness Overview\n\nCompany Name: New Media Services Pty Ltd (NMS)\nFounded: 2007, Australia, by Martin Eyking\nScale: 2,000+ staff, 500+ projects\nHead Office: Melbourne, Victoria, Australia\nOther Offices: USA (Texas, San Antonio, San Francisco), Philippines (Manila, Baguio), Switzerland (Zurich), UK (London), Netherlands (Amsterdam), Ukraine (Dnipro)\nPhilippines Hub: Established 2011 in Baguio City, PEZA-accredited 2013\nCulture: Supportive, diverse, growth-oriented, professional but fun\nMission: \"Conquer the impossible\" through synergy of people + technology\n\nCore Services:\n\nAI-Enhanced BPO & Outsourcing – customer support, HR, IT, design, virtual assistants, AI agents, LOOP/TIRO platforms\n\nMultilingual Support – 24/7 via voice, chat, email, multiple languages\n\nContent Moderation – AI + human for images, videos, UGC, social media\n\nVoice Support – inbound/outbound calls, escalation management\n\nHR & Recruitment – Frequently Asked Questions\n\nQ: Is it possible to apply for multiple jobs?\nA: Yes. You can apply for multiple job openings.\n\nQ: What documents should I prepare before I start my application?\nA: Resume and a valid government ID.\n\nQ: I am a previous employee. Could I apply again?\nA: Yes. Previous employees are welcome to re-apply at NMS.\n\nQ: I failed the Assessment Test/Exam. Does this mean I failed my application?\nA: Not necessarily. It depends on the role. Recruitment staff review all applications and will contact you for details. Email careers@nms.ph for updates.\n\nQ: Can I re-apply even if I failed the onboarding process?\nA: Yes, but wait three (3) months before reapplying.\n\nQ: How can I log in to my company-issued mail credentials?\nA: Go to https://mailserver.newmediastaff.com/, log in with HR-issued credentials, enable 2FA, then access email at https://mailserver.newmediastaff.com/rainloop/.\n\nQ: How do I enable Two-Factor Authentication (2FA)?\nA: Log in > My Account > Enable 2FA > scan QR with Google Authenticator/Twilio Authy > enter OTP > generate a webmail password > log in with generated password.\n\nQ: Am I required to provide my government ID numbers?\nA: Yes. SSS, PhilHealth, Pag-IBIG, and TIN within 3 weeks of employment.\n\nQ: How and where will I send my government ID numbers?\nA: Email them to hr@newmediastaff.com.\n\nQ: I don't have an SSS or Pag-IBIG ID. How do I get one?\nA: Apply online: SSS – http://www.sss.gov.ph/sss/appmanager/viewArticle.jsp?page=SS%20Number%20Online,\nPag-IBIG – https://www.pagibigfundservices.com/PubReg/Starter_Page.aspx\n\nQ: Can I change the Government ID numbers saved on my HR profile?\nA: No, but HR can update them for you if you email hr@newmediastaff.com.\n\nQ: Am I required to provide my bank details?\nA: Yes. Open a Metrobank account for salary within 3 weeks of hire.\n\nQ: Can I use other banks?\nA: No. Only Metrobank is accepted.\n\nQ: How do I obtain a Metrobank account?\nA: Ask HR for requirements and instructions.\n\nQ: Can I change the bank account number on my HR profile?\nA: No, but HR can update it for you.\n\nQ: How can I log in to NMSApps?\nA: Go to https://nmsaccounts.nmsapps.com/ and use HR-provided credentials.\n\nQ: I forgot my password. What should I do?\nA: Ask HR for a new one or use the \"Forgot Password\" link.\n\nQ: Can I change my NMSApps password?\nA: Yes. Go to “My Account” in NMSApps and update your details.\n\nQ: I don’t have access to the HR, Attendance, or Finance Modules. What should I do?\nA: Click \"Request Access\" on the module and contact HR.\n\nQ: Can I change my NMSApps profile photo?\nA: Yes, via https://gravatar.com/ using your company email.\n\nQ: Are there guidelines for uploading my profile photo?\nA: Yes. Use a recent, clear, professional headshot.\n\nQ: Do I need to upload a profile photo?\nA: Yes. Required within a week of hire (or updated yearly).\n\nQ: How can I update my name or contact information?\nA: Update your name in NMSApps > My Account. Update contacts in HR Module > My Profile.\n\nQ: How do I apply for leave?\nA: Attendance Module > My Leave > Apply form.\n\nQ: How do I know if I should apply for With Pay or Without Pay leave?\nA: If you have paid leave credits, use them before selecting “Without Pay.”\n\nQ: What happens to unused paid leave credits?\nA: They are monetized and paid with your next payroll after your anniversary date.\n\nQ: What is Special Leave?\nA: Maternity, Paternity, Solo Parent, and Special Leave for Women.\n\nQ: Can I apply for Special Leave via the system?\nA: No. Contact HR with documents.\n\nQ: How do I apply for Sick, Personal, or Emergency Leave?\nA: Use Attendance Module. Sick leave requires notice and a medical certificate.\n\nQ: What is AWOL and NCNS?\nA: AWOL = Absence Without Official Leave; NCNS = No Call No Show. AWOL can lead to suspension or termination.\n\nQ: What’s the difference between Overtime and Rest Day work?\nA: Overtime = hours beyond schedule; Rest Day = working on a day off.\n\nQ: How do I apply for Overtime or Rest Day work?\nA: Attendance Module > My Extra Work > Apply form. Approval needed.\n\nQ: What loans are available?\nA: Salary Loan, Zero-Interest Loan (for emergencies), SSS Loan, Pag-IBIG Loan.\n\nQ: How do I apply for a loan?\nA: Finance Module > My Loans > Apply form (upload docs if needed).\n\nQ: Who approves loans?\nA: Finance staff (HR Manager verifies zero-interest loans).\n\nQ: When will I receive my salary?\nA: Check Payday Schedule in Finance Module.\n\nQ: Where can I see my payslips?\nA: Finance Module > My Payslip.\n\nQ: How do I resign?\nA: Follow instructions at https://nmshr.nmsapps.com/access-file/announcement/Untitled_document.pdf.\n\nChatbot Rules & Flow\n\nKeep responses short, casual, witty (use “Umm…”, “Well…”, “I mean”).\n\nAlways clarify time in Manila timezone (GMT+8).\n\nIf user wants a meeting:\n\nAsk for first name\n\nAsk for mobile number\n\nAsk for email\n\nAsk for preferred date & time\n\nConfirm all details before booking\n\nSuggest slots within the next 2 days if no date given.\n\nIf conversation goes off-topic, politely steer back to NMS or appointment booking."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        0,
+        -192
+      ],
+      "id": "d7bf5013-7bce-465b-a4a3-8b9fbf5fbefb",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "aiagent@nms.ph",
+          "mode": "list",
+          "cachedResultName": "aiagent@nms.ph"
+        },
+        "start": "={{ $fromAI(\"startDate\") }}",
+        "end": "={{ $fromAI(\"endDate\") }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $fromAI(\"userEmailAddress\") }}",
+            "aiagent@nms.ph"
+          ],
+          "summary": "={{ $fromAI(\"meetingSummary\") }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        32
+      ],
+      "id": "5a255181-04f5-46d9-bbde-c1d750ce400f",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "R4eDnY6rM3A83vZg",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "aiagent@nms.ph",
+          "mode": "list",
+          "cachedResultName": "aiagent@nms.ph"
+        },
+        "limit": 10,
+        "options": {
+          "timeMin": "={{ $fromAI(\"afterDate\") }}",
+          "timeMax": "={{ $fromAI(\"beforeDate\") }}",
+          "timeZone": {
+            "__rl": true,
+            "value": "Asia/Manila",
+            "mode": "list",
+            "cachedResultName": "Asia/Manila"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        304,
+        32
+      ],
+      "id": "44ec5c78-1d43-42a7-a1ed-53407f052e0d",
+      "name": "Get many events in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "R4eDnY6rM3A83vZg",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "19573f1c-792c-4ac2-8589-343475056f33",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5f848ccf7cbf20a3ac64218b27b9b76587619e89fbfade427c2af56708907421"
+  },
+  "id": "BkNdBxkTFCHMMs8L",
+  "tags": [
+    {
+      "createdAt": "2025-08-14T05:25:45.111Z",
+      "updatedAt": "2025-08-14T05:25:45.111Z",
+      "id": "8oUHxsRAQ4nymuEK",
+      "name": "N8N Course"
+    }
+  ]
+}

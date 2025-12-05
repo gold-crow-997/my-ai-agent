@@ -1,0 +1,1111 @@
+{
+  "name": "Topic Idea Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -640,
+        -64
+      ],
+      "id": "14b85d8a-d5c6-486d-a003-8e177b856ec0",
+      "name": "Telegram Trigger",
+      "webhookId": "5fbc4176-fc27-48e5-98ba-986f0d2abcf5",
+      "credentials": {
+        "telegramApi": {
+          "id": "T94vKODD3m0o9rtf",
+          "name": "Topic_Idea_generator_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let data = {};\n\nif ($json.message?.text) {           // Telegram\n  const text = $json.message.text.trim();\n\n  // ✅ Updated regex to capture multi-word themes\n  const themeMatch = text.match(/theme:\\s*([^]+?)(?=\\s+priority:|$)/i);\n  const priorityMatch = text.match(/priority:\\s*(\\w+)/i);\n\n  data.trigger_type = \"telegram_command\";\n  data.theme = themeMatch ? themeMatch[1].trim() : \"general\";\n  data.priority = priorityMatch ? priorityMatch[1].toLowerCase() : \"normal\";\n}\n\nelse if ($json.trigger_type) {        // Webhook or Scheduler\n  data = $json;\n}\nelse {\n  data = { trigger_type: \"unknown\", theme: \"general\", priority: \"normal\" };\n}\n\n// ✅ Basic validation\nif (!data.theme) {\n  data.valid = false;\n  data.error = \"Missing theme parameter.\";\n} else {\n  data.valid = true;\n}\n\nreturn [{\n  json: {\n    valid: data.valid,\n    trigger_type: data.trigger_type,\n    theme: data.theme,\n    priority: data.priority,\n    timestamp: new Date().toISOString()\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        -64
+      ],
+      "id": "cf246c83-4039-4337-982d-2105d38b2f21",
+      "name": "Normalize Tringger Payload"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4d376779-dbc5-4951-b137-d2c4494c0649",
+              "leftValue": "={{$json[\"valid\"]}}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        -64
+      ],
+      "id": "16fc0f6d-db2a-4bb7-b98f-91bc06e8f076",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.from.id }}",
+        "text": "=Invalid command.  \nUse: /generate theme:<topic> priority:<level>  \nExample: /generate theme: AI Governance 2025 priority: critical\n",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        112
+      ],
+      "id": "31c28311-a804-46c0-87c0-8de74e1f4228",
+      "name": "Send a text message(Error)",
+      "webhookId": "0b573c76-e833-4d5f-90e4-c68849eac2ff",
+      "credentials": {
+        "telegramApi": {
+          "id": "T94vKODD3m0o9rtf",
+          "name": "Topic_Idea_generator_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1dI8Y4FrSofz52hvUVx49R4aNnsSl59sf1z3-02Xo1j0",
+          "mode": "list",
+          "cachedResultName": "Data Reetrieval Layer",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dI8Y4FrSofz52hvUVx49R4aNnsSl59sf1z3-02Xo1j0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Logging data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dI8Y4FrSofz52hvUVx49R4aNnsSl59sf1z3-02Xo1j0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "trigger_type": "={{ $json.trigger_type }}",
+            "theme": "={{ $json.theme }}",
+            "priority": "={{ $json.priority }}",
+            "status": "=accepted"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "trigger_type",
+              "displayName": "trigger_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "theme",
+              "displayName": "theme",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        48,
+        -160
+      ],
+      "id": "bbe79528-3f10-49c3-a72c-4a2fc0d1367e",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  \"theme\": $input.first().json.theme,\n  \"trigger_type\": $input.first().json.trigger_type,\n  \"priority\": $input.first().json.priority,\n  \"seed_keyword\": $input.first().json.theme\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        -160
+      ],
+      "id": "0a39a721-6c87-4438-ac60-199a55134886",
+      "name": "Build Query Payload"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        928,
+        -176
+      ],
+      "id": "ee43b986-fb89-48a1-a4aa-6e1330c6d3c7",
+      "name": "Merge - Source Agent Data",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const k = $json.keyword_agent || [];\nconst t = $json.trend_agent || [];\nconst c = $json.competitor_agent || [];\n\nfunction normalizeKeyword(item) {\n  return {\n    topic: item.keyword,\n    volume: item.volume || 0,\n    difficulty: item.difficulty || 0\n  };\n}\n\nfunction normalizeTrend(item) {\n  return {\n    topic: item.topic,\n    velocity: item.velocity || 0\n  };\n}\n\nfunction normalizeCompetitor(item) {\n  return {\n    topic: item.topic,\n    gap_score: item.gap_score || 0,\n    competitor_count: item.competitor_count || 0\n  };\n}\n\nreturn [{\n  json: {\n    theme: $json.theme,\n    keyword_data: k.map(normalizeKeyword),\n    trend_data: t.map(normalizeTrend),\n    competitor_data: c.map(normalizeCompetitor)\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        -160
+      ],
+      "id": "065cd0e7-9bcf-446c-8c90-11c0471ce2c9",
+      "name": "Normalize Data for Fusion"
+    },
+    {
+      "parameters": {
+        "jsCode": "if (!$json.keyword_data.length || !$json.trend_data.length || !$json.competitor_data.length) {\n  throw new Error(\"One or more source agents returned no data. Please verify API availability.\");\n}\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        -160
+      ],
+      "id": "0a1619b7-a5de-4b56-8096-4f5a2f0fede7",
+      "name": "Validation / Debug Layer"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Weighting factors (can be set as ENV vars)\nconst W_DEMAND = 1.0;   // keyword volume weight\nconst W_TREND  = 1.5;   // trend velocity weight\nconst W_COMP   = 1.2;   // competitor gap weight\n\n// Helper functions\nfunction normalize(val, max) {\n  if (!val || !max) return 0;\n  return Math.min(val / max, 1);\n}\n\nconst keywords   = $json.keyword_data || [];\nconst trends     = $json.trend_data   || [];\nconst competitors= $json.competitor_data || [];\n\n// Find maximums for normalization\nconst maxVol = Math.max(...keywords.map(k => k.volume || 0), 1);\nconst maxVel = Math.max(...trends.map(t => t.velocity || 0), 1);\nconst maxGap = Math.max(...competitors.map(c => c.gap_score || 0), 1);\n\n// Build unified topic list\nconst topicMap = {};\n\n// Merge keyword data\nfor (const k of keywords) {\n  const key = k.topic.toLowerCase();\n  topicMap[key] = topicMap[key] || {};\n  topicMap[key].topic = k.topic;\n  topicMap[key].volume = normalize(k.volume, maxVol);\n  topicMap[key].difficulty = k.difficulty || 0;\n}\n\n// Merge trend data\nfor (const t of trends) {\n  const key = t.topic.toLowerCase();\n  topicMap[key] = topicMap[key] || {};\n  topicMap[key].topic = t.topic;\n  topicMap[key].velocity = normalize(t.velocity, maxVel);\n}\n\n// Merge competitor data\nfor (const c of competitors) {\n  const key = c.topic.toLowerCase();\n  topicMap[key] = topicMap[key] || {};\n  topicMap[key].topic = c.topic;\n  topicMap[key].gap_score = normalize(c.gap_score, maxGap);\n}\n\n// Compute ROI score\nconst fused = Object.values(topicMap).map(t => {\n  const volume     = t.volume     || 0;\n  const velocity   = t.velocity   || 0;\n  const gap        = t.gap_score  || 0.1; // prevent division by 0\n  const roi = ((volume * W_DEMAND) + (velocity * W_TREND)) / (gap * W_COMP);\n  return {\n    topic: t.topic,\n    demand_score: volume,\n    trend_score: velocity,\n    gap_score: gap,\n    final_roi_score: Number(roi.toFixed(3))\n  };\n});\n\n// Sort by ROI descending\nfused.sort((a, b) => b.final_roi_score - a.final_roi_score);\n\n// Return\nreturn [{ json: { theme: $json.theme, topics: fused } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        -48
+      ],
+      "id": "5ba3074d-7853-458f-8ec7-f373d0f72bab",
+      "name": "Fuse Data & Calculate ROI"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1dI8Y4FrSofz52hvUVx49R4aNnsSl59sf1z3-02Xo1j0",
+          "mode": "list",
+          "cachedResultName": "Data Reetrieval Layer",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dI8Y4FrSofz52hvUVx49R4aNnsSl59sf1z3-02Xo1j0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1450689898,
+          "mode": "list",
+          "cachedResultName": "Scores",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dI8Y4FrSofz52hvUVx49R4aNnsSl59sf1z3-02Xo1j0/edit#gid=1450689898"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Theme",
+              "displayName": "Theme",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Demand",
+              "displayName": "Demand",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Trend",
+              "displayName": "Trend",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Gap",
+              "displayName": "Gap",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ROI Score",
+              "displayName": "ROI Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        48
+      ],
+      "id": "90b6ba8c-d5c5-4cbc-bdbf-77ccec2e97be",
+      "name": "Append Raw Scores",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const topics = $json.topics || [];\nreturn [{\n  json: {\n    theme: $json.theme,\n    top_topics: topics.slice(0, 20), // top 20 for synthesis\n    summary_input: topics.map(t => `${t.topic} (ROI:${t.final_roi_score})`).join('\\n')\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        144
+      ],
+      "id": "96adb65d-f330-494f-9d41-a77c474a732a",
+      "name": "Select Top Topics"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        624
+      ],
+      "id": "a9fa3b20-6d87-4869-a0fd-688f69b667be",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[\n  {\n    \"cluster\": \"AI Governance and Policy\",\n    \"related_keywords\": [\"AI regulation\", \"AI policy framework\"],\n    \"content_ideas\": [\n      {\n        \"title\": \"How AI Regulation Will Shape Innovation in 2025\",\n        \"format\": \"Blog Post\",\n        \"angle\": \"Analyze policy trends and their impact on tech adoption.\",\n        \"target_audience\": \"Tech leaders and policy makers\",\n        \"base_keywords\": [\"AI regulation\", \"AI policy\"]\n      },\n      {\n        \"title\": \"Global AI Governance Models: A Comparative Guide\",\n        \"format\": \"Report\",\n        \"angle\": \"Compare EU, US, and Asia approaches to AI oversight.\",\n        \"target_audience\": \"Corporate compliance teams\",\n        \"base_keywords\": [\"AI governance\", \"AI framework\"]\n      }\n    ]\n  },\n  {\n    \"cluster\": \"AI Compliance Tools\",\n    \"related_keywords\": [\"AI compliance tools\"],\n    \"content_ideas\": [\n      {\n        \"title\": \"Top AI Compliance Platforms Businesses Should Know\",\n        \"format\": \"Video\",\n        \"angle\": \"Product overview and feature comparisons.\",\n        \"target_audience\": \"Business owners and IT directors\",\n        \"base_keywords\": [\"AI compliance\", \"AI tools\"]\n      }\n    ]\n  }\n]\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -368,
+        624
+      ],
+      "id": "425a7c8a-e103-4d2f-9b82-836b9e0eb6d1",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $json.text || $json.output || '';\ntext = text.replace(/^```json/i, '').replace(/```$/i, '').trim();\n\nlet clusters;\ntry {\n  clusters = JSON.parse(text);\n} catch (err) {\n  throw new Error('Invalid JSON from LLM: ' + err.message);\n}\n\nreturn [{ json: { theme: $json.theme, clusters } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        416
+      ],
+      "id": "93e6cf13-f78d-41a2-9795-52afec9a764c",
+      "name": "Code – Parse LLM Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "const clusters = $json.clusters || [];\nconst theme = $json.theme;\n\n// Scoring weights\nconst W_DEMAND = 1.0;\nconst W_TREND = 1.5;\nconst W_GAP = 1.2;\n\nconst results = [];\n\nfor (const cluster of clusters) {\n  for (const idea of cluster.content_ideas) {\n    // Assign synthetic or API-based scores\n    const demand = Math.random();       // placeholder: replace with keyword match logic\n    const trend = Math.random();        // placeholder: replace with trend velocity\n    const gap = Math.random() || 0.1;   // prevent /0\n\n    const roi = ((demand * W_DEMAND) + (trend * W_TREND)) / (gap * W_GAP);\n\n    results.push({\n      theme,\n      cluster: cluster.cluster,\n      title: idea.title,\n      format: idea.format,\n      base_keywords: idea.base_keywords,\n      demand_score: Number(demand.toFixed(2)),\n      trend_score: Number(trend.toFixed(2)),\n      gap_score: Number(gap.toFixed(2)),\n      final_roi_score: Number(roi.toFixed(3))\n    });\n  }\n}\n\n// Sort by ROI\nresults.sort((a, b) => b.final_roi_score - a.final_roi_score);\n\nreturn [{ json: { theme, ideas_ranked: results } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        416
+      ],
+      "id": "19b5eccf-340c-4963-8ebc-e21e3d9d1c12",
+      "name": "Compute Idea Scores"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ideas = $json.ideas_ranked || [];\nreturn [{\n  json: {\n    theme: $json.theme,\n    top_ideas: ideas.slice(0, 20)\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        416
+      ],
+      "id": "c704ee39-3124-4b2b-aaac-abf261be0218",
+      "name": "Select Top Topics1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Theme: {{ $json[\"theme\"] }}\n\nHere are the selected topics:\n{{ JSON.stringify($json[\"top_ideas\"], null, 2) }}\n\nFor each, return JSON:\n[\n  {\n    \"title\": \"string\",\n    \"format\": \"string\",\n    \"summary\": \"string (2–3 sentences)\",\n    \"target_keywords\": [\"array\"],\n    \"recommended_length\": \"string (e.g., 1200 words, 3-min video)\",\n    \"call_to_action\": \"string\"\n  }\n]\n",
+        "options": {
+          "systemMessage": "You are a senior content strategist.\nFor each topic, generate a short actionable content brief for the content team.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        368,
+        416
+      ],
+      "id": "a22a039a-5051-47fc-b22b-5f9ae40485ea",
+      "name": "Generate Content Briefs"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        320,
+        624
+      ],
+      "id": "c9a452a2-d09e-4890-89c8-1095e568eb1e",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wC7ii1TKu5ChRWeP",
+          "name": "Google Gemini(PaLM) Api [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Below is a list of prioritized topics and their ROI scores \nrelated to the theme \"{{ $json[\"theme\"] }}\":\n\n{{ JSON.stringify($json[\"top_topics\"], null, 2) }}\n\nReturn JSON exactly in this structure:\n\n[\n  {\n    \"cluster\": \"string\",\n    \"related_keywords\": [\"array of strings\"],\n    \"content_ideas\": [\n      {\n        \"title\": \"string\",\n        \"format\": \"string (Blog Post | Video | Guide | Webinar)\",\n        \"angle\": \"string\",\n        \"target_audience\": \"string\",\n        \"base_keywords\": [\"array of strings\"]\n      }\n    ]\n  }\n]\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a senior content strategist.\nGroup related topics into clear content clusters.\nFor each cluster, create 2–3 high-potential content ideas \nthat are creative, SEO-relevant, and realistic to produce.\nRespond ONLY in valid JSON following the given schema.\nNo markdown, no extra text.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -592,
+        416
+      ],
+      "id": "a97321cf-9e23-4c5d-b86e-904a6c12d4f0",
+      "name": "Topic Clustering & Idea Generator"
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $json.output || $json.text || '';\ntext = text.replace(/^```json/i, '').replace(/```$/i, '').trim();\nlet briefs = JSON.parse(text);\n\nreturn [{ json: { theme: $json.theme, briefs } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        416
+      ],
+      "id": "dfe6b96f-fc8f-4e79-9a90-71469dba56ef",
+      "name": "Validate Briefs"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1dI8Y4FrSofz52hvUVx49R4aNnsSl59sf1z3-02Xo1j0",
+          "mode": "list",
+          "cachedResultName": "Data Reetrieval Layer",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dI8Y4FrSofz52hvUVx49R4aNnsSl59sf1z3-02Xo1j0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1067982661,
+          "mode": "list",
+          "cachedResultName": "Results",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dI8Y4FrSofz52hvUVx49R4aNnsSl59sf1z3-02Xo1j0/edit#gid=1067982661"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "format",
+              "displayName": "format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "target_keywords",
+              "displayName": "target_keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recommended_length",
+              "displayName": "recommended_length",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "call_to_cation",
+              "displayName": "call_to_cation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        928,
+        416
+      ],
+      "id": "9c22174b-097e-417b-9982-1c30a72c0034",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "folderId": "1xbaVNYCdmhq-xrkzfIsE2XWFtAWyYmTy",
+        "title": "Theme: AI Governance 2025"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        416
+      ],
+      "id": "d315275b-38db-4a22-b76b-dcc6023a7692",
+      "name": "Create a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "yDN1LPDdBCB7q1Zy",
+          "name": "Google Docs [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        416
+      ],
+      "id": "b102914f-8278-43f4-a05f-75579cd6337b",
+      "name": "Update a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "yDN1LPDdBCB7q1Zy",
+          "name": "Google Docs [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const theme = $json.theme;\nconst briefs = $json.briefs || [];\nconst date = new Date().toLocaleDateString();\n\nlet report = `\nTOPIC IDEA GENERATOR REPORT\nTheme: ${theme}\nDate: ${date}\n\n==================================================\nEXECUTIVE SUMMARY\n==================================================\nThis report summarizes the top-performing content ideas synthesized from keyword demand, trend velocity, and competitive gap analysis. \nEach brief below includes a suggested format, focus, target keywords, and a call-to-action.\n\n==================================================\nTOP CONTENT IDEAS\n==================================================\n`;\n\nbriefs.forEach((b, i) => {\n  report += `\n${i + 1}. ${b.title}\nFormat: ${b.format}\nROI Score: ${b.final_roi_score || \"N/A\"}\nSummary: ${b.summary}\nTarget Keywords: ${(b.target_keywords || []).join(\", \")}\nRecommended Length: ${b.recommended_length}\nCall to Action: ${b.call_to_action}\n--------------------------------------------------\n`;\n});\n\nreport += `\n==================================================\nNEXT STEPS\n==================================================\n1. Review and approve selected topics for production.\n2. Assign each topic to a content writer or creative team.\n3. Track performance metrics and update the ROI model over time.\n\nGenerated automatically by N8N AI Agent – Topic Idea Generator.\n`;\n\nreturn [\n  {\n    json: {\n      documentId: $json.documentId,\n      documentBody: report\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        416
+      ],
+      "id": "fdc168d2-91f4-43af-bec3-a01a030c6ad5",
+      "name": "Build Final Report Body"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=Topic Idea Generator Report Complete  Theme: AI Governance 2025 Google Doc: https://docs.google.com/document/d/{{$json[\"documentId\"]}}/view",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1888,
+        416
+      ],
+      "id": "412466f3-b0b0-4acf-aca7-049130d9cd66",
+      "name": "Send a text message",
+      "webhookId": "45190722-2320-4f47-9f1d-2a2c55ca0869",
+      "credentials": {
+        "telegramApi": {
+          "id": "Ey36IMOgFS1qlavV",
+          "name": "Telegram Product Recommendation [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Convert Keywords JSON strings into arrays\nconst formatted = items.map(item => {\n  const d = item.json;\n  let keywords = [];\n  try {\n    keywords = JSON.parse(d[\"Keywords\"]);\n  } catch {\n    keywords = (d[\"Keywords\"] || \"\").split(\",\").map(k => k.trim());\n  }\n\n  return {\n    json: {\n      topic: d[\"Title\"] || \"Untitled\",\n      content_type: d[\"Content Type\"] || \"Unknown\",\n      why_it_performs: d[\"Why It Performs\"] || \"\",\n      counter_title: d[\"Suggested Counter Title\"] || \"\",\n      keywords,\n      gap_score: Math.random().toFixed(2) // placeholder until Competitor Agent returns live scores\n    }\n  };\n});\n\nreturn formatted;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        -304
+      ],
+      "id": "e7e2c289-cb98-4efb-aa0f-20584e50a9bc",
+      "name": "Format Competitor Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all();\nlet records = [];\n\n// Support both \"records\" array or flat items\nfor (const item of input) {\n  if (item.json.records) {\n    // Airtable returned one array of multiple records\n    records = records.concat(item.json.records);\n  } else {\n    // Or n8n already split them (rare case)\n    records.push(item.json);\n  }\n}\n\nconst normalized = records.map((record) => {\n  const f = record.fields || {};\n\n  // Handle numeric value directly (Velocity could be number or string)\n  let velocity = 0;\n  if (typeof f[\"Velocity\"] === \"number\") velocity = f[\"Velocity\"];\n  else velocity = parseFloat((f[\"Velocity\"] || \"0\").replace(/[^0-9.]/g, \"\"));\n\n  return {\n    json: {\n      topic: f[\"Keyword\"] || \"Untitled\",\n      velocity: isNaN(velocity) ? 0 : velocity,\n      reason: f[\"Reason\"] || \"\",\n      sentiment: f[\"Sentiment\"] || \"\",\n      category: f[\"Category\"] || \"\",\n      recommendation: f[\"Recommendation\"] || \"\"\n    }\n  };\n});\n\nreturn normalized;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        -80
+      ],
+      "id": "809b569e-1af4-417d-9ab8-930debfdbe3d",
+      "name": "Normalize Trend Data"
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "appbCso4A3kgLX0Bo",
+          "mode": "list",
+          "cachedResultName": "Trend Analysis",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblwwoS1Uc8crIRL5",
+          "mode": "list",
+          "cachedResultName": "trend_results",
+          "cachedResultUrl": "https://airtable.com/appbCso4A3kgLX0Bo/tblwwoS1Uc8crIRL5"
+        },
+        "id": "=",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        496,
+        -80
+      ],
+      "id": "43ddcb4e-ba52-482a-8ded-904eda1453ff",
+      "name": "Get Trand Analysis Result",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KjHajpmhaN3srHl8",
+          "name": "Airtable Personal Access Token [Ranilo Pastidio]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1XmqZssn6w0LOJoE2vmXnpkC5d50xbFwgo5Mjytjoqyw",
+          "mode": "list",
+          "cachedResultName": "Competitor Contents Analysis",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1XmqZssn6w0LOJoE2vmXnpkC5d50xbFwgo5Mjytjoqyw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1XmqZssn6w0LOJoE2vmXnpkC5d50xbFwgo5Mjytjoqyw/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        496,
+        -304
+      ],
+      "id": "3ad40661-5b99-4755-b838-7932e3bb9906",
+      "name": "Get Competitor Contents Analysis Data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlu3eMoIIzQCwo9X",
+          "name": "Google Sheets [Ranilo Pastidio]"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize Tringger Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Tringger Payload": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message(Error)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Build Query Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Query Payload": {
+      "main": [
+        [
+          {
+            "node": "Get Competitor Contents Analysis Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Trand Analysis Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge - Source Agent Data": {
+      "main": [
+        [
+          {
+            "node": "Normalize Data for Fusion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Data for Fusion": {
+      "main": [
+        [
+          {
+            "node": "Validation / Debug Layer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation / Debug Layer": {
+      "main": [
+        [
+          {
+            "node": "Fuse Data & Calculate ROI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fuse Data & Calculate ROI": {
+      "main": [
+        [
+          {
+            "node": "Append Raw Scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Raw Scores": {
+      "main": [
+        [
+          {
+            "node": "Select Top Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Top Topics": {
+      "main": [
+        [
+          {
+            "node": "Topic Clustering & Idea Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Topic Clustering & Idea Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Topic Clustering & Idea Generator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code – Parse LLM Output": {
+      "main": [
+        [
+          {
+            "node": "Compute Idea Scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Idea Scores": {
+      "main": [
+        [
+          {
+            "node": "Select Top Topics1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Top Topics1": {
+      "main": [
+        [
+          {
+            "node": "Generate Content Briefs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Content Briefs",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Topic Clustering & Idea Generator": {
+      "main": [
+        [
+          {
+            "node": "Code – Parse LLM Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Content Briefs": {
+      "main": [
+        [
+          {
+            "node": "Validate Briefs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Create a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a document": {
+      "main": [
+        [
+          {
+            "node": "Build Final Report Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a document": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Briefs": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Final Report Body": {
+      "main": [
+        [
+          {
+            "node": "Update a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Trand Analysis Result": {
+      "main": [
+        [
+          {
+            "node": "Normalize Trend Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Competitor Contents Analysis Data": {
+      "main": [
+        [
+          {
+            "node": "Format Competitor Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Competitor Data": {
+      "main": [
+        [
+          {
+            "node": "Merge - Source Agent Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Trend Data": {
+      "main": [
+        [
+          {
+            "node": "Merge - Source Agent Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3db5f897-9c62-4766-80db-76c67a6f1ab1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "hQKA8MmCb6rXYeZN",
+  "tags": []
+}

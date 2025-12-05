@@ -1,0 +1,398 @@
+{
+  "name": "Leads Outreacher",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1Wn1DEQXq6Q3H9u2OO9dYyrMHCg1pQF1XDyzRghH25Mk",
+          "mode": "list",
+          "cachedResultName": "Leads Outreacher",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Wn1DEQXq6Q3H9u2OO9dYyrMHCg1pQF1XDyzRghH25Mk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Contacts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Wn1DEQXq6Q3H9u2OO9dYyrMHCg1pQF1XDyzRghH25Mk/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        704
+      ],
+      "id": "67289022-b68a-4367-9262-72eba5e1f28f",
+      "name": "Google Sheets Trigger1",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "eptRWdUko6Fy2WCg",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        704,
+        704
+      ],
+      "id": "6c416652-f94e-4226-a01b-9dc99bcfeb9a",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d4556d15-9ecc-4206-a09b-ec7eb3228ae1",
+              "leftValue": "={{ $json['Campaign Status'] }}",
+              "rightValue": "Sent An Email",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        272,
+        704
+      ],
+      "id": "2e54057e-5898-4087-8e99-561f5e9d6b5c",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.woodpecker.co/rest/v2/campaigns/2363707/stop",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "<YOUR_API_KEY>"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        544
+      ],
+      "id": "fb3a951a-60e5-41c8-be0d-c1e1a1da2b0f",
+      "name": "Stop campaign"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.woodpecker.co/rest/v1/add_prospects_campaign",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "<YOUR_API_KEY>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"campaign\": {\n    \"campaign_id\": 2363707\n  },\n  \"prospects\": [\n    {\n      \"email\": \"{{ $json['Email Address'] }}\",\n      \"first_name\": \"{{ $json['Contact Name'] }}\",\n      \"company\": \"{{ $json['Company Name'] }}\",\n      \"snippet1\": \"Hello World!\"\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1024,
+        720
+      ],
+      "id": "8bbd5417-5f17-4fa4-8531-b648eaf12db1",
+      "name": "Add Contacts to Campaign"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1Wn1DEQXq6Q3H9u2OO9dYyrMHCg1pQF1XDyzRghH25Mk",
+          "mode": "list",
+          "cachedResultName": "Leads Outreacher",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Wn1DEQXq6Q3H9u2OO9dYyrMHCg1pQF1XDyzRghH25Mk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1596705508,
+          "mode": "list",
+          "cachedResultName": "Contacts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10YhaQSDQflfXW8jkTTKYRonIOW2NwNhywYV8bJCyaDo/edit#gid=1596705508"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Campaign Status": "Sent An Email",
+            "Email Address": "={{ $json.prospects[0].email }}"
+          },
+          "matchingColumns": [
+            "Email Address"
+          ],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Contact Name",
+              "displayName": "Contact Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "LinkedIn URL",
+              "displayName": "LinkedIn URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Campaign Status",
+              "displayName": "Campaign Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        720
+      ],
+      "id": "f70f34e9-2e8d-4784-97bc-dfa3ef96c803",
+      "name": "Update Status : Sent an Email",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7NZIEvEYVAmx88sF",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.woodpecker.co/rest/v2/campaigns/2363707/run",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "<YOUR_API_KEY>"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1024,
+        528
+      ],
+      "id": "8383974b-078a-42b6-a23f-881a73ee66f1",
+      "name": "Run Campaign"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Stop campaign",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Run Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add Contacts to Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop campaign": {
+      "main": [
+        []
+      ]
+    },
+    "Add Contacts to Campaign": {
+      "main": [
+        [
+          {
+            "node": "Update Status : Sent an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status : Sent an Email": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Campaign": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "beded725-3314-4b3e-a7ae-0ff766364520",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "zGdEpR7cHOD7Ag7A",
+  "tags": []
+}

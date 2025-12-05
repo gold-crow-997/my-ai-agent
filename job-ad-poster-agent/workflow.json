@@ -1,0 +1,2701 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=Uh oh, {{ $json.message.chat.username }} disconnected. Sad to see you drop off 😞",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "message_thread_id": "={{ $json.message.message_thread_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-4064, 432],
+      "id": "900ec499-4e5d-4780-a22f-d73ccc37eab7",
+      "name": "goodbye message",
+      "webhookId": "9a36c168-c91a-4283-b28a-34bc7996da2d",
+      "credentials": {
+        "telegramApi": {
+          "id": "o7wjzZLnCNQrtW3X",
+          "name": "the_bottler_bot [cris]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=Hey @{{ $json.message.chat.username }} 👋 Let’s get started, feel free to share your ideas here! 💬",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "message_thread_id": "={{ $json.message.message_thread_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-4064, 624],
+      "id": "4febd25b-6feb-4a67-8af2-b50a55e7f026",
+      "name": "welcome message",
+      "webhookId": "e1483af4-f83e-4667-a2b6-3eaa03bde9e1",
+      "credentials": {
+        "telegramApi": {
+          "id": "o7wjzZLnCNQrtW3X",
+          "name": "the_bottler_bot [cris]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-nano",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-2240, 1184],
+      "id": "f4346717-b70d-4362-9ae9-fb56a43e46d2",
+      "name": "OpenRouter Chat Model3",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0yyt4YmtAikN6fuK",
+          "name": "OpenRouter [Jon Rey:pops]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const platforms = [];\n\nfor (const item of $input.all()) {\n  const data = item.json;\n  platforms.push({ \n    json: { \n      platform: data.platform, \n      validation: data.additional_validation \n      } \n  });\n}\n\nreturn platforms;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-2560, 1008],
+      "id": "8aaca1e7-b448-4c79-88f2-5e7b327ff55a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [-2384, 1008],
+      "id": "1320f12f-776d-45f2-b0aa-82c8455069b4",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').item.json.sessionId }}",
+        "text": "=Hi @{{ $('Config').item.json.metadata.json.message.from.username }}!,{{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-352, -64],
+      "id": "e1765b88-3d25-4857-8e37-683cee8e18f8",
+      "name": "Telegram Error Message",
+      "webhookId": "cc4a597d-ce7f-4bf4-b8fe-2347eeea2fb2",
+      "credentials": {
+        "telegramApi": {
+          "id": "YoEzhBstzbvfl9mz",
+          "name": "Telegram jonrey@pawcoder_job_ad_poster_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.message }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [-32, 48],
+      "id": "1c294139-b996-4982-ab5e-2690fd3bdd3d",
+      "name": "Chat-Node Error Message"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=Hey! 👋 Thanks for adding me to your channel. Drop your job details below, and I’ll post it for you. 😎\n\nNeed help? Type \"@[MENTION ME] /how\" to learn how to post your message! 📩",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "message_thread_id": "={{ $json.message.message_thread_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-4064, 240],
+      "id": "b5777667-256f-4625-a892-b9c9b3f09437",
+      "name": "Bot has been added message",
+      "webhookId": "e1483af4-f83e-4667-a2b6-3eaa03bde9e1",
+      "credentials": {
+        "telegramApi": {
+          "id": "o7wjzZLnCNQrtW3X",
+          "name": "the_bottler_bot [cris]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [-4560, 528],
+      "id": "6a0a7c3b-7072-4745-bb5a-5438fa7aaf3b",
+      "name": "Telegram Trigger",
+      "webhookId": "3d1ba827-e546-47a3-97e2-e7abb70d905b",
+      "credentials": {
+        "telegramApi": {
+          "id": "YoEzhBstzbvfl9mz",
+          "name": "Telegram jonrey@pawcoder_job_ad_poster_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1T103Op3e5phyqPT5PYc75geZkOyYXqN_pKZF2Lc7OCo",
+          "mode": "list",
+          "cachedResultName": "Platform-formatter",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1T103Op3e5phyqPT5PYc75geZkOyYXqN_pKZF2Lc7OCo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "posting-platforms",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1T103Op3e5phyqPT5PYc75geZkOyYXqN_pKZF2Lc7OCo/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "is_available",
+              "lookupValue": "yes"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [-2816, 1008],
+      "id": "6f59112e-05bf-4348-a213-232c0ab1e114",
+      "name": "Available Platforms",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rWi8akk4LdM1YIGq",
+          "name": "Google Sheets [Jon Rey:popai]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Config').item.json.message }}",
+        "options": {
+          "systemMessage": "=[DateTime: {{ $now }}]\n\nYou are the **Job Ad Formatter and Enhancer Agent**. Your job is to turn user-provided job input into two precise outputs:\n\n1. A **human-ready, social-media-safe Markdown job post** (applicant-facing — no links, no template code, no internal metadata).  \n2. A **structured JSON `data` object** (programmatic — includes tracking/validation metadata).\n\nBefore you run, **imagine two perspectives** and let them guide every decision:\n- You are an applicant scrolling quickly — what would make you *stop and apply* without feeling misled?  \n- You are a platform moderator (e.g., Facebook) reviewing for false advertising or spam — would this post look trustworthy, accurate, and policy-safe?\n\nIf there’s any chance the post could mislead applicants or trigger moderation, **fail** and return the Failure JSON (do not produce Markdown).\n\n---\n\n### 🧠 Core Rules\n\n- Never invent or assume information. Use only:  \n  (a) fields explicitly provided in the user input,  \n  (b) dynamic fields validated at runtime,  \n  (c) safe defaults defined in your workflow.  \n- Prefer omission over invention. If a required fact is missing or ambiguous (salary, job type, location, application instructions, platform-required fields), **return Failure JSON**.  \n- Markdown must be purely applicant-facing: no `posted_by`, no platform validation notes, no runtime expressions, no links, no placeholder image URLs.  \n- JSON carries internal fields (`posted_by`, `platforms`, `image` boolean, runtime validations if present).  \n- Keep JSON and Markdown consistent — textual fields in JSON should mirror the lively tone used in Markdown but remain strictly factual.\n- platforms: always get the value from **Available Platforms**\n\n---\n\n### ⚙️ Algorithm\n\n1. **Collect Input**  \n   - Extract default `data` fields: job_title, description, salary_range, work_arrangement, pay_type, job_type, skills, benefits (optional), years_of_experience (optional), key_competencies (optional), company (optional).  \n   - Extract `posted_by` (required, internal) and `platforms` (required else use the all availale platforms).\n\n2. **Validate Static Fields**  \n   - job_title and description must be present and meaningful.  \n   - salary_range must be present or explicitly omitted by user; if present, it must be parseable (min/max numbers and currency).  \n   - work_arrangement / job_type / pay_type must be clear but optional (auto-generated based on the context of the jobs details).  \n   - posted_by and platforms(else use the all availale platforms) must be present.  \n   - If any required field is missing or invalid → **fail**.\n\n3. **Include Dynamic Validation**\n**Available Platforms**\n{{ $json.data.map((dt, index) => (`${index + 1}. ${dt.platform.toLowerCase()}\n**Additional Validation**:\n${dt.validation || 'No Additional validation'}\n`)).join(\"\") }}\n---\n\n4. **Decision: Fail Fast or Proceed**  \n- If any required static field is missing or invalid → **return Failure JSON**.  \n- If all validations pass → proceed to generate outputs.\n\n5. **Generate Final `data` JSON**  \n- Base on provided `data`.  \n- Merge any additional validated dynamic fields only if they do not duplicate existing keys and were validated at runtime.  \n- Textual fields (description, caption, key_competencies, skills) should mirror Markdown tone — factual but lively.  \n- Include internal metadata (`posted_by`, `platforms`, `image`: boolean default false).  \n- Include `platforms_validations` only if present and validated at runtime.\n\n6. **Generate Markdown (Applicant-Facing)**  \n- Text-only (no URLs, template code, or platform metadata).  \n- Start with a bold headline using `**` and 1–2 tasteful emojis.  \n- Add a short emotional hook (1–2 sentences).  \n- One-line job facts: salary • work arrangement • job type (use emojis as separators, no labels like “Salary:”).  \n- Bulleted responsibilities and qualifications (concise, action-driven).  \n- Perks section based on declared benefits only.  \n- End with a natural, warm CTA (e.g., “Ready to join? Apply today.”).  \n- Keep tone human, recruiter-like, not robotic.\n\n7. **Automatic Missing Field Detection**  \nIf any required or essential fields (like job_title, description, pay_type, job_type, or posted_by) are missing or invalid, dynamically detect and list them clearly in the `Failure JSON` message.\n\n---\n\n### ❌ Failure JSON\n\n{\n\"status\": \"failed\",\n\"message\": \"Job post generation failed due to missing or invalid required field(s): [automatically list detected missing or invalid fields here]. Please provide valid data.\"\n}\n\n---\n\n### ✅ Success JSON\n\n{\n\"status\": \"success\",\n\"message\": \"Job ad generated successfully.\",\n\"posted_by\": \"string (internal — do NOT include in Markdown)\",\n\"preferred_tone\": [\"professional\",\"friendly\"],\n\"image\": false,\n\"platforms\": [\"string\", \"...\"],\n\"markdown\": \"string (post-ready, human, no links, no template code)\",\n\"data\": {\n \"job_title\": \"string\",\n \"description\": \"string (factual, lively — mirrors Markdown tone)\",\n \"salary_range\": {\n   \"min\": \"number | null\",\n   \"max\": \"number | null\",\n   \"currency_code\": \"string | null\",\n   \"currency_symbol\": \"string | null\"\n },\n \"work_arrangement\": \"string | null\",\n \"pay_type\": \"string | null\",\n \"job_type\": \"string | null\",\n \"skills\": [\"string\"],\n \"benefits\": [\"string\"],\n \"years_of_experience\": [\"string\"],\n \"key_competencies\": [\"string (lively, factual)\"],\n \"company\": {\n   \"name\": \"string | null\",\n   \"location\": \"string | null\",\n   \"contact\": \"string | null\"\n },\n \"caption\": \"string (mirrors Markdown tone)\"\n}\n}\n\n---\n\n### ✅ Final Safety Checklist\n\n- Would an applicant feel misled or frustrated by this Markdown? → If yes, **fail**.  \n- Would a platform moderator flag this as false advertising or spam? → If yes, **fail**.  \n- Are all required static fields valid? → If no, **fail**.  \n- Is Markdown free of links, code, or internal data? → If yes, **proceed**.\n\nOutput only the final JSON object (Failure or Success). No commentary, no explanations.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [-2064, 992],
+      "id": "e00dc35e-18f4-41a9-bc56-7d7d0c7c9575",
+      "name": "Smart Job Ad Validation & Extraction Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fc8f2360-651b-402e-9a5c-3c51f562f938",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1696, 992],
+      "id": "efbf816e-fffc-46da-85f2-98737a86b83d",
+      "name": "Parsed Data: Smart Job Ad Validation & Extraction Agent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "36fe0692-4483-4422-a737-caacf50793fa",
+              "leftValue": "={{ $json.output.status }}",
+              "rightValue": "failed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1344, 992],
+      "id": "cd80658c-c8bb-40dc-b739-805251999720",
+      "name": "is Extraction Failed?"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [1168, 1296],
+      "id": "a70e7695-0c26-419e-a128-22a338455292",
+      "name": "OpenRouter Chat Model4",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0yyt4YmtAikN6fuK",
+          "name": "OpenRouter [Jon Rey:pops]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b3f6eea-2c42-4921-8157-e83d778b76dc",
+              "name": "isSuccess",
+              "value": "={{ $json.isSuccess }}",
+              "type": "boolean"
+            },
+            {
+              "id": "763c6f9e-f82b-4e90-b364-ec5ef526aec2",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "5a9867ae-636a-44d1-9dc8-a5b7292579ca",
+              "name": "name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "b7f810ba-7ba3-4c0b-a9f5-806b74eb5911",
+              "name": "message",
+              "value": "={{ $json.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [4960, 2064],
+      "id": "04f0adef-fca2-47b3-9b4c-a0bcf2305d3c",
+      "name": "Platform:Output"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1104, 192],
+      "id": "bdf4214d-64aa-4839-9b30-edbe04a82c74",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').item.json.sessionId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1824, 112],
+      "id": "9082f9c6-b5d5-45c9-8167-a8d1962d4cb4",
+      "name": "Telegram Error Message1",
+      "webhookId": "cc4a597d-ce7f-4bf4-b8fe-2347eeea2fb2",
+      "credentials": {
+        "telegramApi": {
+          "id": "YoEzhBstzbvfl9mz",
+          "name": "Telegram jonrey@pawcoder_job_ad_poster_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8e070493-f91d-4f56-b85a-624b01264b3d",
+              "name": "message",
+              "value": "=⚡ Hey @{{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.posted_by }}!\n\nHere’s the latest update for your Job Ad Post:\n\n{{ \n$json.data?.map((platform, index) => (`${platform.isSuccess ? '✅' : '❌'} ${platform.name}\n${platform.isSuccess ? `👉 ${platform.url}` : ''}\n${platform.isSuccess ? '' : `- ${platform.message}`}`\n)).join('\\n')\n}}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1328, 192],
+      "id": "4bfee3a8-236d-4c12-8599-57c4f3f06280",
+      "name": "Edit Fields4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "72e78768-56d7-4ae6-9beb-b020f271b568",
+              "leftValue": "={{ Boolean($('Image and Platform Config').item.json.base) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1760, 816],
+      "id": "76f7439f-fb4b-41f0-8e94-ee7cd2e9b5e9",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "858ec1e7-04b2-4c29-a138-623563f67e3d",
+              "name": "data",
+              "value": "={{ $('Image and Platform Config').item.json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "7b7254ed-5f45-44a1-925f-fa9298546929",
+              "name": "base",
+              "value": "={{ $('Image and Platform Config').item.json.base }}",
+              "type": "string"
+            },
+            {
+              "id": "aa8201ea-60ce-4427-9342-9adde65bac4e",
+              "name": "mime",
+              "value": "={{ $('Image and Platform Config').item.json.mime }}",
+              "type": "string"
+            },
+            {
+              "id": "bcd89462-9b6c-47fa-9025-290bea619a16",
+              "name": "fileName",
+              "value": "={{ $('Image and Platform Config').item.json.fileName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1968, 736],
+      "id": "6186574b-d1e9-4915-b996-aa6d6853f338",
+      "name": "Edit Fields7"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "=base",
+        "binaryPropertyName": "=data",
+        "options": {
+          "fileName": "={{ $json.fileName }}",
+          "mimeType": "={{ $json.mime }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [2192, 736],
+      "id": "c192e0c9-5ba7-4e1b-8a91-f01d43c7c751",
+      "name": "Image2"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "job-ad-poster",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryPropertyName": "file"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-4304, 1296],
+      "id": "bc050677-a868-44ef-ae71-c1fdb2f1b18a",
+      "name": "Webhook",
+      "webhookId": "18b8fd88-434b-4394-b36c-fa2ccc5c7c53"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b986e00f-4fba-4eb7-8368-78d9ba25fe73",
+              "name": "platforms",
+              "value": "={{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.platforms }}",
+              "type": "array"
+            },
+            {
+              "id": "47f5a154-2cd9-487c-9305-f2db15fd50b0",
+              "name": "mime",
+              "value": "={{ $json.mime }}",
+              "type": "string"
+            },
+            {
+              "id": "9f6ac11e-3d45-492d-be56-7e000fac1226",
+              "name": "fileName",
+              "value": "={{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.data.job_title }}",
+              "type": "string"
+            },
+            {
+              "id": "6a5c71a9-9f7a-4e07-b348-a52b352291f6",
+              "name": "base",
+              "value": "={{ $json.base }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [272, 544],
+      "id": "8000fce2-7d2a-42f1-84aa-22182c1b7cf2",
+      "name": "Image and Platform Config"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b3f6eea-2c42-4921-8157-e83d778b76dc",
+              "name": "isSuccess",
+              "value": "={{ Boolean($json.id) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "763c6f9e-f82b-4e90-b364-ec5ef526aec2",
+              "name": "url",
+              "value": "=https://www.facebook.com/{{ $json.id.replaceAll(\"_\",\"/posts/\").trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "5f5ae4a6-bb51-4cf7-81eb-7256fea7b8fa",
+              "name": "name",
+              "value": "={{ $('Loop Over: Platforms').item.json.platforms }}",
+              "type": "string"
+            },
+            {
+              "id": "ed479f2d-f90b-441a-8bfd-51be6169ad14",
+              "name": "message",
+              "value": "={{ \n  Boolean($json.id) ? \n  `${ $('Loop Over: Platforms').item.json.platforms } has been posted successfully` :\n  `\n  An error occured in ${$('Loop Over: Platforms').item.json.platforms }: ${ $json.headers['www-authenticate'] ?? \"Check the platform configuration if needed.\" }\n  `\n}}\n\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [3632, 848],
+      "id": "f5c8e1be-5c67-4f74-a797-c15841c30e5d",
+      "name": "Facebook: Output"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b3f6eea-2c42-4921-8157-e83d778b76dc",
+              "name": "isSuccess",
+              "value": "=false",
+              "type": "boolean"
+            },
+            {
+              "id": "763c6f9e-f82b-4e90-b364-ec5ef526aec2",
+              "name": "url",
+              "value": "=",
+              "type": "string"
+            },
+            {
+              "id": "5f5ae4a6-bb51-4cf7-81eb-7256fea7b8fa",
+              "name": "name",
+              "value": "={{ $('Loop Over: Platforms').item.json.platforms }}",
+              "type": "string"
+            },
+            {
+              "id": "ed479f2d-f90b-441a-8bfd-51be6169ad14",
+              "name": "message",
+              "value": "={{ JSON.stringify($json) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1472, 2048],
+      "id": "889ee7e0-78ef-43f2-8ecf-7a97f14902d3",
+      "name": "Agent: Error Output"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [2240, 1392],
+      "id": "b3c332a6-a99b-4adf-ab4a-74d37ca09ce2",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b3f6eea-2c42-4921-8157-e83d778b76dc",
+              "name": "isSuccess",
+              "value": "={{ Boolean($json.id) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "763c6f9e-f82b-4e90-b364-ec5ef526aec2",
+              "name": "url",
+              "value": "=https://www.reddit.com/",
+              "type": "string"
+            },
+            {
+              "id": "5f5ae4a6-bb51-4cf7-81eb-7256fea7b8fa",
+              "name": "name",
+              "value": "={{ $('Loop Over: Platforms').item.json.platforms }}",
+              "type": "string"
+            },
+            {
+              "id": "ed479f2d-f90b-441a-8bfd-51be6169ad14",
+              "name": "message",
+              "value": "={{ \n  Boolean($json.id) ? \n  `Reddit: ${ $json.output } has been posted successfully` :\n  `\n  An error occured in Reddit: ${ $json.output } : ${ $json.headers['www-authenticate'] ?? \"Check the platform configuration if needed.\" }\n  `\n}}\n\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [3472, 1168],
+      "id": "d557c10b-9530-48d9-be83-3fd7d4d5f92f",
+      "name": "Reddit: Output"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "72e78768-56d7-4ae6-9beb-b020f271b568",
+              "leftValue": "={{ Boolean($('Image and Platform Config').item.json.base) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [3040, 1504],
+      "id": "267f05cb-9b73-409e-b622-9de47175f120",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "me",
+        "edge": "photos",
+        "sendBinaryData": true,
+        "binaryPropertyName": "=data",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{ $('Job Ad Poster Agent').item.json.output }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [2400, 736],
+      "id": "708c2bdd-72e5-465d-ab13-f22b1fb2203b",
+      "name": "Facebook: Post with Image",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "1gFmgdT4hmXWwoIp",
+          "name": "Facebook [Jon Rey:personal]"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "me",
+        "edge": "feed",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{ $('Job Ad Poster Agent').item.json.output }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [2432, 896],
+      "id": "6ef079cb-dcc2-4c6c-97bd-b4c0428b1c5a",
+      "name": "Facebook: Post without Image",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "1gFmgdT4hmXWwoIp",
+          "name": "Facebook [Jon Rey:personal]"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const defaultProps = {\n      sessionId: $('Webhook').first().json.body.sessionId,\n      message: $('Webhook').first().json.body.prompt,\n      ref: 'webhook',\n      metadata: null\n    };\n\nif ($('Webhook').first().binary?.file0) {\n  return [\n    {\n      json: {\n        ...defaultProps,\n        uploadedImage: {\n          ...$('Webhook').first().binary?.file0,\n          base: $json.base\n        }\n      },\n    }\n  ];\n}\n\nreturn [{ json: defaultProps }];\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-3632, 1312],
+      "id": "9bbbbef4-ed28-476d-a7e8-631dd85ee034",
+      "name": "Webhook Config"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nreturn [{ json: {\n      sessionId: $json.sessionId,\n      message: $json.message,\n      ref: $json.ref,\n      metadata: $json?.metadata || {},\n      uploadedImage: $json?.uploadedImage || null\n    } \n}];\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-3392, 1008],
+      "id": "982a1a38-5592-47e6-bde3-5ab6e1abebf6",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "file0",
+        "destinationKey": "base",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [-3856, 1232],
+      "id": "83358c53-f455-43ad-9cb8-b184ae5210eb",
+      "name": "Webhook: Extract from File"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "destinationKey": "base",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [-3840, 736],
+      "id": "91cde96a-10d4-45b0-86fa-ab5bd596745b",
+      "name": "Telegram: Extract from File"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [-320, 256],
+      "id": "a15c5141-1d6c-496f-9bd7-06f7959c3048",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const telegram = $('Telegram Trigger').first();\n\nconst message = `${telegram.json.message.text || telegram.json.message.caption }\n\n**This is the correct value for posted by:** ${ telegram.json.message.from.username} }`;\n\nconst defaultProps = {\n      sessionId: telegram.json.message.chat.id,\n      message: message,\n      ref: 'telegram',\n      metadata: telegram\n    };\n\nif (telegram.binary?.data) {\n  return [\n    {\n      json: {\n        ...defaultProps,\n        uploadedImage: {\n          ...telegram.binary?.file0,\n          base: $json.base\n        }\n      }\n    }\n  ];\n}\n\nreturn [{ json: defaultProps }];\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-3616, 816],
+      "id": "87051612-9442-4c34-905a-5b838d78d60d",
+      "name": "Telegram Config"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "87ab5ec1-5fa1-4b65-a5ae-ce544dcc17a8",
+                    "leftValue": "={{ $json.message.new_chat_participant.username }}",
+                    "rightValue": "pawcoder_job_ad_poster_bot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pawcoder_job_ad_poster_bot"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.left_chat_participant }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "dced2f1f-4bf5-40fd-917a-57b72e909141"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "left_chat_participant"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7920088e-2f8d-420a-9be0-ae50793d063f",
+                    "leftValue": "={{ $json.message.new_chat_participant }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "new_chat_participant"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0c48e9d1-4aa3-4af0-9ec4-e26a8667cf8e",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "start"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [-4288, 480],
+      "id": "8f2b4a96-7a6b-4463-b1a9-36033b5591d1",
+      "name": "Telegram Input Router"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8b9215de-c63c-416d-aee7-db7da158c392",
+              "leftValue": "={{ $binary }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-4080, 1296],
+      "id": "e736c15f-be22-4dbb-b9d5-334499efe52a",
+      "name": "has a Webhook File?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8b9215de-c63c-416d-aee7-db7da158c392",
+              "leftValue": "={{ $binary }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-4064, 816],
+      "id": "0cd98160-7350-495a-bcd6-7a162b245682",
+      "name": "has a Telegram File?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "656efb30-94c8-4005-8289-440eb093d272",
+              "leftValue": "={{ $('Config').item.json.uploadedImage?.fileType}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-3184, 1008],
+      "id": "567c0713-8611-4ca1-b4b6-63e6f4069af1",
+      "name": "is Image Exists?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "21372383-d8a8-4bba-94e1-f929505d6fae",
+              "leftValue": "={{ $('Config').item.json.uploadedImage.fileType }}",
+              "rightValue": "image",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-2560, 720],
+      "id": "ada87a69-6761-496d-a81e-320dd1fe57dd",
+      "name": "is it an Image File?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9024872b-73e3-4f0e-8f83-3c5c48d0288d",
+              "name": "message",
+              "value": "Uploaded file must be an image",
+              "type": "string"
+            },
+            {
+              "id": "81641c20-55d1-4f2d-a249-b4cbb74d22fa",
+              "name": "status",
+              "value": 400,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-2224, 48],
+      "id": "259d6bc5-8664-4d7b-bfe6-e6d2f4eb7e9a",
+      "name": "Not an image response"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "691f106f-8678-4896-8c76-874af56230e2",
+              "leftValue": "={{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.image && !Boolean($('Config').item.json.uploadedImage) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1040, 1280],
+      "id": "dc79a5bf-1480-4587-9648-a4584765c810",
+      "name": "Generate an image?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9e600e4a-02d5-4efb-b75b-1a6e58678aa7",
+              "name": "base",
+              "value": "={{ $('Config').item.json.uploadedImage.base }}",
+              "type": "string"
+            },
+            {
+              "id": "0b53e735-3348-43f7-a547-bb19aba98331",
+              "name": "mime",
+              "value": "={{ $('Config').item.json.uploadedImage.mimeType }}",
+              "type": "string"
+            },
+            {
+              "id": "5a5b484c-9c4a-49b8-9557-ceafa7c7cd85",
+              "name": "",
+              "value": "={{ $('Config').item.json.uploadedImage }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-704, 1296],
+      "id": "05c98014-82c7-4faa-8fc3-ad7dcfb9ee1e",
+      "name": "Uploaded Image Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "422a1553-1d74-4aae-8d99-24793d299ee0",
+              "name": "prompt",
+              "value": "=# Professional Hiring Advertisement Banner Prompt\n---\n\n{{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.markdown }}\n---\n\n**Company Details:**\nname: {{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.data.company.name }}\ncontact: {{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.data.company.contact }}\nlocation: {{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.data.company.location }}\n\n\nNote:Analyze the job details above\n\n**Goal:** Generate a professional-looking hiring advertisement banner for a **{{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.data.job_title }}** position, styled similarly to an infographic, detailed text and summary of the job that easily attract applicants and easily approve by moderators, no need to add the whole detailed text just the main point of the job and you must render the text properly. The overall design should be clear and informative.\n\n---\n\n## Visual Elements and Style\n\n* **Background:** Use a **dark, muted, and slightly blurry background** that suggests a modern, professional, or digital environment. A **dark grey or black overlay** with a subtle spotlight effect is preferred.\n\n* **Text/Typography:**\n    * The main headline, \"**We Are HIRING**,\" should be prominent. \"**HIRING**\" must be in **large, bold, white, sans-serif font**.\n    * Include a smaller, white text line beneath it that says: \"**{{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.data.job_type }}**.\"\n    * A large **black bar/overlay** should run across the bottom third of the image, containing the role: \"**{{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.data.job_title }}**.\" This text should be in **bold, white, sans-serif font** and centered within the black bar.\n\n* **Supporting Imagery:**\n    * Analyze the Job Details and generate the proper supporting image for it (eg. background, banner, anything that it suit the information)\n\n---\n\n## Mood and Tone\n\nThe overall image should convey **professionalism, urgency, and a focus on digital media and technology**.\n\n---\n\n## Aspect Ratio\n\nUse a **wide banner aspect ratio** (e.g., 16:9 or 2:1) suitable for a social media ad.",
+              "type": "string"
+            },
+            {
+              "id": "a25ca3b7-c715-49dd-8a24-aa84a244b183",
+              "name": "model",
+              "value": "google/gemini-2.5-flash-image-preview",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-400, 544],
+      "id": "af6fc36c-70da-4863-a259-b20797ccc804",
+      "name": "Image Generator Config"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"{{ $json.model }}\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"{{ $json.prompt.replaceAll('\\n',\"\\\\n\").replaceAll('\"', '\\\\\"') }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-176, 544],
+      "id": "3d15a73a-702b-456e-a2de-ece6183c3c40",
+      "name": "NANO BANANA",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0yyt4YmtAikN6fuK",
+          "name": "OpenRouter [Jon Rey:pops]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9e600e4a-02d5-4efb-b75b-1a6e58678aa7",
+              "name": "base",
+              "value": "={{ $json.choices[0].message.images[0].image_url.url.split(\",\")[1] }}",
+              "type": "string"
+            },
+            {
+              "id": "0b53e735-3348-43f7-a547-bb19aba98331",
+              "name": "mime",
+              "value": "={{ $json.choices[0].message.images[0].image_url.url.split(\";\")[0].split(\":\")[1] || 'image/png' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [48, 544],
+      "id": "bdf0f6a9-3933-4f87-acee-89e65fd5329b",
+      "name": "Generated Image Data"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "platforms",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [496, 544],
+      "id": "d7c50444-64e3-4a2c-8410-20e50cf9a04e",
+      "name": "Platforms: Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [720, 640],
+      "id": "1aa6c0f3-bb82-4aff-9062-c7d769cb07d1",
+      "name": "Loop Over: Platforms"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1T103Op3e5phyqPT5PYc75geZkOyYXqN_pKZF2Lc7OCo",
+          "mode": "list",
+          "cachedResultName": "Platform-formatter",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1T103Op3e5phyqPT5PYc75geZkOyYXqN_pKZF2Lc7OCo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "posting-platforms",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1T103Op3e5phyqPT5PYc75geZkOyYXqN_pKZF2Lc7OCo/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "platform",
+              "lookupValue": "={{ $json.platforms }}"
+            },
+            {
+              "lookupColumn": "is_available",
+              "lookupValue": "yes"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [944, 880],
+      "id": "96f985c4-937f-4d74-8c85-02d60b5297f5",
+      "name": "Get the platform",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rWi8akk4LdM1YIGq",
+          "name": "Google Sheets [Jon Rey:popai]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Loop Over: Platforms').item.json.platforms }}",
+                    "rightValue": "facebook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "65a9a757-90e4-4eb2-84b0-62405e430e83"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "facebook"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7d3dbcc7-cf7d-4ccf-b3e5-614ae9598383",
+                    "leftValue": "={{ $('Loop Over: Platforms').item.json.platforms }}",
+                    "rightValue": "reddit",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reddit"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [1520, 832],
+      "id": "5421bebf-0188-44e5-9964-0bd11f6b53ff",
+      "name": "Platform Post Router"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1T103Op3e5phyqPT5PYc75geZkOyYXqN_pKZF2Lc7OCo",
+          "mode": "list",
+          "cachedResultName": "Platform-formatter",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1T103Op3e5phyqPT5PYc75geZkOyYXqN_pKZF2Lc7OCo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1978454802,
+          "mode": "list",
+          "cachedResultName": "reddit-details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1T103Op3e5phyqPT5PYc75geZkOyYXqN_pKZF2Lc7OCo/edit#gid=1978454802"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "is_available",
+              "lookupValue": "yes"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [1712, 1168],
+      "id": "b615e2ff-87d3-4712-b342-d3022ab13d31",
+      "name": "Get Subreddit",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rWi8akk4LdM1YIGq",
+          "name": "Google Sheets [Jon Rey:popai]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1936, 1168],
+      "id": "62085687-b329-4370-be4b-9e78f59c4c9f",
+      "name": "Aggregate Subreddits"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Job Ad Poster Agent').item.json.output }}",
+        "options": {
+          "systemMessage": "=System:\nYou are a Smart Subreddit Finder AI Agent.\n\nCurrent Date and Time: {{ $now }}\n\nObjective:\n- Analyze the user-provided job details and determine the most relevant subreddit communities where this job should be posted or discussed.\n- Be conservative: prefer subreddits that accept job posts or active communities around the role/skill.\n\nSubreddit list:\n{{ $json.data.map((subreddit, index) => (`${index + 1}) ${subreddit.subreddit}\\n- ${subreddit.description}`)).join(\"\\n\\n\") }}\n---\nBehavior:\n- Read the full job text; extract role, domain, tech/skills, seniority, location/remote, company type (startup/enterprise), and special context (contract/part-time/academic).\n- For each candidate subreddit, run a careful internal reasoning step (self-reflection). You may call the \"think\" tool to explicitly reflect before deciding.\n- Self-reflection checklist (run for every decision):\n  - Is the subreddit focused on the job's domain or core skill?\n  - Is the subreddit active and reasonably moderated?\n  - Would posts like this be on-topic (jobs, hiring, career advice, contract gigs, remote, student roles)?\n  - Does the subreddit’s rules permit job posts or hiring-related content?\n  - Does the subreddit match seniority (e.g., r/forhire vs r/cscareerquestions for seniors)?\n  - Are there niche communities that strongly match (e.g., language/framework/industry-specific)?\n- Think deeply — do not shortcut. If you feel uncertain about a subreddit, run one more short self-reflection before including it.\n- Do not ask the user for more info. Assume enough context to decide.\n\nConstraints:\n- Exclude unrelated, banned, or obviously off-topic subreddits.\n- Prefer specific, high-signal subreddits over generic ones, but include 1–2 broader communities if relevant.\n- Always output only a JSON array of subreddit names. No descriptions, no explanations, no extra fields, no text.\n- If zero good matches are found, return an empty JSON array: []\n\nOutput:\n- Return exactly:\n[\n  ...subreddit list\n]\n\nAssistant (tone):\n- Direct, factual, slightly witty — think like a recruiter who also reads niche forums.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [2160, 1168],
+      "id": "94f2764b-c313-4b08-8d2e-480076ccacac",
+      "name": "Subreddit Finder AI Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa750d60-7f0f-4cce-aea6-24bd9110996b",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2480, 1168],
+      "id": "f6b34f5c-5638-49fe-8b3d-298a8cd5159f",
+      "name": "Parse subreddit output"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [2688, 1168],
+      "id": "fc3e8ca1-5711-481f-8db7-6d71ec539965",
+      "name": "Subreddits: Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [2928, 1184],
+      "id": "653d4aa0-b823-4809-bd1b-b09ce8d94f1e",
+      "name": "Loop Over: Subreddit"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "858ec1e7-04b2-4c29-a138-623563f67e3d",
+              "name": "data",
+              "value": "={{ $('Image and Platform Config').item.json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "7b7254ed-5f45-44a1-925f-fa9298546929",
+              "name": "base",
+              "value": "={{ $('Image and Platform Config').item.json.base }}",
+              "type": "string"
+            },
+            {
+              "id": "aa8201ea-60ce-4427-9342-9adde65bac4e",
+              "name": "mime",
+              "value": "={{ $('Image and Platform Config').item.json.mime }}",
+              "type": "string"
+            },
+            {
+              "id": "bcd89462-9b6c-47fa-9025-290bea619a16",
+              "name": "fileName",
+              "value": "={{ $('Image and Platform Config').item.json.fileName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [3200, 1392],
+      "id": "cdb2295b-84a2-488b-b046-686d55a6716a",
+      "name": "Subreddit with image data"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "=base",
+        "binaryPropertyName": "=data",
+        "options": {
+          "fileName": "={{ $json.fileName }}",
+          "mimeType": "={{ $json.mime }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [3376, 1392],
+      "id": "b2162a15-42ef-47e0-98d0-55b25000619a",
+      "name": "Image: Subreddit"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b3f6eea-2c42-4921-8157-e83d778b76dc",
+              "name": "isSuccess",
+              "value": "={{ Boolean($json.id) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "763c6f9e-f82b-4e90-b364-ec5ef526aec2",
+              "name": "url",
+              "value": "=https://www.reddit.com/",
+              "type": "string"
+            },
+            {
+              "id": "5f5ae4a6-bb51-4cf7-81eb-7256fea7b8fa",
+              "name": "name",
+              "value": "={{ `${$('Loop Over: Platforms').item.json.platforms}:${$json.output}` }}",
+              "type": "string"
+            },
+            {
+              "id": "ed479f2d-f90b-441a-8bfd-51be6169ad14",
+              "name": "message",
+              "value": "={{ \n  Boolean($json.id) ? \n  `Reddit: ${ $json.output } has been posted successfully` :\n  `\n  An error occured in Reddit: ${ $json.output } : ${ $json.headers['www-authenticate'] ?? \"Check the platform configuration if needed.\" }\n  `\n}}\n\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [3648, 1504],
+      "id": "22af809e-4d87-473d-86d6-d436bcff0e34",
+      "name": "Subreddit: with image"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b3f6eea-2c42-4921-8157-e83d778b76dc",
+              "name": "isSuccess",
+              "value": "={{ Boolean($json.id) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "763c6f9e-f82b-4e90-b364-ec5ef526aec2",
+              "name": "url",
+              "value": "=https://www.reddit.com/",
+              "type": "string"
+            },
+            {
+              "id": "5f5ae4a6-bb51-4cf7-81eb-7256fea7b8fa",
+              "name": "name",
+              "value": "={{ `${$('Loop Over: Platforms').item.json.platforms}:${$json.output}` }}",
+              "type": "string"
+            },
+            {
+              "id": "ed479f2d-f90b-441a-8bfd-51be6169ad14",
+              "name": "message",
+              "value": "={{ \n  Boolean($json.id) ? \n  `Reddit: ${ $json.output } has been posted successfully` :\n  `\n  An error occured in Reddit: ${ $json.output } : ${ $json.headers['www-authenticate'] ?? \"Check the platform configuration if needed.\" }\n  `\n}}\n\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [3248, 1696],
+      "id": "d819198e-a15f-4f71-af83-2345608dd4e7",
+      "name": "Subreddit: without image"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [5664, 2224],
+      "id": "7854ec62-2268-4db6-8cf1-0a3d3e7b88c5",
+      "name": "Wait for next platform iteration",
+      "webhookId": "11b78783-6305-45e3-a5d4-cd67e6ae8154"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [3840, 1696],
+      "id": "a7ea71de-e9c6-45b3-8ac5-2e0fb4415273",
+      "name": "Wait for next subreddit iteration",
+      "webhookId": "30bc8d2a-f0a5-4b9f-961f-710a8db0a186"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1712, 416],
+      "id": "54caf8a5-b553-4362-9cfe-a1d6e10107b5",
+      "name": "Respond to Webhook Error"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.message }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [2016, 304],
+      "id": "eacc921b-b723-402b-af9c-ffbe43c9b4b9",
+      "name": "Chat-Node Error Message2"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Config').item.json.ref }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "67fdc8ac-216f-4178-813c-114205b8d912"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "090f8112-b575-4ccf-8f24-6603f20cb12c",
+                    "leftValue": "={{ $('Config').item.json.ref }}",
+                    "rightValue": "chat-node",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "chat-node"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b4939932-fddf-4dca-808f-24f4c7fba78f",
+                    "leftValue": "={{ $('Config').item.json.ref }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [1552, 176],
+      "id": "1652bb1e-f875-4540-9840-f67ede4efc2d",
+      "name": "Error Response2"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Config').item.json.ref }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "0711d718-2002-49ef-8078-21960aaaf9b5"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "421c00bb-de56-46eb-b191-a30eef6d84ce",
+                    "leftValue": "={{ $('Config').item.json.ref }}",
+                    "rightValue": "chat-node",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "chat-node"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e1bfb3e6-8192-43cb-8e07-cd8ce19ff86d",
+                    "leftValue": "={{ $('Config').item.json.ref }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [-640, 32],
+      "id": "ff015eab-a83d-4344-b21c-8463468d7c31",
+      "name": "Error Response Router"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9024872b-73e3-4f0e-8f83-3c5c48d0288d",
+              "name": "message",
+              "value": "={{ $json.output.message }}",
+              "type": "string"
+            },
+            {
+              "id": "6ffc9d74-3638-4ef6-af59-3cf446f37ab3",
+              "name": "status",
+              "value": 400,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1056, 256],
+      "id": "2015dc55-d682-41b4-af42-ef39eb309b3c",
+      "name": "Error Response"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Parsed Data: Smart Job Ad Validation & Extraction Agent').item.json.output.markdown }}\n",
+        "options": {
+          "systemMessage": "=# Job Ad Poster AI – Per-Platform Atomic Processing (Self-Reflective & Recruiter-Grade)\n\n## Overview\nYou are a smart **Job Ad Poster AI for {{ $json.platform }}**.  \nYour task is to convert a job post into **{{ $json.message_formatter || \"markdown\" }}** format — producing a single, stylized, ready-to-post text block that grabs attention at a single glance.\n\n## Input Cleaning\n- Preserve all original content (headings, bullets, hashtags, spacing, links, emojis).  \n- Never change meaning, facts, or intent — only adjust presentation and style per rules.\n\n## Additional Rules\n{{ $json.additional_rules }}\n---\n\n## Pre-Execution Check\nSilently verify that `platform`, `message_formatter`, and `additional_rules` are loaded and understood. Do not output this check.\n\n## Processing Steps\n1. Parse the input: extract title, company (if present), location, salary, bullets, links, hashtags, and CTA.  \n2. Sequentially apply **Additional Rules** in order (later rules override earlier ones). Treat each list item as a discrete instruction.  \n3. Format according to **{{ $json.message_formatter || \"markdown\" }}** (default = markdown). Respect any explicit formatter constraints from rules.  \n4. **Self-Reflect — Style, Recruitment & UX Pass (MANDATORY):**\n   - Ask yourself silently:  \n     - “Is this visually appealing and attractive?”  \n     - “Would this make a qualified applicant curious within one glance?”  \n     - “Does the hierarchy (title → company → key perks → CTA) read instantly?”  \n     - “Are emojis, icons, and bullets used to enhance scanning, not distract?”  \n     - “Is the first line a magnetic hook that signals value or uniqueness?”  \n   - Review only visual/style/UX aspects: typography-equivalent (bold/italic emphasis choices), line breaks, leading hook, emoji/icon placement, badge-like perks, slug correctness for appended URL, hashtag visibility, divider removal, and concise CTA placement.  \n   - Make **style-only** adjustments to maximize recruiter appeal and scannability — do **not** alter wording, facts, or intent. Examples of allowed style tweaks: swap `-` to `✅`, add `📍` before company, add `💰` before salary, remove `---` dividers, ensure hashtags are plain and visible, ensure header uses emoji instead of `##` where asked, ensure top line is concise and hooky (without changing wording).  \n   - If multiple style choices conflict, prefer the version that increases clarity and curiosity for a recruiter/audience at a single glance.\n5. Finalize and output the formatted job post text exactly as the final product.  \n   - Output must be plain text formatted per `message_formatter`.  \n   - Do **not** wrap output in backticks or code fences.  \n   - Do **not** include JSON, metadata, explanations, or any extra text.  \n   - End the response immediately after the formatted text.\n\n## Enforcement Rules\n- Apply every item in `{{ $json.additional_rules }}` exactly and sequentially.  \n- Output must match the stylistic expectations of **{{ $json.platform }}**.  \n- Default formatter is `markdown` when `message_formatter` is not provided.  \n- Never change meaning, data, or intent — only styles and presentation.  \n- Final output = one clean, recruiter-appealing text block — nothing else.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [1168, 880],
+      "id": "f4639663-40c9-4138-b1b3-e51d2fb4dcf4",
+      "name": "Job Ad Poster Agent",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const defaultProps = {\n      sessionId: $input.first().json.sessionId,\n      message: $input.first().json.chatInput,\n      ref: 'chat-node',\n      metadata: null\n    };\n\nreturn [{ json: defaultProps }];\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-3696, 1024],
+      "id": "a0a54cd4-f7c6-4337-85c6-2a62d038d6e4",
+      "name": "Chat Config"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [-3952, 1024],
+      "id": "c2f7acf2-4280-47bb-b574-32fd473e6159",
+      "name": "When chat message received",
+      "webhookId": "0eedb290-d3ca-48e1-a4cc-11b4294aa19e"
+    }
+  ],
+  "connections": {
+    "OpenRouter Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Smart Job Ad Validation & Extraction Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Smart Job Ad Validation & Extraction Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Telegram Input Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Available Platforms": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Job Ad Validation & Extraction Agent": {
+      "main": [
+        [
+          {
+            "node": "Parsed Data: Smart Job Ad Validation & Extraction Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsed Data: Smart Job Ad Validation & Extraction Agent": {
+      "main": [
+        [
+          {
+            "node": "is Extraction Failed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is Extraction Failed?": {
+      "main": [
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate an image?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Job Ad Poster Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Subreddit Finder AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Platform:Output": {
+      "main": [
+        [
+          {
+            "node": "Wait for next platform iteration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields4": {
+      "main": [
+        [
+          {
+            "node": "Error Response2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields7",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Facebook: Post without Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields7": {
+      "main": [
+        [
+          {
+            "node": "Image2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image2": {
+      "main": [
+        [
+          {
+            "node": "Facebook: Post with Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "has a Webhook File?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image and Platform Config": {
+      "main": [
+        [
+          {
+            "node": "Platforms: Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook: Output": {
+      "main": [
+        [
+          {
+            "node": "Platform:Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent: Error Output": {
+      "main": [
+        [
+          {
+            "node": "Platform:Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "Subreddit Finder AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit: Output": {
+      "main": [
+        [
+          {
+            "node": "Platform:Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Subreddit with image data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Subreddit: without image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook: Post with Image": {
+      "main": [
+        [
+          {
+            "node": "Facebook: Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Facebook: Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook: Post without Image": {
+      "main": [
+        [
+          {
+            "node": "Facebook: Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Facebook: Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Config": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "is Image Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Webhook Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram: Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Telegram Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Config": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Input Router": {
+      "main": [
+        [
+          {
+            "node": "Bot has been added message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "goodbye message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "welcome message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "welcome message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "has a Telegram File?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "has a Webhook File?": {
+      "main": [
+        [
+          {
+            "node": "Webhook: Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Webhook Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "has a Telegram File?": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is Image Exists?": {
+      "main": [
+        [
+          {
+            "node": "is it an Image File?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Available Platforms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is it an Image File?": {
+      "main": [
+        [
+          {
+            "node": "Not an image response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Smart Job Ad Validation & Extraction Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not an image response": {
+      "main": [
+        [
+          {
+            "node": "Error Response Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image?": {
+      "main": [
+        [
+          {
+            "node": "Image Generator Config",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Uploaded Image Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Uploaded Image Data": {
+      "main": [
+        [
+          {
+            "node": "Image and Platform Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Generator Config": {
+      "main": [
+        [
+          {
+            "node": "NANO BANANA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NANO BANANA": {
+      "main": [
+        [
+          {
+            "node": "Generated Image Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generated Image Data": {
+      "main": [
+        [
+          {
+            "node": "Image and Platform Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Platforms: Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over: Platforms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over: Platforms": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get the platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get the platform": {
+      "main": [
+        [
+          {
+            "node": "Job Ad Poster Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Platform Post Router": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Subreddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Subreddit": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Subreddits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Subreddits": {
+      "main": [
+        [
+          {
+            "node": "Subreddit Finder AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subreddit Finder AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse subreddit output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse subreddit output": {
+      "main": [
+        [
+          {
+            "node": "Subreddits: Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subreddits: Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over: Subreddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over: Subreddit": {
+      "main": [
+        [
+          {
+            "node": "Reddit: Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subreddit with image data": {
+      "main": [
+        [
+          {
+            "node": "Image: Subreddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: Subreddit": {
+      "main": [
+        [
+          {
+            "node": "Subreddit: with image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subreddit: with image": {
+      "main": [
+        [
+          {
+            "node": "Wait for next subreddit iteration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subreddit: without image": {
+      "main": [
+        [
+          {
+            "node": "Wait for next subreddit iteration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for next platform iteration": {
+      "main": [
+        [
+          {
+            "node": "Loop Over: Platforms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for next subreddit iteration": {
+      "main": [
+        [
+          {
+            "node": "Loop Over: Subreddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Response2": {
+      "main": [
+        [
+          {
+            "node": "Telegram Error Message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Chat-Node Error Message2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Response Router": {
+      "main": [
+        [
+          {
+            "node": "Telegram Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Chat-Node Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Response": {
+      "main": [
+        [
+          {
+            "node": "Error Response Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Ad Poster Agent": {
+      "main": [
+        [
+          {
+            "node": "Platform Post Router",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agent: Error Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Config": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Chat Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  }
+}

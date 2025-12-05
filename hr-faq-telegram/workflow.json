@@ -1,0 +1,330 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Telegram Trigger').first().json.message.text }}",
+        "options": {
+          "systemMessage": "=NMS Philippines Chatbot Context – Vee\n\nYou are \"Vee\", a friendly, witty, female website chatbot for New Media Services (NMS Philippines, Baguio City).  \nYou operate in Manila timezone (GMT+8).  \nThe current date is {{ $now.format('yyyy-MM-dd') }}.\n\nBusiness Overview:\n- Company Name: New Media Services Pty Ltd (NMS)\n- Founded: 2007 in Australia by Martin Eyking\n- Scale: 2,000+ staff, 500+ projects\n- Head Office: Melbourne, Victoria, Australia\n- Other Offices: USA (Texas, San Antonio, San Francisco), Philippines (Manila, Baguio), Switzerland (Zurich), UK (London), Netherlands (Amsterdam), Ukraine (Dnipro)\n- Philippines Hub: Established 2011 in Baguio City, PEZA-accredited in 2013\n- Culture: Supportive, diverse, growth-oriented, professional yet fun\n- Mission: \"Conquer the impossible\" through synergy of people + technology\n\nCore Services:\n- AI-Enhanced BPO & Outsourcing – customer support, HR, IT, design, virtual assistants, AI agents, LOOP/TIRO platforms\n- Multilingual Support – 24/7 via voice, chat, email, multiple languages\n- Content Moderation – AI + human for images, videos, UGC, social media\n- Voice Support – inbound/outbound calls, escalation management\n\nTools:\n[FAQ_Query_Tool]\n- Connect to this tool to get all Frequently Asked Questions.\n- Input will be ('query') where 'query' is the users prompt.\n- Provides question/answer pairs for HR-related queries.\n\nChatbot Rules & Flow:\n[Default Tone]\n- Default tone: professional.\n- Current tone: {{ $('Tone Save').first().json.tone }}\n- Always reply using the current tone.\n\n[Tone Switching]\n- If \"showOptions\" = true → display the available tones from {{ JSON.stringify($('Tone Save').first().json.tones) }}.  \n- If \"showOptions\" = false → do NOT display tone options, just continue with the current tone.  \n- Once a tone is selected, update it consistently until changed again.\n\n\n[Knowledge Source Priority]\n- Use [FAQ_Query_Tool] as the knowledgebase for questions and answers.\n- If no FAQ entry is relevant, let the user know no FAQ covers their question and share helpful company information instead. \n- Never include unrelated FAQ entries.\n- Always append this exact phrase to the end of every FAQ answer(translate to appropriate language): \"If this is not what you're looking for, please let me know so I can assist further.\"\n\n\nIf conversation goes off-topic, politely steer back to NMS.\n"
+        }
+      },
+      "id": "4d6ec9ea-2a56-4056-a5f0-3b8c10ca3bc3",
+      "name": "NMS HR Assistant Agent",
+      "position": [352, -16],
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ $('NMS HR Assistant Agent').item.json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "5957494f-ed46-476f-a0b3-cd61c33df3ea",
+      "name": "Send Telegram Response",
+      "position": [704, -16],
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "webhookId": "afcc418d-4723-4f60-a577-c5f3bd7a309e",
+      "credentials": {
+        "telegramApi": {
+          "id": "fL5ee1LmF79BrRUq",
+          "name": "Telegram @hr_inquiry_chatbot PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "74f04fd1-8e7e-47e6-a229-851cbdec7ace",
+      "name": "Telegram Trigger",
+      "position": [-96, -16],
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "webhookId": "5757ba5b-b427-4af8-a23b-7527a0f01ae8",
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "fL5ee1LmF79BrRUq",
+          "name": "Telegram @hr_inquiry_chatbot PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = this.$getWorkflowStaticData('global');\nconst chatId     = $('Telegram Trigger').first().json.message.chat.id;\nconst userMsg    = $('Telegram Trigger').first().json.message.text.toLowerCase();\n\nstaticData.tones     ??= {};\nstaticData.askedTone ??= {};\nstaticData.tones[chatId] ??= 'professional';\n\nlet showOptions = false;\n\nconst toneMap = {\n  informal:    ['informal', 'casual'],\n  formal:      ['formal'],\n  professional:['professional'],\n  humorous:    ['humorous', 'funny']\n};\n\nif (/\\b(tone|style|formal|informal|casual|professional|humorous|funny)\\b/.test(userMsg)) {\n  let matchedTone = null;\n\n  for (const [tone, words] of Object.entries(toneMap)) {\n    if (words.some(w => userMsg.includes(w))) {\n      matchedTone = tone;\n      break;\n    }\n  }\n\n  if (matchedTone) {\n    staticData.tones[chatId] = matchedTone;\n  } else if (!staticData.askedTone[chatId]) {\n    showOptions = true;\n    staticData.askedTone[chatId] = true;\n  }\n}\n\nreturn [{\n  json: {\n    tone: staticData.tones[chatId],\n    tones: {\n      formal: \"Polished, structured, precise.\",\n      informal: \"Conversational and relaxed.\",\n      professional: \"Clear, respectful, and confident.\",\n      humorous: \"Lighthearted, witty, and entertaining.\"\n    },\n    showOptions\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [128, -16],
+      "id": "d30ca93d-312a-401a-bf87-d254781b3b00",
+      "name": "Tone Save"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $items().map(item => {\n  const row = item.json;\n  return {\n    json: {\n      id: row.ID,\n      text: `QUESTION: ${row.QUESTION}\\nANSWER:${row.ANSWER}`\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [192, 448],
+      "id": "b1c768a0-a19c-49dd-922c-62d531fb26f2",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [400, 448],
+      "id": "454a3232-d241-40b3-9d3d-f7040aad5910",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.popapps.ai/webhook/archivist-rag",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=data",
+              "value": "={{ $json.data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [608, 448],
+      "id": "b97485b3-2fc2-4251-ab92-1efd49253999",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "w3jv4lim4XPFU49H",
+          "name": "RAG API: PROD - hr_telegram_knowledge_base"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Pull FAQ and Store to Vector Database",
+        "height": 208,
+        "width": 864
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-80, 400],
+      "typeVersion": 1,
+      "id": "58d803e7-9a19-47d5-9276-b423e344be5f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.popapps.ai/webhook/rag-researcher",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [496, 176],
+      "id": "628b30f5-30b7-4753-956b-9667429f40f6",
+      "name": "FAQ_Query_Tool",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "w3jv4lim4XPFU49H",
+          "name": "RAG API: PROD - hr_telegram_knowledge_base"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1ZQa2MlR6OhUIA9f-jVflxqy6JTrwpotqUfNXYrZU2fU",
+          "mode": "list",
+          "cachedResultName": "NMS FAQ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZQa2MlR6OhUIA9f-jVflxqy6JTrwpotqUfNXYrZU2fU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1575280161,
+          "mode": "list",
+          "cachedResultName": "HR",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZQa2MlR6OhUIA9f-jVflxqy6JTrwpotqUfNXYrZU2fU/edit#gid=1575280161"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [-16, 448],
+      "id": "1f8b53b1-c1f4-48a7-b99a-c56dbcdd8e87",
+      "name": "HR FAQ Sheet",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "mAI0fDvv46jdiyQs",
+          "name": "Google Sheets - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [320, 176],
+      "id": "03940eed-751a-4576-b47c-1c199ce8d174",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Bv9gd6EUW9thiAnj",
+          "name": "OpenAi PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [160, 176],
+      "id": "eb86c664-a313-4bd3-ac04-332df36c907e",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0fGm0bmsTQiGNBk2",
+          "name": "cris@popai.agency [request from AunAli]"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "NMS HR Assistant Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Tone Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tone Save": {
+      "main": [
+        [
+          {
+            "node": "NMS HR Assistant Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAQ_Query_Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "NMS HR Assistant Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HR FAQ Sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "NMS HR Assistant Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  }
+}

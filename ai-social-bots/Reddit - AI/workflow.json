@@ -1,0 +1,2292 @@
+{
+  "name": "Reddit - AI",
+  "nodes": [
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Format chat id  and context').isExecuted ? $('Format chat id  and context').item.json.chatid : $json.chatid }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -5008,
+        1632
+      ],
+      "id": "90613dc4-2338-42f1-9880-efac44e5e056",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -5168,
+        1632
+      ],
+      "id": "db71a06d-12e3-40fd-bc4b-aa53159df539",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kIf8f9beW222JuhO",
+          "name": "googel nms account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "be45b180-b32d-41ff-90ed-cdc59d74d4af",
+              "name": "chatid",
+              "value": "={{ $('Telegram Reddit bot').item.json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "ba649496-8c67-49ae-8977-0dad41d72148",
+              "name": "text",
+              "value": "={{ $('Telegram Reddit bot').item.json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5408,
+        1408
+      ],
+      "id": "21a40266-be2b-4fc8-bb0e-42a716b955b4",
+      "name": "Format chat id  and context"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Generate Reddit Content').item.json.output.chat_id }}",
+        "text": "🔍 Take a moment to review! The workflow is paused",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "✅ Post to Reddit",
+                    "additionalFields": {
+                      "callback_data": "postReddit"
+                    }
+                  },
+                  {
+                    "text": "❌ Generate a new one?",
+                    "additionalFields": {
+                      "callback_data": "generate"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "reply_to_message_id": "={{ $json.result.message_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -4160,
+        1408
+      ],
+      "id": "122892df-1118-4bbe-bf9a-aa7caecfb6da",
+      "name": "Confirmation of the content",
+      "webhookId": "beb849a6-aa53-485e-bb87-b8702377fd20",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -6384,
+        2128
+      ],
+      "id": "0dd185f8-51c5-4a1f-a2eb-aec46fd5b1d3",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kIf8f9beW222JuhO",
+          "name": "googel nms account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatid }}",
+        "text": "=Please wait for a 2-3 minutes {{ $('Telegram Reddit bot').item.json.message.chat.first_name }}, I will generate your content shortly...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -5152,
+        1408
+      ],
+      "id": "1472e8c7-44f9-4240-8a7c-eabc94b6e6b6",
+      "name": "Send Processing Notification",
+      "webhookId": "5b6e5c2c-0f1d-45d4-84a3-a2a12d78bf82",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Format chat id  and context').isExecuted ? $('Format chat id  and context').item.json.text : $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are a Reddit Content Creator AI.\nYour goal is to generate short, engaging, and trendy Reddit captions based on current trending topics — to increase engagement and upvotes.\n\nSTEP 1: TREND RESEARCH (MANDATORY)\n\n**ALWAYS use the \"Google_search_engine\" tool FIRST before generating any content.**\n**You MUST perform at least 4 searches with different keywords to gather comprehensive trend data.**\n\nHOW TO RESEARCH TRENDS:\n1. Call Google_search_engine with the user's topic + \"trends {{ new Date($today).toLocaleString(\"default\", { month: \"long\", year: \"numeric\" }) }}\"\n2. Search for related topics: \"[topic] trending Reddit\"\n3. Search for engagement strategies: \"[topic] Reddit engagement\"\n4. Search for content formats: \"[topic] viral Reddit content {{ new Date($today).toLocaleString(\"default\", { month: \"long\", year: \"numeric\" }) }}\"\n5. Use Further_more_information (Wikipedia) tool if you need background context on the topic\n6. ANALYZE all search results to identify:\n   - Trending topics and themes\n   - Popular content formats (text posts, images, discussions)\n   - High-engagement patterns\n   - Current conversations and user behavior\n\n**CRITICAL:** Always perform multiple searches with varied keywords. The more research, the better your content will perform.\n\nBased on your research, create content that:\n\n✓ Incorporates trending themes/topics from search results\n✓ Aligns with popular content formats found\n✓ Connects the user's topic to current Reddit trends\n✓ Is timely, relevant, and optimized for engagement\n✓ Matches Reddit's conversational tone\n\nCRITICAL OUTPUT RULES\n\n1️⃣ The \"captions\" field must contain **CLEAN TEXT ONLY** — strictly **no hashtags (#)** inside.\n2️⃣ The output must be **a valid JSON object** with **exactly** these three fields:\n   - \"captions\"\n   - \"image_prompt\"\n   - \"chat_id\"\n3️⃣ Do **not** include backticks, markdown formatting, explanations, or extra text.\n4️⃣ Captions must be under 230 characters, fun, casual, and audience-friendly.\n5️⃣ \"image_prompt\" must be 2-3 sentences maximum and incorporate NMS brand colors.\n\nIMAGE PROMPT - NMS BRAND GUIDELINES\n\nEvery \"image_prompt\" MUST include these NMS brand elements:\n\nREQUIRED COLOR PALETTE:\n✓ Vibrant red (#E52B2B) - dominant color\n✓ Warm orange (#FF6B35) - accent color  \n✓ Clean white background\n✓ High contrast, modern aesthetic\n\nVISUAL STYLE:\n✓ Bold, energetic, and eye-catching\n✓ Match trending content formats from your research\n✓ Professional yet approachable\n✓ Clean geometric shapes\n✓ Optimized for Reddit feed (square or 16:9 ratio)\n\nKeep it CONCISE - describe the scene naturally while weaving in the colors.\n\nGOOD Example:\n\"Dynamic illustration of AI-powered interfaces with flowing data streams. Vibrant red (#E52B2B) geometric frames with orange (#FF6B35) glowing tech elements on white background. Modern, high-energy Reddit-optimized composition.\"\n\nJSON OUTPUT FORMAT\n\n{\n  \"captions\": \"<short caption text without hashtags>\",\n  \"image_prompt\": \"<2-3 sentence NMS brand-aligned visual description with red/orange colors>\",\n  \"chat_id\": \"{{ $('Format chat id  and context').isExecuted ? $('Format chat id  and context').item.json.chatid : $json.chatid }}\"\n}\n\n⚠️ CRITICAL REMINDERS:\n- ALWAYS search Google at least 4 times with different keywords FIRST\n- READ all search results before creating content\n- ADAPT your content to match trends discovered in searches\n- Captions: under 230 chars, NO hashtags inside\n- Image prompt: MUST use red (#E52B2B) + orange (#FF6B35) + white\n- Keep image_prompt concise (2-3 sentences)\n- Output ONLY valid JSON, no extra text"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -4912,
+        1408
+      ],
+      "id": "7a6de5f8-2fab-41c8-8c09-468ba7c5dbf1",
+      "name": "Generate Reddit Content"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-preview-image-generation",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash-preview-image-generation"
+        },
+        "prompt": "={{ $json.output.image_prompt }}",
+        "options": {
+          "binaryPropertyOutput": "img"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -4576,
+        1408
+      ],
+      "id": "a19a78e9-b0dd-46c9-9d2c-c34427982a82",
+      "name": "Generate Reddit Image",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kIf8f9beW222JuhO",
+          "name": "googel nms account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Generate Reddit Content').item.json.output.chat_id }}",
+        "binaryData": true,
+        "binaryPropertyName": "img",
+        "replyMarkup": "inlineKeyboard",
+        "additionalFields": {
+          "caption": "={{ $('Generate Reddit Content').item.json.output.captions }}\n\n{{ $('Generate Reddit Content').item.json.output.hashtags }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -4368,
+        1408
+      ],
+      "id": "7d4c24ce-f418-43b1-94f0-5cfe6b6f3ca5",
+      "name": "Send Reddit Preview",
+      "webhookId": "17b332f9-addd-430f-8d85-ea37b7d0ba41",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "54f2260e-ef89-4dda-8f35-161c8304250f",
+              "name": "chatid",
+              "value": "={{ $('Telegram Reddit bot').item.json.callback_query.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "01d7176a-c3ea-43af-ab07-769a7545a632",
+              "name": "caption",
+              "value": "={{ $('Telegram Reddit bot').item.json.callback_query.message.reply_to_message.caption }}",
+              "type": "string"
+            },
+            {
+              "id": "9fb4d824-d1f8-411a-a6dd-07893a5986aa",
+              "name": "file_id",
+              "value": "={{ $('Telegram Reddit bot').item.json.callback_query.message.reply_to_message.photo[3].file_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5456,
+        656
+      ],
+      "id": "d3eab925-27e2-4f30-b689-12a6a9a69878",
+      "name": "Format Reddit Post Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dlydtznlz/image/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "upload_preset",
+              "value": "IGpost"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -4848,
+        656
+      ],
+      "id": "85872658-cffe-4c47-8f00-56c279708e96",
+      "name": "Upload Image to Cloudinary"
+    },
+    {
+      "parameters": {
+        "subreddit": "RandomIsLife",
+        "kind": "link",
+        "title": "={{ $('Format Reddit Post Data').item.json.caption }}",
+        "url": "={{ $json.url }}"
+      },
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [
+        -4640,
+        656
+      ],
+      "id": "8efaa210-0977-4e05-99a4-04bd8f88c452",
+      "name": "Create Reddit Link Post",
+      "retryOnFail": true,
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "2B8FiKzIM2isuR55",
+          "name": "Reddit account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -4416,
+        560
+      ],
+      "id": "78b907ab-581a-46cc-b530-faae85f07a5a",
+      "name": "Wait for Reddit Response",
+      "webhookId": "f840b46c-f32c-4efa-a76b-0326a3403a10"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram Reddit bot').item.json.callback_query.message.reply_to_message.chat.id }}",
+        "messageId": "={{ $('Telegram Reddit bot').item.json.callback_query.message.message_id }}",
+        "replyMarkup": "inlineKeyboard",
+        "text": "Successfully posted to Reddit!",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "View Post",
+                    "additionalFields": {
+                      "url": "={{ $json.url }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -4224,
+        560
+      ],
+      "id": "01b6143f-1c7b-403b-93c2-2a7a4ff1852f",
+      "name": "Send Reddit Link to Telegram",
+      "webhookId": "6ef81e56-a25a-41a3-b92f-0e146e82cb0a",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Reddit bot').item.json.callback_query.message.reply_to_message.chat.id }}",
+        "text": "Would you like me to post this type of topics daily?🤗",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "✅ Yes",
+                    "additionalFields": {
+                      "callback_data": "yesDaily"
+                    }
+                  },
+                  {
+                    "text": "❌ No",
+                    "additionalFields": {
+                      "callback_data": "no"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "reply_to_message_id": "={{ $('Telegram Reddit bot').item.json.callback_query.message.reply_to_message.message_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -4032,
+        560
+      ],
+      "id": "6fc6daff-4019-47d9-b920-7329b5aa423d",
+      "name": "Ask Telegram for Daily Approval”",
+      "webhookId": "beb849a6-aa53-485e-bb87-b8702377fd20",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -4208,
+        736
+      ],
+      "id": "65466d23-5781-48f4-877b-cd2fa360dd69",
+      "name": "No Operation, do nothing",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM",
+          "mode": "list",
+          "cachedResultName": "Social Medias - Ai Agent (DAILY)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1030459467,
+          "mode": "list",
+          "cachedResultName": "Reddit",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM/edit#gid=1030459467"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -6624,
+        1936
+      ],
+      "id": "9efbbd3b-47a0-4ef8-b2aa-8545bef68477",
+      "name": "Fetch Reddit Sheet Rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IzZFdKDy8iaOFYNG",
+          "name": "Google Sheets [ Gabriel ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.ChatID }}",
+        "text": "Time for your daily post! ⏰",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -6416,
+        1936
+      ],
+      "id": "205d95df-f9f2-492f-a1c3-b69257380741",
+      "name": "Send Daily Telegram Reminder",
+      "webhookId": "b584b62d-ead0-433c-bfbd-40a17b5493d0",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Fetch Reddit Sheet Rows').item.json['Topic / Prompt'] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are a Reddit Content Creator AI.\nYour goal is to generate short, engaging, and trendy Reddit captions based on current trending topics — to increase engagement and upvotes.\n\nSTEP 1: TREND RESEARCH (MANDATORY)\n\n**ALWAYS use the \"Google_search_engine\" tool FIRST before generating any content.**\n**You MUST perform at least 4 searches with different keywords to gather comprehensive trend data.**\n\nHOW TO RESEARCH TRENDS:\n1. Call Google_search_engine with the user's topic + \"trends {{ new Date($today).toLocaleString(\"default\", { month: \"long\", year: \"numeric\" }) }}\"\n2. Search for related topics: \"[topic] trending Reddit\"\n3. Search for engagement strategies: \"[topic] Reddit engagement\"\n4. Search for content formats: \"[topic] viral Reddit content {{ new Date($today).toLocaleString(\"default\", { month: \"long\", year: \"numeric\" }) }}\"\n5. Use Further_more_information (Wikipedia) tool if you need background context on the topic\n6. ANALYZE all search results to identify:\n   - Trending topics and themes\n   - Popular content formats (text posts, images, discussions)\n   - High-engagement patterns\n   - Current conversations and user behavior\n\n**CRITICAL:** Always perform multiple searches with varied keywords. The more research, the better your content will perform.\n\nBased on your research, create content that:\n\n✓ Incorporates trending themes/topics from search results\n✓ Aligns with popular content formats found\n✓ Connects the user's topic to current Reddit trends\n✓ Is timely, relevant, and optimized for engagement\n✓ Matches Reddit's conversational tone\n\nCRITICAL OUTPUT RULES\n\n1️⃣ The \"captions\" field must contain **CLEAN TEXT ONLY** — strictly **no hashtags (#)** inside.\n2️⃣ The output must be **a valid JSON object** with **exactly** these three fields:\n   - \"captions\"\n   - \"image_prompt\"\n   - \"chat_id\"\n3️⃣ Do **not** include backticks, markdown formatting, explanations, or extra text.\n4️⃣ Captions must be under 230 characters, fun, casual, and audience-friendly.\n5️⃣ \"image_prompt\" must be 2-3 sentences maximum and incorporate NMS brand colors.\n\nIMAGE PROMPT - NMS BRAND GUIDELINES\n\nEvery \"image_prompt\" MUST include these NMS brand elements:\n\nREQUIRED COLOR PALETTE:\n✓ Vibrant red (#E52B2B) - dominant color\n✓ Warm orange (#FF6B35) - accent color  \n✓ Clean white background\n✓ High contrast, modern aesthetic\n\nVISUAL STYLE:\n✓ Bold, energetic, and eye-catching\n✓ Match trending content formats from your research\n✓ Professional yet approachable\n✓ Clean geometric shapes\n✓ Optimized for Reddit feed (square or 16:9 ratio)\n\nKeep it CONCISE - describe the scene naturally while weaving in the colors.\n\nGOOD Example:\n\"Dynamic illustration of AI-powered interfaces with flowing data streams. Vibrant red (#E52B2B) geometric frames with orange (#FF6B35) glowing tech elements on white background. Modern, high-energy Reddit-optimized composition.\"\n\nJSON OUTPUT FORMAT\n\n{\n  \"captions\": \"<short caption text without hashtags>\",\n  \"image_prompt\": \"<2-3 sentence NMS brand-aligned visual description with red/orange colors>\",\n  \"chat_id\": \"{{ $('Fetch Reddit Sheet Rows').item.json.ChatID }}\"\n}\n\n⚠️ CRITICAL REMINDERS:\n- ALWAYS search Google at least 4 times with different keywords FIRST\n- READ all search results before creating content\n- ADAPT your content to match trends discovered in searches\n- Captions: under 230 chars, NO hashtags inside\n- Image prompt: MUST use red (#E52B2B) + orange (#FF6B35) + white\n- Keep image_prompt concise (2-3 sentences)\n- Output ONLY valid JSON, no extra text"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -6192,
+        1936
+      ],
+      "id": "69846ff7-ccb1-4e2c-859f-22da1f2d55bd",
+      "name": "Generate Reddit Content with AI"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -5248,
+        656
+      ],
+      "id": "37ee61ba-7420-4840-9ac7-15aa3bae49d8",
+      "name": "Download Telegram File",
+      "webhookId": "92f02af2-ffc5-4da6-a88f-99ce89b45527",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -5040,
+        656
+      ],
+      "id": "4d5a0a45-aecb-4311-a2fd-268ccebc3e19",
+      "name": "Wait after Telegram Download",
+      "webhookId": "f840b46c-f32c-4efa-a76b-0326a3403a10"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dlydtznlz/image/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "upload_preset",
+              "value": "IGpost"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -4656,
+        1936
+      ],
+      "id": "40f785f6-d4e7-4437-82aa-1ae41bca889a",
+      "name": "Upload Image to Cloudinary1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -4240,
+        1840
+      ],
+      "id": "fe06afc4-f62b-4938-8927-d63500ea7037",
+      "name": "Wait for Reddit Response1",
+      "webhookId": "fed6824f-9820-4655-8196-aa7d42d249bb"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Format Reddit Post Data').item.json.chatid }}",
+        "text": "=⚠️ Oops, something went wrong. Please try again later.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -4416,
+        736
+      ],
+      "id": "7bee2ee5-37e3-4116-b83f-6e4721644210",
+      "name": "Feedback Error",
+      "webhookId": "6ef81e56-a25a-41a3-b92f-0e146e82cb0a",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Format New Reddit Data').item.json.chatid }}",
+        "text": "=⚠️ Oops, something went wrong. Please try again later.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -4240,
+        2016
+      ],
+      "id": "3fdc2034-bd92-43ab-9e24-67f8fcaa4ed2",
+      "name": "Feedback Error1",
+      "webhookId": "6ef81e56-a25a-41a3-b92f-0e146e82cb0a",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -4080,
+        2016
+      ],
+      "id": "3a5fb610-3f24-45f7-b0ee-926f094c0b24",
+      "name": "No Operation, do nothing1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"json\":{\n   \"userwantstocreatepost\":\"\",\n      \"message\":\"\"\n    }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -5920,
+        1648
+      ],
+      "id": "7f0bb3c0-43e4-4211-9719-9ac512fc59b0",
+      "name": "Structured Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an assistant specialized in creating content for Reddit.\n\nAnalyze the user's message below:\n\n\"{{ $json.message.text }}\"\n\nDetermine the intent of the message.\n\nIf the user is requesting you to **generate a Reddit post, caption, content idea, or prompt**, respond with:\n\n{\n  \"UserwantsToCreatePost\": true\n  \"reply\": <your reply>\n}\n\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -6080,
+        1424
+      ],
+      "id": "b555c070-bce8-45a9-80f7-3e1217af0448",
+      "name": "AI Agent Inquiry messages"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Reddit bot').item.json.message.chat.id }}",
+        "text": "={{ $json.output.json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -5408,
+        1616
+      ],
+      "id": "136173e5-60a5-4f4a-ba2e-f88625bb4e9a",
+      "name": "Send a reply",
+      "webhookId": "a5c5dd13-d98d-4e1a-b3c2-cc950efce029",
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f67a42b6-bc32-4746-b68d-864ffedf40ea",
+              "leftValue": "={{ $json.output.json.userwantstocreatepost }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -5680,
+        1424
+      ],
+      "id": "76990c45-573c-4d8e-a560-6be1510a1543",
+      "name": "Does the user want to post?"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -6096,
+        1648
+      ],
+      "id": "a1d1824f-a140-4af7-b2cb-a32f4fe6764c",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kIf8f9beW222JuhO",
+          "name": "googel nms account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Daily AI Image Creation\n- Generates an image based on the image prompt.\n- Merges the Generated Image and the contents.\n- Sends a preview of the content.",
+        "height": 304,
+        "width": 448,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5744,
+        1808
+      ],
+      "typeVersion": 1,
+      "id": "d1166bc8-9343-4ac7-91ee-7b308d9e7387",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "## Posting new post \n- Re-assure users for posting the new post\n- Get the image and uploads it into Reddit for posting.\n- Creates a new post and return the link of the post to telegram to explore.\n",
+        "height": 384,
+        "width": 1360,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5280,
+        1808
+      ],
+      "typeVersion": 1,
+      "id": "2988d9ba-3a1a-4c86-87a8-bfa1db761ef7",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $json.callback_query.id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -6192,
+        1008
+      ],
+      "id": "6a1be218-e33c-4ba2-b708-7de5a7b21d38",
+      "name": "Answer Query a callback",
+      "webhookId": "b6eae5c5-beac-452d-a8f0-d07899aa6f3e",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram Reddit bot').item.json.callback_query.message.chat.id }}",
+        "messageId": "={{ $('Telegram Reddit bot').item.json.callback_query.message.message_id }}",
+        "text": "={{ $('Telegram Reddit bot').item.json.callback_query.message.text }}    \n\n⏳ Processing your request...",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -5984,
+        1008
+      ],
+      "id": "776f5a3a-f6bc-4b42-90cc-0b0e889733b8",
+      "name": "Edit a text message",
+      "webhookId": "db3f28fd-6dd7-4b28-96df-d6d8f8ecf8c3",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Telegram Reddit bot').item.json.callback_query.data }}",
+                    "rightValue": "postReddit",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "6796ed16-50da-420c-a4b4-917c2c72d3a8"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Post to Reddit"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "943f7733-36a6-49cf-8f5b-9733aa36821e",
+                    "leftValue": "={{ $('Telegram Reddit bot').item.json.callback_query.data }}",
+                    "rightValue": "generate",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Generate"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e661f621-9f8f-4633-b4b2-da68f1f89a8d",
+                    "leftValue": "={{ $('Telegram Reddit bot').item.json.callback_query.data }}",
+                    "rightValue": "yesDaily",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Yes to daily"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "cef427d9-bd1f-4d64-87b9-24b537f3368a",
+                    "leftValue": "={{ $('Telegram Reddit bot').item.json.callback_query.data }}",
+                    "rightValue": "no",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No to daily"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -5776,
+        976
+      ],
+      "id": "33c597fe-f5e0-4ce4-9b3a-b3d4118adc92",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "12eaa4be-f501-4271-b349-77a1152c629a",
+              "name": "text",
+              "value": "={{ $('Telegram Reddit bot').item.json.callback_query.message.reply_to_message.caption }}",
+              "type": "string"
+            },
+            {
+              "id": "8d338014-c3ac-439d-b869-7a8bd9484d78",
+              "name": "chatid",
+              "value": "={{ $json.result.chat.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5248,
+        832
+      ],
+      "id": "fabaf3c0-5c3a-4784-8b16-bef56a656a52",
+      "name": "Re - Format Contents1"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram Reddit bot').item.json.callback_query.message.chat.id }}",
+        "messageId": "={{ $('Telegram Reddit bot').item.json.callback_query.message.message_id }}",
+        "text": "=Got it {{ $('Telegram Reddit bot').item.json.callback_query.message.reply_to_message.chat.first_name }}! 😊👍",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -5456,
+        1024
+      ],
+      "id": "6b2c68ef-cb41-4555-9173-74ed765eed1a",
+      "name": "Update bot reply message",
+      "webhookId": "28f401a9-6cef-434c-b39f-93ce0c5cee61",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Check for query data (buttons)\n- Post to Reddit\n- Generate another\n- Yes for inserting data to excel\n- No for inserting data to excel\n",
+        "height": 176,
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5920,
+        768
+      ],
+      "typeVersion": 1,
+      "id": "f6898d44-8869-42cc-843b-6929fc8a67c1",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM",
+          "mode": "list",
+          "cachedResultName": "Social Medias - Ai Agent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1030459467,
+          "mode": "list",
+          "cachedResultName": "Reddit",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oOfFGf-j03-10gQr7ixjl0SJjdFgvmOrp-djU0MslJM/edit#gid=1030459467"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ChatID": "={{ $('Telegram Reddit bot').item.json.callback_query.message.chat.id }}",
+            "Topic / Prompt": "={{ $('Telegram Reddit bot').item.json.callback_query.message.reply_to_message.caption }}"
+          },
+          "matchingColumns": [
+            "ChatID"
+          ],
+          "schema": [
+            {
+              "id": "ChatID",
+              "displayName": "ChatID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Topic / Prompt",
+              "displayName": "Topic / Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -5248,
+        1024
+      ],
+      "id": "02da5c98-fefc-47f5-9eca-725ab7e6f903",
+      "name": "Append or Update1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IzZFdKDy8iaOFYNG",
+          "name": "Google Sheets [ Gabriel ]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Approved Posting\n- Notifies the user that the post was approved and will be posted on Facebook.\n- Formats the data to get the Caption and FileID(image).\n- Get the image and uploads it on to Facebook Container for Posting.\n- Creates a post and return the link of the post to telegram to explore.\n- Asks user again to post a new post daily then append the topic in the excel.",
+        "width": 560,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5040,
+        848
+      ],
+      "typeVersion": 1,
+      "id": "98a7ee1f-6045-4f48-baee-2e79a2d4e144",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -6704,
+        1008
+      ],
+      "id": "50c9a3e1-5bc4-45b5-b6d6-65e02bb3b771",
+      "name": "Telegram Reddit bot",
+      "webhookId": "9d3fb738-ea3c-48ad-a35a-a2aeb734ea5d",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Telegram Trigger for (Message & Button Callback)\n- Check first if the trigger is either a message or callback ",
+        "height": 112,
+        "width": 448
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -6736,
+        832
+      ],
+      "typeVersion": 1,
+      "id": "6a86e322-27c1-4139-9196-3409105b53e8",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Things to consider\n- Don't post after a post prompt has been made add like a delay when you post another again.\nOptimization: \n1. Add limit to the telegram bot like a post count per day ideally 10 posts only and the interval between posts (30 mins).\n2. Prevent user to post consecutively this can make the account to be flagged or blocked for spamming post requests.",
+        "height": 176,
+        "width": 656
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -6736,
+        608
+      ],
+      "typeVersion": 1,
+      "id": "495ea982-f9d0-438d-85cb-cb02da83cec9",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## AI Agent to check if the user wants to post\n- If user wants to post proceeds on the usual flow (send message for reassurance)\n- If the message isn't aligned on the the AI agent proceed on explaining this AI ",
+        "height": 176,
+        "width": 432,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -6080,
+        1216
+      ],
+      "typeVersion": 1,
+      "id": "38cd9112-6ec1-4729-a1cb-e1a5e5c906f6",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "content": "## AI Content & Image Creation -> User approval\n- The AI generates caption, hashtags and image prompt for later use\n- Generates an image based on the image prompt\n- Formats the AI output to extract the Caption and Hashtags\n- Merges the Generated Image and the extracted Caption and Hashtags\n- Sends a preview of the content for approval\n- If approved, notify the user about posting and continue posting\n- If no, then notify the user for follow-up re-creation of the content",
+        "height": 256,
+        "width": 496,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4752,
+        1120
+      ],
+      "typeVersion": 1,
+      "id": "5a27aa79-6d94-4e59-a867-a63069b7ded7",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "content": "## Daily Trigger for new Content Generation\n- Check excel for topics.\n- Notify users for the daily posting\n- Generate new post depending on the topic",
+        "height": 480,
+        "width": 1056
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -6816,
+        1808
+      ],
+      "typeVersion": 1,
+      "id": "7ceef6ee-af88-433a-8e7e-fe86ab73e65c",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram Reddit bot').item.json.callback_query.message.chat.id }}",
+        "messageId": "={{ $('Telegram Reddit bot').item.json.callback_query.message.message_id }}",
+        "text": "=Got it {{ $('Telegram Reddit bot').item.json.callback_query.message.chat.first_name }}! 😊👍",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -5456,
+        1216
+      ],
+      "id": "09339494-206c-423d-9623-4c0721daa871",
+      "name": "Update bot reply message1",
+      "webhookId": "f3409e94-62df-4c6e-bca2-4d310445ba73",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram Reddit bot').item.json.callback_query.message.chat.id }}",
+        "messageId": "={{ $('Telegram Reddit bot').item.json.callback_query.message.message_id }}",
+        "text": "Creating fresh content ✨📱",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -5456,
+        832
+      ],
+      "id": "fa28d805-607b-48bd-8f84-4589d490a95a",
+      "name": "Update bot message (generate)",
+      "webhookId": "9ac5e38d-06f2-4d4d-95f6-ac1a60bed2ca",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Generate Reddit Content with AI').item.json.output.chat_id }}",
+        "binaryData": true,
+        "binaryPropertyName": "img",
+        "replyMarkup": "inlineKeyboard",
+        "additionalFields": {
+          "caption": "={{ $('Generate Reddit Content with AI').item.json.output.captions }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -5472,
+        1936
+      ],
+      "id": "04a30d88-e683-46a2-b35b-c9e041abce7e",
+      "name": "Send New Reddit Preview",
+      "webhookId": "17b332f9-addd-430f-8d85-ea37b7d0ba41",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.result.chat.id }}",
+        "text": "Your post will be sent to Reddit...🤗🚀",
+        "additionalFields": {}
+      },
+      "id": "200920f8-1ce0-4c10-8917-801c60827cc5",
+      "name": "Confirmation of new content",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -5248,
+        1936
+      ],
+      "webhookId": "7f1ff546-72b2-4edc-8cd5-4b1bf30f4a1b",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "54f2260e-ef89-4dda-8f35-161c8304250f",
+              "name": "chatid",
+              "value": "={{ $json.result.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "01d7176a-c3ea-43af-ab07-769a7545a632",
+              "name": "caption",
+              "value": "={{ $('Send New Reddit Preview').item.json.result.caption }}",
+              "type": "string"
+            },
+            {
+              "id": "9fb4d824-d1f8-411a-a6dd-07893a5986aa",
+              "name": "file_id",
+              "value": "={{ $('Send New Reddit Preview').item.json.result.photo[3].file_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5056,
+        1936
+      ],
+      "id": "c452f8d9-57ea-4977-a1f1-b98ddce4aa6b",
+      "name": "Format New Reddit Data"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -4848,
+        1936
+      ],
+      "id": "bdd4391b-cf28-4cc1-aab8-7344650df55b",
+      "name": "Download Telegram New File",
+      "webhookId": "92f02af2-ffc5-4da6-a88f-99ce89b45527",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "subreddit": "RandomIsLife",
+        "kind": "link",
+        "title": "={{ $('Format New Reddit Data').item.json.caption }}",
+        "url": "={{ $json.url }}"
+      },
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [
+        -4464,
+        1936
+      ],
+      "id": "b7df7ac9-6ffe-43d7-9649-e83f98db6bfd",
+      "name": "Create New Reddit Link Post",
+      "retryOnFail": true,
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "2B8FiKzIM2isuR55",
+          "name": "Reddit account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Format New Reddit Data').item.json.chatid }}",
+        "text": "=I’ve successfully posted your daily content. Take a look at your content 🔍📝\n\nIf you’d like to change the daily content I’ve been posting, just type: \n\n“Create [your content desire]” and say “yes” to daily post to replace the current topic. ✅",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "View Post",
+                    "additionalFields": {
+                      "url": "={{ $json.url }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -4080,
+        1840
+      ],
+      "id": "7ae7526b-00bd-430e-9886-43c3f9f3267c",
+      "name": "Send new post link",
+      "webhookId": "6ef81e56-a25a-41a3-b92f-0e146e82cb0a",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"captions\": \"<short caption text without hashtags>\",\n  \"image_prompt\": \"<2-3 sentence NMS brand-aligned visual description with red/orange colors>\",\n  \"chat_id\": \"{{ $('Format chat id  and context').isExecuted ? $('Format chat id  and context').item.json.chatid : $json.chatid }}\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -4496,
+        1632
+      ],
+      "id": "04609ff8-e9ba-41ad-9a69-2a0aced42680",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"captions\": \"<short caption text without hashtags>\",\n  \"image_prompt\": \"<2-3 sentence NMS brand-aligned visual description with red/orange colors>\",\n  \"chat_id\": \"{{ $('Fetch Reddit Sheet Rows').item.json.ChatID }}\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -5872,
+        2128
+      ],
+      "id": "239434f1-5058-46fb-a9b5-d7cfb224e597",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "1b3f6975-1472-4795-abe8-3cb7c058c527"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "/start"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fc1b17c3-07f5-4c98-ba19-81e44cb43bc8",
+                    "leftValue": "={{$json.callback_query}}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Button callback"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.message_id }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "number",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "catch-all-rule"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Prompt"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -6496,
+        992
+      ],
+      "id": "52f60461-23bc-42b4-8752-b6542a6c12ca",
+      "name": "Router"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.from.id }}",
+        "text": "=✉️ Send a message like:\n\"Create a post about AI trends in 2025\"\n\"Write a Reddit post about productivity tips\"\n\n📸 Get preview → Choose:\n✅ Post to Reddit\n❌ Generate new one\n🔗 Receive Reddit link\n\n📅 Daily posts - After posting, choose if you want automatic daily content\n💡 Tip: Be specific about your topic!",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -6176,
+        816
+      ],
+      "id": "d0a12424-e605-4d70-a257-36d874dc5a0d",
+      "name": "/start",
+      "webhookId": "d2d49e93-866d-443e-ba1a-9f36667304fd",
+      "credentials": {
+        "telegramApi": {
+          "id": "1nWfBsf4fxlcDtNa",
+          "name": "Telegram [ Gabriel - PopAIReddit_Bot]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-preview-image-generation",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash-preview-image-generation"
+        },
+        "prompt": "={{ $json.output.image_prompt }}",
+        "options": {
+          "binaryPropertyOutput": "img"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -5664,
+        1936
+      ],
+      "id": "66c8b9e9-a1d4-470b-aaf9-64ae4b347099",
+      "name": "Generate new image",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kIf8f9beW222JuhO",
+          "name": "googel nms account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "af037b40-a59f-4d76-92af-4d74faebe4ae",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -6800,
+        1936
+      ],
+      "id": "0166a9f4-9292-40a6-8f91-916cf6f5a5c3",
+      "name": "Webhook",
+      "webhookId": "af037b40-a59f-4d76-92af-4d74faebe4ae"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool to search Google for current trending information and Reddit insights. Call this multiple times with different keywords for comprehensive research.",
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyBAqb-kUBK_8pmKmpoK5R4EEPs8C00rCHM"
+            },
+            {
+              "name": "cx",
+              "value": "86e6fcd640afb451f"
+            },
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('q', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -4848,
+        1632
+      ],
+      "id": "713e90b5-1862-439a-9705-637b83ee7e6a",
+      "name": "Google_search_engine"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        -4672,
+        1632
+      ],
+      "id": "e745a07b-3cc6-4b68-975a-7e5af470f2e7",
+      "name": "Further_more_information"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        -6208,
+        2128
+      ],
+      "id": "067dd10a-da2d-41d9-9ea8-b05d7482d322",
+      "name": "Further_more_information1"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool to search Google for current trending information and Reddit insights. Call this multiple times with different keywords for comprehensive research.",
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyBAqb-kUBK_8pmKmpoK5R4EEPs8C00rCHM"
+            },
+            {
+              "name": "cx",
+              "value": "86e6fcd640afb451f"
+            },
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('q', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -6032,
+        2128
+      ],
+      "id": "59719448-9154-4b48-970f-f66fecbd8271",
+      "name": "Google_search_engine1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Generate Reddit Content",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Reddit Content",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format chat id  and context": {
+      "main": [
+        [
+          {
+            "node": "Send Processing Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmation of the content": {
+      "main": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Reddit Content with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Processing Notification": {
+      "main": [
+        [
+          {
+            "node": "Generate Reddit Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Reddit Content": {
+      "main": [
+        [
+          {
+            "node": "Generate Reddit Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Reddit Image": {
+      "main": [
+        [
+          {
+            "node": "Send Reddit Preview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reddit Preview": {
+      "main": [
+        [
+          {
+            "node": "Confirmation of the content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Reddit Post Data": {
+      "main": [
+        [
+          {
+            "node": "Download Telegram File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image to Cloudinary": {
+      "main": [
+        [
+          {
+            "node": "Create Reddit Link Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Reddit Link Post": {
+      "main": [
+        [
+          {
+            "node": "Wait for Reddit Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Feedback Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Reddit Response": {
+      "main": [
+        [
+          {
+            "node": "Send Reddit Link to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reddit Link to Telegram": {
+      "main": [
+        [
+          {
+            "node": "Ask Telegram for Daily Approval”",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Telegram for Daily Approval”": {
+      "main": [
+        []
+      ]
+    },
+    "Fetch Reddit Sheet Rows": {
+      "main": [
+        [
+          {
+            "node": "Send Daily Telegram Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Daily Telegram Reminder": {
+      "main": [
+        [
+          {
+            "node": "Generate Reddit Content with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Reddit Content with AI": {
+      "main": [
+        [
+          {
+            "node": "Generate new image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Telegram File": {
+      "main": [
+        [
+          {
+            "node": "Wait after Telegram Download",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait after Telegram Download": {
+      "main": [
+        [
+          {
+            "node": "Upload Image to Cloudinary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image to Cloudinary1": {
+      "main": [
+        [
+          {
+            "node": "Create New Reddit Link Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Reddit Response1": {
+      "main": [
+        [
+          {
+            "node": "Send new post link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feedback Error": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feedback Error1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent Inquiry messages",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Inquiry messages": {
+      "main": [
+        [
+          {
+            "node": "Does the user want to post?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Does the user want to post?": {
+      "main": [
+        [
+          {
+            "node": "Format chat id  and context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Inquiry messages",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Query a callback": {
+      "main": [
+        [
+          {
+            "node": "Edit a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit a text message": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Format Reddit Post Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update bot message (generate)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update bot reply message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update bot reply message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update bot reply message": {
+      "main": [
+        [
+          {
+            "node": "Append or Update1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Re - Format Contents1": {
+      "main": [
+        [
+          {
+            "node": "Generate Reddit Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Reddit bot": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update bot message (generate)": {
+      "main": [
+        [
+          {
+            "node": "Re - Format Contents1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send New Reddit Preview": {
+      "main": [
+        [
+          {
+            "node": "Confirmation of new content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmation of new content": {
+      "main": [
+        [
+          {
+            "node": "Format New Reddit Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format New Reddit Data": {
+      "main": [
+        [
+          {
+            "node": "Download Telegram New File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Telegram New File": {
+      "main": [
+        [
+          {
+            "node": "Upload Image to Cloudinary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create New Reddit Link Post": {
+      "main": [
+        [
+          {
+            "node": "Wait for Reddit Response1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Feedback Error1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Reddit Content",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Reddit Content with AI",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router": {
+      "main": [
+        [
+          {
+            "node": "/start",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Answer Query a callback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent Inquiry messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate new image": {
+      "main": [
+        [
+          {
+            "node": "Send New Reddit Preview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Reddit Sheet Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google_search_engine": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate Reddit Content",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Further_more_information": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate Reddit Content",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Further_more_information1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate Reddit Content with AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google_search_engine1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate Reddit Content with AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "CGIlDo3MI1okeF7t"
+  },
+  "versionId": "5b1fbb4d-fe60-45b4-a995-27d269f0c6db",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  },
+  "id": "JdvZzr7Ibc3m1abh",
+  "tags": []
+}

@@ -1,0 +1,1143 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are Vee, the female chatbot persona of NMS Philippines, professional, friendly, approachable, and witty with expertise in providing first-line support using the official Recruitment-Visitors Knowledgebase dataset and Recruitment-Visitors Knowledgebase.  \n---\n**Mission / Duty:**  \n- Respond promptly and accurately to all inquiries.  \n- Use only the FAQ dataset provided in the Recruitment-Visitors Knowledgebase of NMS Philippines.  \n- Be the first-line support for all website visitors.  \n- Maintain professionalism with a touch of warmth and wit.  \n- Support multilingual queries while keeping a consistent tone.  \n- Must return the answers only for every inquiry with no added data.  \n---\n**Style & Voice:**  \n- Professional, friendly, approachable, and witty.  \n- Use clear, concise, and polite language.  \n- Never sound robotic or overly formal.  \n---\n**Interaction Rules:**  \n- Every message new Http Request on Recruitment-Visitors Knowledgebase dataset.\n- Always check if there is a possible answer to the inquiries.\n- Always answer strictly based on the Recruitment-Visitors Knowledgebase dataset.  \n- For every inquiry, fetch possible answer from the Recruitment-Visitors Knowledgebase.  \n- If info is not found in the Recruitment-Visitors Knowledgebase dataset, respond politely: \"I don’t have that information right now. You may check the official NMS Philippines website or contact HR directly for further details.\"  \n- Never invent or speculate outside the dataset.  \n- Use Manila timezone (GMT+8) for any time or date references.  \n- Reference today’s date as {{ $now.format('yyyy-MM-dd') }}.  \n---\n**Self-Reflection & Adaptation:**  \nBefore final output, always check:  \n- Match Recruitment-Visitors Knowledgebase exactly?  \n- Tone professional + friendly + witty?  \n- No fabricated info?  \n- Date/time in Manila timezone?  \n- Answers must be clear, concise, and complete?  \n---\n**IMPORTANT:**  \n- Persona named Vee, female chatbot for NMS Philippines.  \n- Serve as first-line support on the website using only provided datasets.  \n- Handle multilingual queries staying consistent in tone.  \n- Use polite refusal message if info is missing.  \n- Use Manila timezone for dates/times, formatted as specified.  \n- Maintain professionalism combined with warmth and wit in responses.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [-368, -256],
+      "id": "a29924d5-56c1-4f74-9a57-df6b96cc0d93",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hello there! I'm Vee, your friendly NMS Philippines chatbot. How can I assist you today? 😊\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [-1440, -208],
+      "id": "6393a6d5-c75f-4378-be12-8504f7b967c6",
+      "name": "Chat Input",
+      "webhookId": "ae683dca-d38b-43c0-a2ba-0cd8120366c5"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1ZQa2MlR6OhUIA9f-jVflxqy6JTrwpotqUfNXYrZU2fU",
+          "mode": "list",
+          "cachedResultName": "NMS FAQ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZQa2MlR6OhUIA9f-jVflxqy6JTrwpotqUfNXYrZU2fU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1243698930,
+          "mode": "list",
+          "cachedResultName": "Recruitment-Visitors FAQ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZQa2MlR6OhUIA9f-jVflxqy6JTrwpotqUfNXYrZU2fU/edit#gid=1243698930"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [-1440, 656],
+      "id": "0778a78b-b531-461e-9367-fff378b8ec45",
+      "name": "Recruitment-Visitors FAQ",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "mAI0fDvv46jdiyQs",
+          "name": "Google Sheets - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4.1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-496, 16],
+      "id": "b9eb6726-7c79-4286-b718-8787245fd54d",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Z4lvwCe4xAcnLqRr",
+          "name": "OpenRouter PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "498dabc3-0a5c-4f60-8bec-524338d4b679",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "f7c25d91-a561-4915-b5ec-ea33f982b29c",
+              "name": "prompt",
+              "value": "={{ $json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "60dc88bd-4c2c-49f6-a24e-443f5e20b1ab",
+              "name": "ref",
+              "value": "={{ $json.ref }}",
+              "type": "string"
+            },
+            {
+              "id": "3b4d577d-e53b-4644-8914-5ef339b21b2e",
+              "name": "embedding_table_name",
+              "value": "documents_ai_chat_hr_chatbot_knowledge_base",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-992, -256],
+      "id": "71a6f3be-062c-4e02-9037-72409cb74d0b",
+      "name": "TriggerConfig"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "498dabc3-0a5c-4f60-8bec-524338d4b679",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "f7c25d91-a561-4915-b5ec-ea33f982b29c",
+              "name": "prompt",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "60dc88bd-4c2c-49f6-a24e-443f5e20b1ab",
+              "name": "ref",
+              "value": "chat-workflow",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1216, -208],
+      "id": "75aaf388-db5e-45b8-8684-95a24a095a98",
+      "name": "Chat Config"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "498dabc3-0a5c-4f60-8bec-524338d4b679",
+              "name": "sessionId",
+              "value": "=telegram:{{ $json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f7c25d91-a561-4915-b5ec-ea33f982b29c",
+              "name": "prompt",
+              "value": "=Hello, my name is @{{ $json.message.chat.username }},\n**Question:** {{ $json.message.text }}\n\n**Additional Reminder:***\n- Please always mention me eg. @{{ $json.message.chat.username }} when you respond.\n- my messaging app is \"Telegram\"\n",
+              "type": "string"
+            },
+            {
+              "id": "f8d0037d-9be9-427e-b88b-72d0f55df5d9",
+              "name": "ref",
+              "value": "telegram",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1216, -544],
+      "id": "c43adee1-b034-4093-ab71-daf1f0dc66f5",
+      "name": "Telegram Config"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f3e842c6-5f08-42bc-be58-cb5f8597bce5",
+              "name": "sessionId",
+              "value": "={{ $json.body.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "0a419853-93ff-4f2d-9305-ef4d8e3366c4",
+              "name": "ref",
+              "value": "webhook",
+              "type": "string"
+            },
+            {
+              "id": "29734408-4aed-4cdf-95d9-1b9f8828a1d9",
+              "name": "prompt",
+              "value": "={{ $json.body.prompt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1216, 160],
+      "id": "0c9f75cc-cc0a-4571-8158-7f9875ac23e6",
+      "name": "Webhook Input Mapper"
+    },
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [-1440, -544],
+      "id": "fb8c823f-7741-4cda-aa8a-b0a50ead21d0",
+      "name": "Telegram Trigger",
+      "webhookId": "c778421d-9e4d-4698-a0b4-e59e3fbb6852",
+      "credentials": {
+        "telegramApi": {
+          "id": "LH0exizr8XbLpwST",
+          "name": "Telegram @finance_inquiry_chatbot - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "c95ee520-5d39-47f1-8e76-d44fd496fa85",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-1440, 160],
+      "id": "f592ffd6-61ef-43c9-a973-b1389e39c8d0",
+      "name": "Webhook",
+      "webhookId": "c95ee520-5d39-47f1-8e76-d44fd496fa84"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3e4efc7c-8ea9-4b12-a4ff-e27ca941d04a",
+              "leftValue": "={{ $json.sessionId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "566ac3fb-633d-4d2d-b8fa-85ec120561cd",
+              "leftValue": "={{ $json.prompt }}",
+              "rightValue": "={{ $json.message }}",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-768, -256],
+      "id": "07a14bce-8804-4d87-8b3b-b9df2de52e3c",
+      "name": "input validation"
+    },
+    {
+      "parameters": {
+        "content": "## Initial Database Setup\n\n> **Note:** This must be called **once** to set up the initial database tables.  \n\nAlternatively, you can copy the PostgreSQL queries provided, replace all placeholders, and execute them directly in your PostgreSQL environment.\n\n**Payload Node Configuration**  \n- **`embedding_table_name`**: Set the table name for storing the datasets  \n  *Example:* `documents_ai_chat_hr_chatbot_knowledge_base`  \n- **`embedding_dimension`**: Set the embedding dimension  \n  *Default:* `1024`  \n",
+        "height": 512,
+        "width": 656,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-1504, -1280],
+      "typeVersion": 1,
+      "id": "ad95a901-b79b-4430-906d-d1e68b35168d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "60cccf40-a2dd-4913-b96c-23206c77f2aa",
+              "name": "embedding_table_name",
+              "value": "=documents_ai_chat_hr_chatbot_knowledge_base",
+              "type": "string"
+            },
+            {
+              "id": "7237d8ae-0ab2-4025-9137-a6761826f53b",
+              "name": "embedding_dimension",
+              "value": 1024,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1216, -928],
+      "id": "a62a6f25-ca35-4d12-9487-224d675d18d6",
+      "name": "Payload"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Create a table to store your documents\ncreate table {{ $('Payload').item.json.embedding_table_name }} (\n  id bigserial primary key,\n  text text, -- corresponds to Document.pageContent\n  metadata jsonb, -- corresponds to Document.metadata\n  embedding vector({{ $json.embedding_dimension }}) -- change if needed\n);\n\n-- Create a function to search for documents\ncreate function match_{{ $('Payload').item.json.embedding_table_name }} (\n  query_embedding vector({{ $json.embedding_dimension }}),\n  match_count int default null,\n  filter jsonb DEFAULT '{}'\n) returns table (\n  id bigint,\n  content text,\n  metadata jsonb,\n  similarity float\n)\nlanguage plpgsql\nas $$\n#variable_conflict use_column\nbegin\n  return query\n  select\n    id,\n    content,\n    metadata,\n    1 - ({{ $('Payload').item.json.embedding_table_name }}.embedding <=> query_embedding) as similarity\n  from {{ $('Payload').item.json.embedding_table_name }}\n  where metadata @> filter\n  order by {{ $('Payload').item.json.embedding_table_name }}.embedding <=> query_embedding\n  limit match_count;\nend;\n$$;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-992, -928],
+      "id": "1d30b956-22e7-4a89-a965-5fb581f18777",
+      "name": "Create Document Metadata Table",
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-1440, -928],
+      "id": "1e69a3a5-f608-4307-a9d2-a5aefce57332",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"output\": {{ $json.message.filter(item => item).join(\"\\n\").toJsonString() }}\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [224, -512],
+      "id": "7c2f54c3-8bad-48d9-9a99-853a44523490",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TriggerConfig').item.json.sessionId.replace(\"telegram:\", \"\") }}",
+        "text": "={{ $json.output.reply }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [224, -704],
+      "id": "8bfd0f53-ab37-4e75-9725-dda01233dd6d",
+      "name": "Send a text message1",
+      "webhookId": "d92f5905-05ca-4438-8598-33feadb49574",
+      "credentials": {
+        "telegramApi": {
+          "id": "LH0exizr8XbLpwST",
+          "name": "Telegram @finance_inquiry_chatbot - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "232bef6b-0f59-4e50-a1a9-72f3824d3b8b",
+              "name": "message",
+              "value": "={{ ([!$json.sessionId ? '`sessionId` is required' : null , !$json.prompt ? '`prompt` message is required' : null ]).filter(item => item) }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-384, -608],
+      "id": "554121be-9eec-4141-b714-5c83343c9248",
+      "name": "Validation Message"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "874fa787-f784-4a2f-8b61-a75d8cab6034"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ea081d95-a6c8-4961-82fd-0c0f33e83e49",
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "chat-workflow",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "chat-workflow"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5b8c8ca7-25da-4e37-946c-f5c85c67290e",
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [0, -624],
+      "id": "b6373a47-beb2-40ef-8efe-ba28bf5d79cc",
+      "name": "Error: Response Router"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to find direct answers to factual questions. It is connected to the official Finance Frequently Asked Questions (FAQ) knowledge base, which contains answers to a wide variety of potential user queries. This is your primary tool for answering any specific question a user might ask.",
+        "topK": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1.1,
+      "position": [-144, -80],
+      "id": "0146de2e-923c-40ec-8f03-b0c5f137eeea",
+      "name": "Recruitment-Visitors Knowledgebase1"
+    },
+    {
+      "parameters": {
+        "tableName": "={{ $('TriggerConfig').item.json.embedding_table_name }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [-80, 128],
+      "id": "8e4d9b90-f301-494d-8fe0-397d8a5512cc",
+      "name": "DB: Finance Knowledge Base",
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Pull and Store the Dataset in Vector Database for Recruitment-Visitors Knowledgebase - FAQs\n\n### Refer to the Google Sheet link below for a sample format and example input for importing datasets into the database:\n\nFinance Knowledge Base Sample Dataset: https://docs.google.com/spreadsheets/d/1DHAbPGuVrFMqbZ6lPrXqTTdWv6KXqUxB2aFriFmxsGk/edit?usp=sharing\n",
+        "height": 720,
+        "width": 1616,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-1536, 352],
+      "typeVersion": 1,
+      "id": "713f454e-4383-4239-ad6f-eb266e1d7ce8",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\n\nconst dataItems = $input.first().json.data\n\nfor (let i = 0; i < dataItems.length; i++) {\n  const item = dataItems[i];\n  const id = item.ID || '';\n  const q = item.QUESTION || '';\n  const a = item.ANSWER || '';\n\n  if (!id || !q || !a) {\n    continue; // skip if id is empty\n  }\n\n  const combined = `QUESTION: ${q}\\nEXACT_ANSWER: ${a}`;\n\n  results.push({\n    json: {\n      id,\n      text: combined\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-768, 656],
+      "id": "390d125c-67a2-4be1-a3c0-f4524a965340",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [-384, 928],
+      "id": "798091b5-94c1-4ddd-8022-7cbe9be1a0da",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DO $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = '{{ $('Database Config').item.json.embedding_table_name }}') THEN\n        EXECUTE 'DELETE FROM {{ $('Database Config').item.json.embedding_table_name }} WHERE metadata->>''id'' LIKE ''%' || $1 || '%''';\n    END IF;\nEND\n$$;",
+        "options": {
+          "queryReplacement": "={{ $json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-384, 400],
+      "id": "d8f71d19-6ef7-4deb-9ab5-3bf634f83f4c",
+      "name": "Delete Data",
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "276bfa33-6566-4e58-985e-4a9a4890850f",
+              "name": "embedding_table_name",
+              "value": "documents_ai_chat_hr_chatbot_knowledge_base",
+              "type": "string"
+            },
+            {
+              "id": "a6074eea-e47c-4ee1-88bb-94029ef1c908",
+              "name": "data",
+              "value": "={{ $json.data }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-992, 656],
+      "id": "86996bd7-0f1c-4c8d-b6c5-29ae8366b63d",
+      "name": "Database Config"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [-1216, 656],
+      "id": "24316b2b-ee42-4736-8896-4182adcff428",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "modelName": "embed-multilingual-v3.0"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsCohere",
+      "typeVersion": 1,
+      "position": [-288, 224],
+      "id": "fbf030c0-1579-4f7e-8cd3-ca925da97f5c",
+      "name": "Embeddings Cohere",
+      "credentials": {
+        "cohereApi": {
+          "id": "pIE5hEKmpufDQ5j1",
+          "name": "CohereApi PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "={{ $('Database Config').item.json.embedding_table_name }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [-448, 704],
+      "id": "8f4a7598-28ba-4cfd-a826-e229c2bc41a8",
+      "name": "Recruitment-Visitors Knowledgebase - Storage",
+      "credentials": {
+        "postgres": {
+          "id": "US5FqkN6nLeCxKAB",
+          "name": "Postgres - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### 🔐 Setup Instructions\n\n- ✅ **Environment Prerequisites:**  \n  - n8n Workflow runtime environment with network access.  \n  - PostgreSQL database configured with `pgvector` extension for vector embeddings.  \n  - Google Cloud credentials with access to the Recruitment-Visitors FAQ Google Sheets file.  \n  - OpenRouter API key for GPT-4.1 chat model access.  \n  - Cohere API key for multilingual text embeddings.  \n  - Telegram Bot credentials if Telegram messaging is enabled.  \n\n- ✅ **Initial Database Setup:**  \n  - Run the SQL commands in node `Create Document Metadata Table` to create the embedding table and matching function.  \n  - Ensure the table name matches the configured `embedding_table_name` (`documents_ai_chat_hr_chatbot_knowledge_base`).  \n\n- ✅ **Dataset Ingestion:**  \n  - Connect the `Recruitment-Visitors FAQ` Google Sheets Trigger to load FAQ data.  \n  - Use `Code` and `Default Data Loader` nodes to format and load data.  \n  - Generate embeddings with `Embeddings Cohere`.  \n  - Insert embeddings and FAQ text data into PostgreSQL using `Recruitment-Visitors Knowledgebase - Storage`.  \n\n- ✅ **Webhook and Messaging Setup:**  \n  - Deploy HTTP webhook node (`Webhook`) with provided webhookId/path.  \n  - Configure Telegram Bot webhook using `Telegram Trigger` node and API credentials.  \n\n- ✅ **System Message Customization:**  \n  - Modify the system message in `AI Agent` node to update the chatbot persona or mission as needed.  ",
+        "height": 896,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-2064, -560],
+      "typeVersion": 1,
+      "id": "bc1e0903-97d9-4054-9f52-d9427f280ea6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "874fa787-f784-4a2f-8b61-a75d8cab6034"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ea081d95-a6c8-4961-82fd-0c0f33e83e49",
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "chat-workflow",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "chat-workflow"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5b8c8ca7-25da-4e37-946c-f5c85c67290e",
+                    "leftValue": "={{ $('TriggerConfig').item.json.ref }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [416, -272],
+      "id": "932b7922-cd38-4142-a077-d8ed1a232982",
+      "name": "Response Router"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"output\": {{ $json.output.toJsonString() }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [736, -240],
+      "id": "43aaddc1-f0da-437a-8c74-1780ea1acb21",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TriggerConfig').item.json.sessionId.replace(\"telegram:\", \"\") }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [720, -432],
+      "id": "b4153849-dba8-4065-9e42-bf2394f5fc3a",
+      "name": "Send a text message",
+      "webhookId": "d92f5905-05ca-4438-8598-33feadb49574",
+      "credentials": {
+        "telegramApi": {
+          "id": "LH0exizr8XbLpwST",
+          "name": "Telegram @finance_inquiry_chatbot - PROD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c5b173ee-93c9-4cef-a72a-25de6f76699e",
+              "name": "sessionId",
+              "value": "={{ $('TriggerConfig').item.json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "80f3de69-0585-42c0-9b39-d638548592c8",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [64, -256],
+      "id": "0599907f-a9ef-4422-ab2c-6a85d3d446d5",
+      "name": "Outbound Data"
+    }
+  ],
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Outbound Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Input": {
+      "main": [
+        [
+          {
+            "node": "Chat Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recruitment-Visitors FAQ": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Recruitment-Visitors Knowledgebase1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TriggerConfig": {
+      "main": [
+        [
+          {
+            "node": "input validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Config": {
+      "main": [
+        [
+          {
+            "node": "TriggerConfig",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Config": {
+      "main": [
+        [
+          {
+            "node": "TriggerConfig",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Input Mapper": {
+      "main": [
+        [
+          {
+            "node": "TriggerConfig",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Telegram Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Webhook Input Mapper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "input validation": {
+      "main": [
+        [
+          {
+            "node": "Validation Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload": {
+      "main": [
+        [
+          {
+            "node": "Create Document Metadata Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Message": {
+      "main": [
+        [
+          {
+            "node": "Error: Response Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error: Response Router": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recruitment-Visitors Knowledgebase1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Finance Knowledge Base": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Recruitment-Visitors Knowledgebase1",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Recruitment-Visitors Knowledgebase - Storage",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Delete Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Recruitment-Visitors Knowledgebase - Storage",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Database Config": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Database Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Cohere": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Recruitment-Visitors Knowledgebase - Storage",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "DB: Finance Knowledge Base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Router": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outbound Data": {
+      "main": [
+        [
+          {
+            "node": "Response Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7824031308db534c7c9e014216a02a2cfe1378532902e3ebe0cf84de7a241ad"
+  }
+}
